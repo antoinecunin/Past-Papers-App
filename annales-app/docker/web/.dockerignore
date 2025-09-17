@@ -1,0 +1,30 @@
+# Dépendances & artefacts
+node_modules
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+.yarn
+coverage
+dist
+build
+# Frameworks/bundlers courants
+.next
+out
+.turbo
+.vercel
+.vite
+.cache
+
+# VCS & IDE
+.git
+.gitignore
+.vscode
+.idea
+
+# Docker meta
+Dockerfile
+.dockerignore
+
+# Env & secrets (on passe par docker-compose)
+.env
+.env.*

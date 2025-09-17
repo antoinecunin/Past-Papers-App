@@ -1,0 +1,137 @@
+networks:
+  public:
+  backend:
+
+volumes:
+  mongo_data:
+  minio_data:
+
+services:
+  reverse-proxy:
+    image: nginx:alpine
+    container_name: annales-nginx
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - public
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/api/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: ./web
+      dockerfile: ../docker/web/Dockerfile
+    container_name: annales-web
+    networks:
+      - public
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+      dockerfile: ../docker/api/Dockerfile
+    container_name: annales-api
+    environment:
+      - NODE_ENV=production
+      - API_PORT=${API_PORT}
+      - API_HOST=0.0.0.0
+      - API_LOG_LEVEL=${API_LOG_LEVEL}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - MONGO_URI=${MONGO_URI}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_REGION=${S3_REGION}
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_USE_SSL=${S3_USE_SSL}
+    networks:
+      - backend
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${API_PORT:-3000}${API_HEALTH_PATH:-/api/health} >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 2s
+      retries: 12
+      start_period: 25s
+
+  mongo:
+    image: mongo:7
+    container_name: annales-mongo
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'quit(db.adminCommand({ping:1}).ok?0:1)'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: annales-minio
+    command: server /data --address ":9000" --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    expose:
+      - "9000"
+      - "9001"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  minio-setup:
+    image: minio/mc:latest
+    container_name: annales-minio-setup
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: ["/bin/sh", "/setup.sh"]
+    volumes:
+      - ./docker/minio/setup.sh:/setup.sh:ro
+    environment:
+      - S3_ENDPOINT=minio:9000
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=${S3_BUCKET}
+    networks:
+      - backend
+    restart: "no"
+
+  # Service utilitaire propre pour manipuler MinIO (ls, cat, stat…)
+  mc:
+    image: minio/mc:latest
+    profiles: ["ops"]
+    networks: [backend]
+    environment:
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=${S3_BUCKET}
+    entrypoint: ["/bin/sh","-lc"]
+    command: |
+      'mc alias set local http://$S3_ENDPOINT $S3_ACCESS_KEY $S3_SECRET_KEY --api S3v4 && exec sh'
