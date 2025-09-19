@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+# Installer curl pour les healthchecks
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copier package.json et package-lock.json
+COPY package*.json ./
+
+# Installer toutes les dépendances
+RUN npm ci
+
+# Copier le reste du code (sera remplacé par le volume en dev)
+COPY . .
+
+# Exposer le port Vite
+EXPOSE 5173
+
+# Utiliser Vite dev server avec hot reload
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

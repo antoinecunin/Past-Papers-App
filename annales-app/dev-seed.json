@@ -1,0 +1,31 @@
+{
+  "description": "Configuration des données de test pour l'environnement de développement",
+  "files": [
+    {
+      "path": "M12_controle_final.pdf",
+      "title": "Contrôle Final M12",
+      "year": 2021,
+      "module": "M12-ALGO",
+      "description": "Examen final d'algorithmique"
+    },
+    {
+      "path": "M12_controle_final.pdf",
+      "title": "Contrôle M12 - Session 2",
+      "year": 2021,
+      "module": "M12-ALGO",
+      "description": "Examen de rattrapage"
+    },
+    {
+      "path": "M12_controle_final.pdf",
+      "title": "TP Final Structures de Données",
+      "year": 2022,
+      "module": "M15-STRUCT",
+      "description": "Travaux pratiques sur les structures de données"
+    }
+  ],
+  "settings": {
+    "wait_for_api_timeout": 30,
+    "upload_batch_size": 1,
+    "verbose": true
+  }
+}

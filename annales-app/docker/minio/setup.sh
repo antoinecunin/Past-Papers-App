@@ -17,4 +17,8 @@ done
 
 mc mb -p local/$S3_BUCKET || true
 mc anonymous set none local/$S3_BUCKET
+
+# Créer un fichier sentinelle pour les tests de santé
+echo "%PDF-1.4 test" | mc pipe local/$S3_BUCKET/health-check.pdf
+
 echo "Bucket $S3_BUCKET ready."

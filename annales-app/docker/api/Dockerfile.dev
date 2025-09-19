@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copier package.json et package-lock.json
+COPY package*.json ./
+
+# Installer toutes les dépendances (dev + prod)
+RUN npm ci
+
+# Copier le reste du code (sera remplacé par le volume en dev)
+COPY . .
+
+# Exposer le port de dev
+EXPOSE 3001
+
+# Utiliser ts-node-dev pour le hot reload
+CMD ["npm", "run", "dev"]

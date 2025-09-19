@@ -1,3 +1,5 @@
 .env
+.env.dev
 .claude/
 CLAUDE.md
+M12_controle_final.pdf
