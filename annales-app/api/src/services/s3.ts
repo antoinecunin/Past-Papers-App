@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 
 const s3 = new S3Client({
   region: process.env.S3_REGION,
@@ -15,6 +16,28 @@ export async function uploadBuffer(key: string, buffer: Buffer, contentType: str
     ContentType: contentType
   }));
   return key;
+}
+
+export async function downloadFile(key: string) {
+  const command = new GetObjectCommand({
+    Bucket: process.env.S3_BUCKET!,
+    Key: key
+  });
+
+  const response = await s3.send(command);
+
+  if (!response.Body) {
+    throw new Error('Fichier non trouvé dans S3');
+  }
+
+  const stream = response.Body as Readable;
+
+  return {
+    stream,
+    contentType: response.ContentType,
+    contentLength: response.ContentLength,
+    lastModified: response.LastModified
+  };
 }
 
 export function objectKey(...parts: string[]) {
