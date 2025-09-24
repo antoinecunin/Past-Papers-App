@@ -2,10 +2,318 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 // @ts-ignore - types non fournis pour build.worker.mjs dans pdfjs-dist 5.x
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
-import { CommentIndicator, NewCommentIndicator } from './ui/CommentIndicator';
 import { useCommentPositioning } from '../hooks/useCommentPositioning';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+// Fonction pour rendre le LaTeX en HTML
+const renderLatex = (latex: string): string => {
+  try {
+    return katex.renderToString(latex, {
+      throwOnError: false,
+      displayMode: false, // Mode inline par défaut
+      strict: false
+    });
+  } catch (error) {
+    console.warn('Erreur de rendu LaTeX:', error);
+    return `<span style="color: #dc2626; font-family: monospace;">[Erreur LaTeX: ${latex}]</span>`;
+  }
+};
+
+// Helper pour gérer la compatibilité avec l'ancien format
+const getAnswerContent = (answer: Answer): AnswerContent => {
+  if (answer.content) {
+    return answer.content;
+  }
+  // Fallback pour l'ancien format
+  return {
+    type: 'text',
+    data: answer.text || '',
+  };
+};
+
+// Composant pour l'affichage riche du contenu avec édition et troncature
+const AnswerContentDisplay: React.FC<{
+  answer: Answer,
+  onEdit?: (answerId: string, newContent: AnswerContent) => Promise<void>
+}> = ({ answer, onEdit }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [editContent, setEditContent] = useState<AnswerContent | null>(null);
+  const content = getAnswerContent(answer);
+
+  const startEdit = () => {
+    setEditContent(content);
+    setIsEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (editContent && onEdit) {
+      try {
+        await onEdit(answer._id.toString(), editContent);
+        setIsEditing(false);
+        setEditContent(null);
+      } catch (error) {
+        console.error('Erreur lors de la modification:', error);
+      }
+    }
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(null);
+  };
+
+  // Fonction pour tronquer le texte
+  const truncateText = (text: string, maxLength = 150) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength);
+  };
+
+  // Rendu du contenu selon le type
+  const renderContent = (contentToRender: AnswerContent, truncated = false) => {
+    switch (contentToRender.type) {
+      case 'text':
+        const textData = truncated ? truncateText(contentToRender.data) : contentToRender.data;
+        const shouldShowTextToggle = contentToRender.data.length > 150;
+        return (
+          <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+            {textData}
+            {shouldShowTextToggle && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(!isExpanded);
+                }}
+                style={{
+                  marginLeft: '4px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563eb',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  textDecoration: 'underline'
+                }}
+              >
+                {truncated ? '...Plus' : ' Moins'}
+              </button>
+            )}
+          </div>
+        );
+
+      case 'image':
+        return (
+          <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
+            <img
+              src={contentToRender.data}
+              alt="Commentaire image"
+              style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', display: 'block' }}
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                const errorDiv = img.nextElementSibling as HTMLDivElement;
+                img.style.display = 'none';
+                errorDiv.textContent = `[Image non trouvée: ${contentToRender.data}]`;
+                errorDiv.style.display = 'block';
+              }}
+            />
+            <div style={{ display: 'none', color: '#dc2626', fontSize: '12px', wordWrap: 'break-word' }}></div>
+          </div>
+        );
+
+      case 'latex':
+        const latexData = truncated ? truncateText(contentToRender.data) : contentToRender.data;
+        const renderedLatex = contentToRender.rendered || renderLatex(latexData);
+        const shouldShowLatexToggle = contentToRender.data.length > 150;
+
+        return (
+          <div style={{ maxWidth: '100%' }}>
+            <div
+              dangerouslySetInnerHTML={{ __html: renderedLatex }}
+              style={{
+                maxWidth: '100%',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'thin'
+              }}
+            />
+            {shouldShowLatexToggle && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(!isExpanded);
+                }}
+                style={{
+                  marginTop: '4px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563eb',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  textDecoration: 'underline'
+                }}
+              >
+                {truncated ? '...Plus' : ' Moins'}
+              </button>
+            )}
+            <details style={{ marginTop: '4px' }}>
+              <summary style={{ fontSize: '10px', color: '#6b7280', cursor: 'pointer' }}>Code LaTeX</summary>
+              <div style={{
+                fontFamily: 'monospace',
+                background: '#f5f5f5',
+                padding: '4px',
+                borderRadius: '4px',
+                fontSize: '10px',
+                marginTop: '4px',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                maxWidth: '100%'
+              }}>
+                {latexData}
+              </div>
+            </details>
+          </div>
+        );
+
+      default:
+        return <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>{contentToRender.data}</div>;
+    }
+  };
+
+  if (isEditing && editContent) {
+    return (
+      <div style={{ border: '1px solid #2563eb', borderRadius: '4px', padding: '8px', background: '#f8fafc' }}>
+        <select
+          value={editContent.type}
+          onChange={(e) => setEditContent({ ...editContent, type: e.target.value as ContentType })}
+          style={{ marginBottom: '8px', padding: '4px', fontSize: '12px', width: '100%' }}
+        >
+          <option value="text">💬 Texte</option>
+          <option value="image">🖼️ Image</option>
+          <option value="latex">📐 LaTeX</option>
+        </select>
+        <textarea
+          value={editContent.data}
+          onChange={(e) => setEditContent({ ...editContent, data: e.target.value })}
+          style={{
+            width: '100%',
+            minHeight: '60px',
+            padding: '8px',
+            fontSize: '12px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            resize: 'vertical'
+          }}
+        />
+        {editContent.type === 'latex' && (
+          <div style={{
+            marginTop: '8px',
+            padding: '8px',
+            background: '#f9fafb',
+            borderRadius: '4px',
+            fontSize: '14px',
+            maxWidth: '100%',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word'
+          }}>
+            <div dangerouslySetInnerHTML={{ __html: renderLatex(editContent.data) }} />
+          </div>
+        )}
+        <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+          <button
+            onClick={saveEdit}
+            style={{
+              padding: '4px 12px',
+              background: '#16a34a',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            ✓ Sauver
+          </button>
+          <button
+            onClick={cancelEdit}
+            style={{
+              padding: '4px 12px',
+              background: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            ✕ Annuler
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleContentClick = (e: React.MouseEvent) => {
+    // Ne pas interférer avec les boutons
+    if ((e.target as HTMLElement).tagName === 'BUTTON') {
+      return;
+    }
+
+    // Si le contenu est long, toggle l'expansion
+    if (content.data.length > 150) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div
+        onClick={handleContentClick}
+        onDoubleClick={startEdit}
+        style={{
+          cursor: content.data.length > 150 ? 'pointer' : (onEdit ? 'pointer' : 'default')
+        }}
+      >
+        {renderContent(content, !isExpanded)}
+      </div>
+      {onEdit && !isEditing && (
+        <button
+          onClick={startEdit}
+          style={{
+            position: 'absolute',
+            top: '0',
+            right: '0',
+            background: 'rgba(37, 99, 235, 0.8)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0 0 0 4px',
+            padding: '2px 6px',
+            fontSize: '10px',
+            cursor: 'pointer',
+            opacity: 0,
+            transition: 'opacity 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+        >
+          ✏️
+        </button>
+      )}
+    </div>
+  );
+};
+
+type ContentType = 'text' | 'image' | 'latex';
+
+type AnswerContent = {
+  type: ContentType;
+  data: string; // Texte brut, URL d'image, ou code LaTeX
+  rendered?: string; // Version rendue (pour LaTeX -> HTML)
+};
 
 type Answer = {
   _id: string;
@@ -13,7 +321,9 @@ type Answer = {
   page: number;        // 1-based
   yTop: number;        // [0,1]
   yBottom?: number;    // [0,1]
-  text: string;
+  content: AnswerContent;
+  // Compatibilité avec l'ancien format
+  text?: string; // Déprécié, à migrer vers content
   author?: string;
   createdAt: string;
   updatedAt: string;
@@ -92,18 +402,6 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         canvas.style.pointerEvents = 'none'; // Permettre les clics sur le wrapper
 
         pageWrapper.appendChild(canvas);
-
-        // Conteneur pour les indicateurs de commentaires de cette page
-        const indicatorsContainer = document.createElement('div');
-        indicatorsContainer.className = 'comments-indicators';
-        indicatorsContainer.style.position = 'absolute';
-        indicatorsContainer.style.top = '0';
-        indicatorsContainer.style.right = '0';
-        indicatorsContainer.style.width = '100%';
-        indicatorsContainer.style.height = '100%';
-        indicatorsContainer.style.pointerEvents = 'none';
-        pageWrapper.appendChild(indicatorsContainer);
-
         container.appendChild(pageWrapper);
 
         await page.render({ canvasContext: ctx, viewport, canvas }).promise;
@@ -207,9 +505,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     const tolerance = 0.05; // 5% de la hauteur de la page
 
     comments.forEach(comment => {
-      // Chercher un groupe existant proche
+      // Chercher un groupe existant proche (distance depuis le premier élément du groupe)
       const existingGroup = groups.find(group =>
-        Math.abs(group.avgPosition - comment.yTop) <= tolerance
+        Math.abs(group.answers[0].yTop - comment.yTop) <= tolerance
       );
 
       if (existingGroup) {
@@ -348,6 +646,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         indicator.style.zIndex = '20';
         indicator.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
         indicator.style.minWidth = '200px';
+        indicator.style.maxWidth = '280px';
         indicator.style.pointerEvents = 'auto';
 
         // Empêcher la propagation sur tout l'indicateur
@@ -358,12 +657,23 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         // Contenu du formulaire
         indicator.innerHTML = `
           <form class="new-comment-form" style="display: flex; flex-direction: column; gap: 8px;">
+            <select class="content-type-select" style="padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
+              <option value="text">💬 Texte</option>
+              <option value="image">🖼️ Image (URL)</option>
+              <option value="latex">📐 LaTeX</option>
+            </select>
             <textarea
+              class="content-input"
               placeholder="Votre commentaire..."
               style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; resize: none; font-size: 12px;"
               rows="3"
               required
             ></textarea>
+            <div class="image-preview" style="display: none; max-width: 150px;">
+              <img style="width: 100%; border-radius: 4px;" />
+            </div>
+            <div class="latex-preview" style="display: none; padding: 8px; background: #f9fafb; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 14px; max-width: 100%; overflow-x: auto; overflow-y: hidden; word-wrap: break-word; overflow-wrap: break-word;">
+            </div>
             <div style="display: flex; gap: 8px;">
               <button type="submit" style="padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
                 Ajouter
@@ -377,15 +687,73 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         // Event handlers
         const form = indicator.querySelector('.new-comment-form') as HTMLFormElement;
-        const textarea = indicator.querySelector('textarea') as HTMLTextAreaElement;
+        const typeSelect = indicator.querySelector('.content-type-select') as HTMLSelectElement;
+        const textarea = indicator.querySelector('.content-input') as HTMLTextAreaElement;
         const cancelBtn = indicator.querySelector('.cancel-btn') as HTMLButtonElement;
+        const imagePreview = indicator.querySelector('.image-preview') as HTMLDivElement;
+        const previewImg = imagePreview.querySelector('img') as HTMLImageElement;
+        const latexPreview = indicator.querySelector('.latex-preview') as HTMLDivElement;
+
+        // Gérer le changement de type
+        const updatePlaceholder = () => {
+          const selectedType = typeSelect.value as ContentType;
+          switch (selectedType) {
+            case 'text':
+              textarea.placeholder = 'Votre commentaire...';
+              imagePreview.style.display = 'none';
+              latexPreview.style.display = 'none';
+              break;
+            case 'image':
+              textarea.placeholder = 'URL de l\'image (ex: https://example.com/image.jpg)';
+              imagePreview.style.display = 'none';
+              latexPreview.style.display = 'none';
+              break;
+            case 'latex':
+              textarea.placeholder = 'Code LaTeX (ex: \\int_0^1 x^2 dx = \\frac{1}{3})';
+              imagePreview.style.display = 'none';
+              latexPreview.style.display = 'block';
+              break;
+          }
+        };
+
+        typeSelect.addEventListener('change', updatePlaceholder);
+
+        // Prévisualisation en temps réel
+        textarea.addEventListener('input', () => {
+          const currentType = typeSelect.value as ContentType;
+          const content = textarea.value.trim();
+
+          if (currentType === 'image') {
+            if (content && (content.startsWith('http') || content.startsWith('data:'))) {
+              previewImg.src = content;
+              imagePreview.style.display = 'block';
+              previewImg.onerror = () => imagePreview.style.display = 'none';
+            } else {
+              imagePreview.style.display = 'none';
+            }
+          } else if (currentType === 'latex') {
+            if (content) {
+              latexPreview.innerHTML = renderLatex(content);
+            } else {
+              latexPreview.innerHTML = '<em style="color: #9ca3af;">Aperçu LaTeX...</em>';
+            }
+          }
+        });
 
         form.addEventListener('submit', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const text = textarea.value.trim();
-          if (text) {
-            confirmComment(text);
+          const content = textarea.value.trim();
+          const contentType = typeSelect.value as ContentType;
+
+          if (content) {
+            // Créer l'objet AnswerContent selon le type sélectionné
+            const answerContent: AnswerContent = {
+              type: contentType,
+              data: content
+            };
+
+            confirmComment(answerContent);
           }
         });
 
@@ -441,6 +809,34 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     loadAllAnswers();
   }, [loadAllAnswers, examId]);
 
+  // Fonction pour éditer un commentaire
+  const editAnswer = useCallback(async (answerId: string, newContent: AnswerContent) => {
+    try {
+      // Pré-rendre le LaTeX si nécessaire
+      if (newContent.type === 'latex' && !newContent.rendered) {
+        newContent.rendered = renderLatex(newContent.data);
+      }
+
+      const response = await fetch(`/api/answers/${answerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newContent })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la modification du commentaire');
+      }
+
+      // Recharger les commentaires
+      await Promise.all([
+        loadAnswersForPage(visiblePage),
+        loadAllAnswers()
+      ]);
+    } catch (error) {
+      console.error('Erreur lors de la modification:', error);
+      throw error;
+    }
+  }, [loadAnswersForPage, loadAllAnswers, visiblePage]);
 
   return (
     <div style={wrapperStyle}>
@@ -479,9 +875,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           {(selectedGroup || answers).map(a => (
             <li key={a._id} style={commentItemStyle}>
               <div style={commentMetaStyle}>
-                y={a.yTop.toFixed(2)} • Page {a.page}
+                y={a.yTop.toFixed(2)} • Page {a.page} • {getAnswerContent(a).type.toUpperCase()}
               </div>
-              <div>{a.text}</div>
+              <AnswerContentDisplay answer={a} onEdit={editAnswer} />
             </li>
           ))}
           {!(selectedGroup || answers).length && (
@@ -519,9 +915,11 @@ const pdfPaneStyle: React.CSSProperties = {
 };
 const sidebarStyle: React.CSSProperties = {
   overflow: 'auto',
+  overflowX: 'hidden',
   borderLeft: '1px solid #e5e7eb',
   paddingLeft: 16,
   minWidth: 0,
+  maxWidth: '100%',
 };
 const sidebarHeaderStyle: React.CSSProperties = {
   display: 'flex',
@@ -537,17 +935,13 @@ const commentListStyle: React.CSSProperties = {
 const commentItemStyle: React.CSSProperties = {
   borderBottom: '1px dashed #e5e7eb',
   padding: '8px 0',
+  wordWrap: 'break-word',
+  overflowWrap: 'break-word',
+  wordBreak: 'break-word',
+  maxWidth: '100%',
 };
 const commentMetaStyle: React.CSSProperties = {
   fontSize: 12,
   color: '#6b7280',
   marginBottom: 4,
-};
-const buttonStyle: React.CSSProperties = {
-  justifySelf: 'end',
-  borderRadius: 8,
-  border: '1px solid #d1d5db',
-  background: 'white',
-  padding: '6px 12px',
-  cursor: 'pointer',
 };
