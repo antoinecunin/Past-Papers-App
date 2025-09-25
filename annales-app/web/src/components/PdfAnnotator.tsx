@@ -52,6 +52,20 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     }
   );
 
+  // Ref pour tracker si on a déjà fait le focus initial
+  const hasFocusedRef = useRef(false);
+
+  // Wrappers pour remettre à zéro la ref
+  const wrappedConfirmComment = useCallback(async (content: string | AnswerContent) => {
+    hasFocusedRef.current = false;
+    return confirmComment(content);
+  }, [confirmComment]);
+
+  const wrappedCancelComment = useCallback(() => {
+    hasFocusedRef.current = false;
+    return cancelComment();
+  }, [cancelComment]);
+
   // Chargement du PDF
   useEffect(() => {
     let cancelled = false;
@@ -336,6 +350,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
     // Ajouter le nouvel indicateur si nécessaire
     if (pendingPosition) {
+      // Remettre à zéro le flag pour permettre le focus/scroll sur le nouveau champ
+      hasFocusedRef.current = false;
+
       const pageElements = Array.from(container.querySelectorAll('.pdf-page'));
       const targetPage = pageElements[pendingPosition.pageIndex] as HTMLElement;
 
@@ -419,6 +436,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               textarea.placeholder = 'Code LaTeX (ex: \\int_0^1 x^2 dx = \\frac{1}{3})';
               imagePreview.style.display = 'none';
               latexPreview.style.display = 'block';
+              // Mettre à jour la preview avec le contenu existant
+              const content = textarea.value.trim();
+              if (content) {
+                latexPreview.innerHTML = renderLatex(content);
+              } else {
+                latexPreview.innerHTML = '<em style="color: #9ca3af;">Aperçu LaTeX...</em>';
+              }
               break;
           }
         };
@@ -460,23 +484,35 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               data: content,
             };
 
-            confirmComment(answerContent);
+            wrappedConfirmComment(answerContent);
           }
         });
 
         cancelBtn.addEventListener('click', e => {
           e.preventDefault();
           e.stopPropagation();
-          cancelComment();
+          wrappedCancelComment();
         });
 
         targetPage.appendChild(indicator);
 
-        // Focus sur le textarea
-        setTimeout(() => textarea.focus(), 10);
+        // Focus et scroll vers le textarea seulement lors de la création initiale
+        if (!hasFocusedRef.current) {
+          hasFocusedRef.current = true;
+          setTimeout(() => {
+            // Scroll doux vers l'élément pour le rendre bien visible
+            indicator.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest'
+            });
+            // Focus après le scroll
+            setTimeout(() => textarea.focus(), 300);
+          }, 10);
+        }
       }
     }
-  }, [pendingPosition, confirmComment, cancelComment]);
+  }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment]);
 
   // Fonction pour charger les commentaires d'une page spécifique
   const loadAnswersForPage = useCallback(

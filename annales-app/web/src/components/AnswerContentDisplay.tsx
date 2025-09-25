@@ -96,12 +96,16 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
 
       case 'latex': {
         const latexData = truncated ? truncateText(contentToRender.data) : contentToRender.data;
-        const renderedLatex = contentToRender.rendered || renderLatex(latexData);
+        const renderedLatex = renderLatex(latexData);
         const shouldShowLatexToggle = contentToRender.data.length > 150;
 
         return (
           <div style={{ maxWidth: '100%' }}>
-            <div dangerouslySetInnerHTML={{ __html: renderedLatex }} style={latexRenderStyle} />
+            <div
+              dangerouslySetInnerHTML={{ __html: renderedLatex }}
+              style={latexRenderStyle}
+              onMouseDown={e => e.preventDefault()} // Empêche la sélection
+            />
             {shouldShowLatexToggle && (
               <button
                 onClick={e => {
@@ -186,13 +190,22 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
     }
   };
 
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onEdit) {
+      startEdit();
+    }
+  };
+
   return (
     <div style={{ position: 'relative' }}>
       <div
         onClick={handleContentClick}
-        onDoubleClick={startEdit}
+        onDoubleClick={handleDoubleClick}
         style={{
           cursor: content.data.length > 150 ? 'pointer' : onEdit ? 'pointer' : 'default',
+          userSelect: onEdit ? 'none' : 'auto', // Empêche la sélection quand éditable
         }}
       >
         {renderContent(content, !isExpanded)}
@@ -242,6 +255,8 @@ const latexRenderStyle: React.CSSProperties = {
   overflowY: 'hidden',
   WebkitOverflowScrolling: 'touch',
   scrollbarWidth: 'thin',
+  userSelect: 'none', // Empêche la sélection sur le LaTeX rendu
+  pointerEvents: 'auto', // Permet les interactions avec les boutons
 };
 
 const summaryStyle: React.CSSProperties = {
