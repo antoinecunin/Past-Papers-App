@@ -1,4 +1,4 @@
-import { ModuleIcon, DocumentIcon, EyeIcon } from './ui/Icon';
+import { ModuleIcon, DocumentIcon, EyeIcon, DownloadIcon } from './ui/Icon';
 
 interface Exam {
   _id: string;
@@ -23,6 +23,23 @@ interface ExamCardProps {
 export default function ExamCard({ exam, onSelect }: ExamCardProps) {
   const handleClick = () => {
     onSelect?.(exam);
+  };
+
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Empêche l'ouverture de l'examen
+
+    // Créer un nom de fichier lisible
+    const filename = `${exam.title.replace(/[^a-zA-Z0-9]/g, '_')}${exam.year ? `_${exam.year}` : ''}.pdf`;
+
+    // Créer un lien temporaire pour déclencher le téléchargement
+    const link = document.createElement('a');
+    link.href = `/api/files/${exam._id}/download`;
+    link.download = filename;
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const formatDate = (dateString: string) => {
@@ -76,12 +93,25 @@ export default function ExamCard({ exam, onSelect }: ExamCardProps) {
         )}
       </div>
 
-      {/* Footer avec date et action */}
+      {/* Footer avec date et actions */}
       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
         <span className="text-xs text-gray-500">{formatDate(exam.createdAt)}</span>
-        <div className="flex items-center space-x-1 text-blue-600 hover:text-blue-700">
-          <EyeIcon className="text-blue-600 hover:text-blue-700" />
-          <span className="text-xs font-medium">Voir</span>
+        <div className="flex items-center space-x-3">
+          {/* Bouton télécharger */}
+          <button
+            onClick={handleDownload}
+            className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 transition-colors"
+            title="Télécharger le PDF"
+          >
+            <DownloadIcon className="text-gray-600 hover:text-gray-800" />
+            <span className="text-xs font-medium">PDF</span>
+          </button>
+
+          {/* Bouton voir */}
+          <div className="flex items-center space-x-1 text-blue-600 hover:text-blue-700">
+            <EyeIcon className="text-blue-600 hover:text-blue-700" />
+            <span className="text-xs font-medium">Voir</span>
+          </div>
         </div>
       </div>
     </div>

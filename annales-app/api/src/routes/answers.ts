@@ -197,3 +197,40 @@ router.put('/:id', async (req, res) => {
     return res.status(500).json({ error: 'Internal error' });
   }
 });
+
+/**
+ * @swagger
+ * /answers/{id}:
+ *   delete:
+ *     summary: Supprimer un commentaire
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: OK
+ *       404:
+ *         description: Commentaire non trouvé
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'ID invalide' });
+    }
+
+    const doc = await AnswerModel.findByIdAndDelete(id);
+
+    if (!doc) {
+      return res.status(404).json({ error: 'Commentaire non trouvé' });
+    }
+
+    return res.json({ success: true, message: 'Commentaire supprimé' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Internal error' });
+  }
+});

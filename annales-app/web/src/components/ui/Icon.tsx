@@ -145,3 +145,51 @@ export function BackIcon({
     </Icon>
   );
 }
+
+export function DownloadIcon({
+  size = 'sm',
+  className = 'text-gray-600',
+}: Omit<IconProps, 'children'>) {
+  return (
+    <Icon size={size} className={className}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V11"
+      />
+    </Icon>
+  );
+}
+
+export function TrashIcon({
+  size = 'sm',
+  className = 'text-red-500',
+}: Omit<IconProps, 'children'>) {
+  return (
+    <Icon size={size} className={className}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
+    </Icon>
+  );
+}
+
+export function CopyIcon({
+  size = 'sm',
+  className = 'text-gray-500',
+}: Omit<IconProps, 'children'>) {
+  return (
+    <Icon size={size} className={className}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
+    </Icon>
+  );
+}

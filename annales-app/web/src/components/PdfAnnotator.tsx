@@ -421,6 +421,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         // Gérer le changement de type
         const updatePlaceholder = () => {
           const selectedType = typeSelect.value as ContentType;
+          const content = textarea.value.trim();
+
           switch (selectedType) {
             case 'text':
               textarea.placeholder = 'Votre commentaire...';
@@ -429,15 +431,21 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               break;
             case 'image':
               textarea.placeholder = "URL de l'image (ex: https://example.com/image.jpg)";
-              imagePreview.style.display = 'none';
               latexPreview.style.display = 'none';
+              // Mettre à jour l'aperçu d'image avec le contenu existant
+              if (content && (content.startsWith('http') || content.startsWith('data:'))) {
+                previewImg.src = content;
+                imagePreview.style.display = 'block';
+                previewImg.onerror = () => (imagePreview.style.display = 'none');
+              } else {
+                imagePreview.style.display = 'none';
+              }
               break;
             case 'latex':
               textarea.placeholder = 'Code LaTeX (ex: \\int_0^1 x^2 dx = \\frac{1}{3})';
               imagePreview.style.display = 'none';
               latexPreview.style.display = 'block';
               // Mettre à jour la preview avec le contenu existant
-              const content = textarea.value.trim();
               if (content) {
                 latexPreview.innerHTML = renderLatex(content);
               } else {
@@ -584,6 +592,28 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [loadAnswersForPage, loadAllAnswers, visiblePage]
   );
 
+  // Fonction pour supprimer un commentaire
+  const deleteAnswer = useCallback(
+    async (answerId: string) => {
+      try {
+        const response = await fetch(`/api/answers/${answerId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors de la suppression du commentaire');
+        }
+
+        // Recharger les commentaires
+        await Promise.all([loadAnswersForPage(visiblePage), loadAllAnswers()]);
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        throw error;
+      }
+    },
+    [loadAnswersForPage, loadAllAnswers, visiblePage]
+  );
+
   return (
     <div style={wrapperStyle}>
       <div style={{ ...pdfPaneStyle, position: 'relative' }}>
@@ -628,7 +658,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               <div style={commentMetaStyle}>
                 y={a.yTop.toFixed(2)} • Page {a.page} • {a.content.type.toUpperCase()}
               </div>
-              <AnswerContentDisplay answer={a} onEdit={editAnswer} />
+              <AnswerContentDisplay answer={a} onEdit={editAnswer} onDelete={deleteAnswer} />
             </li>
           ))}
           {!(selectedGroup || answers).length && (

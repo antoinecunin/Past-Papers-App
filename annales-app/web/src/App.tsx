@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import UploadPage from './pages/UploadPage';
 import ExamList from './components/ExamList';
 import PdfAnnotator from './components/PdfAnnotator';
-import { BackIcon } from './components/ui/Icon';
+import { BackIcon, DownloadIcon } from './components/ui/Icon';
 import { useRouter } from './hooks/useRouter';
 import './App.css';
 
@@ -46,6 +46,24 @@ function App() {
     navigate('exams');
   };
 
+  // Téléchargement du PDF de l'examen sélectionné
+  const handleDownloadPdf = () => {
+    if (!selectedExam) return;
+
+    // Créer un nom de fichier lisible
+    const filename = `${selectedExam.title.replace(/[^a-zA-Z0-9]/g, '_')}${selectedExam.year ? `_${selectedExam.year}` : ''}.pdf`;
+
+    // Créer un lien temporaire pour déclencher le téléchargement
+    const link = document.createElement('a');
+    link.href = `/api/files/${selectedExam._id}/download`;
+    link.download = filename;
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Effet pour synchroniser l'état avec l'URL au chargement
   useEffect(() => {
     const examId = getExamId();
@@ -79,22 +97,34 @@ function App() {
         }
         return (
           <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={navigateBack}
-                className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
-              >
-                <BackIcon />
-                <span>Retour aux examens</span>
-              </button>
-              <div className="flex-1">
-                <h1 className="text-xl font-semibold text-gray-900">{selectedExam.title}</h1>
-                {selectedExam.module && selectedExam.year && (
-                  <p className="text-sm text-gray-600">
-                    {selectedExam.module} - {selectedExam.year}
-                  </p>
-                )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={navigateBack}
+                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
+                >
+                  <BackIcon />
+                  <span>Retour aux examens</span>
+                </button>
+                <div className="flex-1">
+                  <h1 className="text-xl font-semibold text-gray-900">{selectedExam.title}</h1>
+                  {selectedExam.module && selectedExam.year && (
+                    <p className="text-sm text-gray-600">
+                      {selectedExam.module} - {selectedExam.year}
+                    </p>
+                  )}
+                </div>
               </div>
+
+              {/* Bouton de téléchargement */}
+              <button
+                onClick={handleDownloadPdf}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 rounded-lg transition-colors"
+                title="Télécharger le PDF"
+              >
+                <DownloadIcon size="md" className="text-gray-600" />
+                <span className="font-medium">Télécharger PDF</span>
+              </button>
             </div>
             <PdfAnnotator
               pdfUrl={`/api/files/${selectedExam._id}/download`}

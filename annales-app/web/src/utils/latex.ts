@@ -33,6 +33,8 @@ const renderMixedLatex = (text: string): string => {
         displayMode: false,
         strict: 'ignore',
         trust: true,
+        output: 'html',
+        fleqn: false,
         macros: {
           '\\R': '\\mathbb{R}',
           '\\N': '\\mathbb{N}',
@@ -83,6 +85,8 @@ const renderMixedLatex = (text: string): string => {
             displayMode: false,
             strict: 'ignore',
             trust: true,
+            output: 'html',
+            fleqn: false,
             macros: {
               '\\R': '\\mathbb{R}',
               '\\N': '\\mathbb{N}',
