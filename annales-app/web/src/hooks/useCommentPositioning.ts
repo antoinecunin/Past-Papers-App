@@ -1,32 +1,12 @@
 import { useCallback, useState } from 'react';
-import katex from 'katex';
-
-// Fonction pour rendre le LaTeX en HTML
-const renderLatex = (latex: string): string => {
-  try {
-    return katex.renderToString(latex, {
-      throwOnError: false,
-      displayMode: false,
-      strict: false
-    });
-  } catch (error) {
-    console.warn('Erreur de rendu LaTeX:', error);
-    return `<span style="color: #dc2626; font-family: monospace;">[Erreur LaTeX: ${latex}]</span>`;
-  }
-};
+import { renderLatex } from '../utils/latex';
+import type { AnswerContent } from '../types/answer';
 
 interface ClickPosition {
   pageIndex: number;
   yPosition: number; // [0,1] relatif à la page
 }
 
-type ContentType = 'text' | 'image' | 'latex';
-
-interface AnswerContent {
-  type: ContentType;
-  data: string;
-  rendered?: string;
-}
 
 interface UseCommentPositioningReturn {
   pendingPosition: ClickPosition | null;
@@ -89,8 +69,6 @@ export function useCommentPositioning(
         page: pendingPosition.pageIndex + 1, // API utilise 1-based
         yTop: pendingPosition.yPosition,
         content: answerContent,
-        // Compatibilité avec l'ancien backend
-        text: answerContent.type === 'text' ? answerContent.data : `[${answerContent.type.toUpperCase()}]`
       };
 
       const response = await fetch('/api/answers', {
