@@ -2,18 +2,6 @@ import React, { useState } from 'react';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 
-// Helper for backward compatibility
-const getAnswerContent = (answer: Answer): AnswerContent => {
-  if (answer.content) {
-    return answer.content;
-  }
-  // Fallback for old format
-  return {
-    type: 'text',
-    data: answer.text || '',
-  };
-};
-
 interface AnswerContentDisplayProps {
   answer: Answer;
   onEdit?: (answerId: string, newContent: AnswerContent) => Promise<void>;
@@ -23,7 +11,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [editContent, setEditContent] = useState<AnswerContent | null>(null);
-  const content = getAnswerContent(answer);
+  const content = answer.content;
 
   const startEdit = () => {
     setEditContent(content);
@@ -112,12 +100,12 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);
                 }}
-                style={{ ...toggleButtonStyle, marginTop: '4px' }}
+                style={{ ...toggleButtonStyle, marginTop: '4px', pointerEvents: 'auto' }}
               >
                 {truncated ? '...Plus' : ' Moins'}
               </button>
             )}
-            <details style={{ marginTop: '4px' }}>
+            <details style={{ marginTop: '4px', pointerEvents: 'auto' }}>
               <summary style={summaryStyle}>Code LaTeX</summary>
               <div style={latexCodeStyle}>{latexData}</div>
             </details>
@@ -256,7 +244,7 @@ const latexRenderStyle: React.CSSProperties = {
   WebkitOverflowScrolling: 'touch',
   scrollbarWidth: 'thin',
   userSelect: 'none', // Empêche la sélection sur le LaTeX rendu
-  pointerEvents: 'auto', // Permet les interactions avec les boutons
+  pointerEvents: 'none', // Laisse passer les événements au parent pour double-clic
 };
 
 const summaryStyle: React.CSSProperties = {

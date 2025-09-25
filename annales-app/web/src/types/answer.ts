@@ -12,8 +12,7 @@ export interface Answer {
   page: number;
   yTop: number;
   yBottom?: number;
-  content?: AnswerContent;
-  text?: string; // Legacy compatibility
+  content: AnswerContent;
   author?: string;
   createdAt: string;
   updatedAt: string;

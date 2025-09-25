@@ -10,7 +10,7 @@ interface ClickPosition {
 interface UseCommentPositioningReturn {
   pendingPosition: ClickPosition | null;
   handlePageClick: (pageElement: HTMLElement, pageIndex: number, event: React.MouseEvent) => void;
-  confirmComment: (content: string | AnswerContent) => Promise<void>;
+  confirmComment: (content: AnswerContent) => Promise<void>;
   cancelComment: () => void;
 }
 
@@ -45,22 +45,15 @@ export function useCommentPositioning(
   );
 
   const confirmComment = useCallback(
-    async (content: string | AnswerContent) => {
+    async (content: AnswerContent) => {
       if (!pendingPosition) return;
 
       try {
-        // Normaliser le contenu vers le nouveau format
-        let answerContent: AnswerContent;
-        if (typeof content === 'string') {
-          // Rétrocompatibilité pour les anciens appels
-          answerContent = { type: 'text', data: content };
-        } else {
-          answerContent = { ...content };
+        const answerContent = { ...content };
 
-          // Pré-rendre le LaTeX si nécessaire
-          if (answerContent.type === 'latex' && !answerContent.rendered) {
-            answerContent.rendered = renderLatex(answerContent.data);
-          }
+        // Pré-rendre le LaTeX si nécessaire
+        if (answerContent.type === 'latex' && !answerContent.rendered) {
+          answerContent.rendered = renderLatex(answerContent.data);
         }
 
         const payload = {

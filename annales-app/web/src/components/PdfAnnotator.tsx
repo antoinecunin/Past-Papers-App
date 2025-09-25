@@ -8,18 +8,6 @@ import { AnswerContentDisplay } from './AnswerContentDisplay';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-// Helper pour gérer la compatibilité avec l'ancien format
-const getAnswerContent = (answer: Answer): AnswerContent => {
-  if (answer.content) {
-    return answer.content;
-  }
-  // Fallback pour l'ancien format
-  return {
-    type: 'text',
-    data: answer.text || '',
-  };
-};
-
 type Props = {
   /** URL du PDF à afficher (servi par l'API) */
   pdfUrl: string;
@@ -54,15 +42,19 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
   // Ref pour tracker si on a déjà fait le focus initial
   const hasFocusedRef = useRef(false);
+  // Ref pour tracker la position actuelle pour éviter le scroll lors des changements de page
+  const currentPositionRef = useRef<{ pageIndex: number; yPosition: number } | null>(null);
 
-  // Wrappers pour remettre à zéro la ref
-  const wrappedConfirmComment = useCallback(async (content: string | AnswerContent) => {
+  // Wrappers pour remettre à zéro les refs
+  const wrappedConfirmComment = useCallback(async (content: AnswerContent) => {
     hasFocusedRef.current = false;
+    currentPositionRef.current = null;
     return confirmComment(content);
   }, [confirmComment]);
 
   const wrappedCancelComment = useCallback(() => {
     hasFocusedRef.current = false;
+    currentPositionRef.current = null;
     return cancelComment();
   }, [cancelComment]);
 
@@ -350,8 +342,16 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
     // Ajouter le nouvel indicateur si nécessaire
     if (pendingPosition) {
-      // Remettre à zéro le flag pour permettre le focus/scroll sur le nouveau champ
-      hasFocusedRef.current = false;
+      // Vérifier si c'est vraiment un nouveau commentaire ou juste un changement de page
+      const isSamePosition = currentPositionRef.current &&
+        currentPositionRef.current.pageIndex === pendingPosition.pageIndex &&
+        currentPositionRef.current.yPosition === pendingPosition.yPosition;
+
+      if (!isSamePosition) {
+        // Nouveau commentaire - remettre à zéro le flag pour permettre le focus/scroll
+        hasFocusedRef.current = false;
+        currentPositionRef.current = pendingPosition;
+      }
 
       const pageElements = Array.from(container.querySelectorAll('.pdf-page'));
       const targetPage = pageElements[pendingPosition.pageIndex] as HTMLElement;
@@ -626,7 +626,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           {(selectedGroup || answers).map(a => (
             <li key={a._id} style={commentItemStyle}>
               <div style={commentMetaStyle}>
-                y={a.yTop.toFixed(2)} • Page {a.page} • {getAnswerContent(a).type.toUpperCase()}
+                y={a.yTop.toFixed(2)} • Page {a.page} • {a.content.type.toUpperCase()}
               </div>
               <AnswerContentDisplay answer={a} onEdit={editAnswer} />
             </li>
