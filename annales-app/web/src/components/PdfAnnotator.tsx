@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjs from 'pdfjs-dist';
-// @ts-ignore - types non fournis pour build.worker.mjs dans pdfjs-dist 5.x
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { useCommentPositioning } from '../hooks/useCommentPositioning';
 import { renderLatex } from '../utils/latex';
@@ -8,7 +7,6 @@ import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
-
 
 // Helper pour gérer la compatibilité avec l'ancien format
 const getAnswerContent = (answer: Answer): AnswerContent => {
@@ -21,8 +19,6 @@ const getAnswerContent = (answer: Answer): AnswerContent => {
     data: answer.text || '',
   };
 };
-
-
 
 type Props = {
   /** URL du PDF à afficher (servi par l'API) */
@@ -66,7 +62,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       setPdfDoc(doc);
       setNumPages(doc.numPages);
     })().catch(console.error);
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [pdfUrl]);
 
   // Rendu des pages (canvas) dans le container
@@ -125,7 +123,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         const page = pages[i];
         const pageHeight = page.offsetHeight + 24; // +24 pour la marge
 
-        if (viewportCenter >= accumulatedHeight && viewportCenter < accumulatedHeight + pageHeight) {
+        if (
+          viewportCenter >= accumulatedHeight &&
+          viewportCenter < accumulatedHeight + pageHeight
+        ) {
           currentPage = i + 1;
           break;
         }
@@ -169,11 +170,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       const target = event.target as HTMLElement;
 
       // Ignorer les clics sur les indicateurs et formulaires
-      if (target.closest('.comment-indicator') ||
-          target.closest('.new-comment-indicator') ||
-          target.closest('button') ||
-          target.closest('textarea') ||
-          target.closest('form')) {
+      if (
+        target.closest('.comment-indicator') ||
+        target.closest('.new-comment-indicator') ||
+        target.closest('button') ||
+        target.closest('textarea') ||
+        target.closest('form')
+      ) {
         return;
       }
 
@@ -186,7 +189,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         }
 
         const pageIndex = parseInt(pageWrapper.dataset.pageIndex, 10);
-        handlePageClick(pageWrapper, pageIndex, event as any);
+        handlePageClick(pageWrapper, pageIndex, event as unknown as React.MouseEvent);
       }
     };
 
@@ -196,25 +199,26 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
   // Fonction pour grouper les commentaires proches (dans un rayon de 5% de la hauteur)
   const groupCommentsByPosition = (comments: Answer[]) => {
-    const groups: { answers: Answer[], avgPosition: number }[] = [];
+    const groups: { answers: Answer[]; avgPosition: number }[] = [];
     const tolerance = 0.05; // 5% de la hauteur de la page
 
     comments.forEach(comment => {
       // Chercher un groupe existant proche (distance depuis le premier élément du groupe)
-      const existingGroup = groups.find(group =>
-        Math.abs(group.answers[0].yTop - comment.yTop) <= tolerance
+      const existingGroup = groups.find(
+        group => Math.abs(group.answers[0].yTop - comment.yTop) <= tolerance
       );
 
       if (existingGroup) {
         // Ajouter au groupe existant
         existingGroup.answers.push(comment);
         // Recalculer la position moyenne
-        existingGroup.avgPosition = existingGroup.answers.reduce((sum, a) => sum + a.yTop, 0) / existingGroup.answers.length;
+        existingGroup.avgPosition =
+          existingGroup.answers.reduce((sum, a) => sum + a.yTop, 0) / existingGroup.answers.length;
       } else {
         // Créer un nouveau groupe
         groups.push({
           answers: [comment],
-          avgPosition: comment.yTop
+          avgPosition: comment.yTop,
         });
       }
     });
@@ -242,11 +246,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       }
 
       // Grouper par page puis par position
-      const commentsByPage = allAnswers.reduce((acc, comment) => {
-        if (!acc[comment.page]) acc[comment.page] = [];
-        acc[comment.page].push(comment);
-        return acc;
-      }, {} as Record<number, Answer[]>);
+      const commentsByPage = allAnswers.reduce(
+        (acc, comment) => {
+          if (!acc[comment.page]) acc[comment.page] = [];
+          acc[comment.page].push(comment);
+          return acc;
+        },
+        {} as Record<number, Answer[]>
+      );
 
       Object.entries(commentsByPage).forEach(([pageNumStr, pageComments]) => {
         const pageNum = parseInt(pageNumStr);
@@ -268,13 +275,18 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           indicator.style.width = '24px';
           indicator.style.height = '24px';
           // Déterminer si ce groupe est sélectionné
-          const isSelected = selectedGroup &&
+          const isSelected =
+            selectedGroup &&
             selectedGroup.length === group.answers.length &&
-            selectedGroup.every(selected => group.answers.some(grouped => grouped._id === selected._id));
+            selectedGroup.every(selected =>
+              group.answers.some(grouped => grouped._id === selected._id)
+            );
 
           indicator.style.backgroundColor = isSelected
             ? '#dc2626' // Rouge pour sélectionné
-            : (pageNum === visiblePage ? '#2563eb' : '#3b82f6');
+            : pageNum === visiblePage
+              ? '#2563eb'
+              : '#3b82f6';
           indicator.style.color = 'white';
           indicator.style.borderRadius = '50%';
           indicator.style.display = 'flex';
@@ -290,7 +302,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           indicator.style.pointerEvents = 'auto';
 
           // Click handler pour l'indicateur
-          indicator.addEventListener('click', (e) => {
+          indicator.addEventListener('click', e => {
             e.preventDefault();
             e.stopPropagation();
 
@@ -298,7 +310,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             setSelectedGroup(group.answers);
 
             // Scroll vers cette position
-            const targetY = targetPage.offsetTop + (targetPage.offsetHeight * group.avgPosition);
+            const targetY = targetPage.offsetTop + targetPage.offsetHeight * group.avgPosition;
             container.scrollTo({ top: targetY - container.clientHeight / 2, behavior: 'smooth' });
           });
 
@@ -345,7 +357,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         indicator.style.pointerEvents = 'auto';
 
         // Empêcher la propagation sur tout l'indicateur
-        indicator.addEventListener('click', (e) => {
+        indicator.addEventListener('click', e => {
           e.stopPropagation();
         });
 
@@ -399,7 +411,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               latexPreview.style.display = 'none';
               break;
             case 'image':
-              textarea.placeholder = 'URL de l\'image (ex: https://example.com/image.jpg)';
+              textarea.placeholder = "URL de l'image (ex: https://example.com/image.jpg)";
               imagePreview.style.display = 'none';
               latexPreview.style.display = 'none';
               break;
@@ -422,7 +434,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             if (content && (content.startsWith('http') || content.startsWith('data:'))) {
               previewImg.src = content;
               imagePreview.style.display = 'block';
-              previewImg.onerror = () => imagePreview.style.display = 'none';
+              previewImg.onerror = () => (imagePreview.style.display = 'none');
             } else {
               imagePreview.style.display = 'none';
             }
@@ -435,7 +447,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           }
         });
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', e => {
           e.preventDefault();
           e.stopPropagation();
           const content = textarea.value.trim();
@@ -445,14 +457,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             // Créer l'objet AnswerContent selon le type sélectionné
             const answerContent: AnswerContent = {
               type: contentType,
-              data: content
+              data: content,
             };
 
             confirmComment(answerContent);
           }
         });
 
-        cancelBtn.addEventListener('click', (e) => {
+        cancelBtn.addEventListener('click', e => {
           e.preventDefault();
           e.stopPropagation();
           cancelComment();
@@ -467,18 +479,21 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   }, [pendingPosition, confirmComment, cancelComment]);
 
   // Fonction pour charger les commentaires d'une page spécifique
-  const loadAnswersForPage = useCallback(async (page: number) => {
-    if (!examId || !page) return;
-    try {
-      const url = `/api/answers?examId=${encodeURIComponent(examId)}&page=${page}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to load answers');
-      const data: Answer[] = await res.json();
-      setAnswers(data.sort((a, b) => a.yTop - b.yTop));
-    } catch (err) {
-      console.error(err);
-    }
-  }, [examId]);
+  const loadAnswersForPage = useCallback(
+    async (page: number) => {
+      if (!examId || !page) return;
+      try {
+        const url = `/api/answers?examId=${encodeURIComponent(examId)}&page=${page}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to load answers');
+        const data: Answer[] = await res.json();
+        setAnswers(data.sort((a, b) => a.yTop - b.yTop));
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    [examId]
+  );
 
   // Fonction pour charger tous les commentaires (pour les indicateurs visuels)
   const loadAllAnswers = useCallback(async () => {
@@ -505,45 +520,50 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   }, [loadAllAnswers, examId]);
 
   // Fonction pour éditer un commentaire
-  const editAnswer = useCallback(async (answerId: string, newContent: AnswerContent) => {
-    try {
-      // Pré-rendre le LaTeX si nécessaire
-      if (newContent.type === 'latex' && !newContent.rendered) {
-        newContent.rendered = renderLatex(newContent.data);
+  const editAnswer = useCallback(
+    async (answerId: string, newContent: AnswerContent) => {
+      try {
+        // Pré-rendre le LaTeX si nécessaire
+        if (newContent.type === 'latex' && !newContent.rendered) {
+          newContent.rendered = renderLatex(newContent.data);
+        }
+
+        const response = await fetch(`/api/answers/${answerId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: newContent }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors de la modification du commentaire');
+        }
+
+        // Recharger les commentaires
+        await Promise.all([loadAnswersForPage(visiblePage), loadAllAnswers()]);
+      } catch (error) {
+        console.error('Erreur lors de la modification:', error);
+        throw error;
       }
-
-      const response = await fetch(`/api/answers/${answerId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newContent })
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la modification du commentaire');
-      }
-
-      // Recharger les commentaires
-      await Promise.all([
-        loadAnswersForPage(visiblePage),
-        loadAllAnswers()
-      ]);
-    } catch (error) {
-      console.error('Erreur lors de la modification:', error);
-      throw error;
-    }
-  }, [loadAnswersForPage, loadAllAnswers, visiblePage]);
+    },
+    [loadAnswersForPage, loadAllAnswers, visiblePage]
+  );
 
   return (
     <div style={wrapperStyle}>
       <div style={{ ...pdfPaneStyle, position: 'relative' }}>
-        <div ref={containerRef} style={{ height: '100%', overflow: 'auto' }} aria-label="PDF viewer">
-        </div>
+        <div
+          ref={containerRef}
+          style={{ height: '100%', overflow: 'auto' }}
+          aria-label="PDF viewer"
+        ></div>
       </div>
       <aside style={sidebarStyle} aria-label="Commentaires">
         <div style={sidebarHeaderStyle}>
           <strong>Commentaires</strong>
           <span style={{ opacity: 0.7 }}>
-            {selectedGroup ? `Groupe sélectionné (${selectedGroup.length})` : `Page ${visiblePage}/${numPages || '…'}`}
+            {selectedGroup
+              ? `Groupe sélectionné (${selectedGroup.length})`
+              : `Page ${visiblePage}/${numPages || '…'}`}
           </span>
         </div>
 
@@ -558,7 +578,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                color: '#374151'
+                color: '#374151',
               }}
             >
               ← Retour à la page
@@ -577,12 +597,24 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           ))}
           {!(selectedGroup || answers).length && (
             <li style={{ opacity: 0.6, padding: '8px 0' }}>
-              {selectedGroup ? 'Aucun commentaire dans ce groupe.' : 'Aucun commentaire sur cette page.'}
+              {selectedGroup
+                ? 'Aucun commentaire dans ce groupe.'
+                : 'Aucun commentaire sur cette page.'}
             </li>
           )}
         </ul>
-        <div style={{ marginTop: 12, padding: '12px', background: '#f9fafb', borderRadius: '8px', fontSize: '14px', color: '#6b7280' }}>
-          💡 <strong>Astuce :</strong> Cliquez directement sur le PDF pour ajouter un commentaire à l'endroit précis
+        <div
+          style={{
+            marginTop: 12,
+            padding: '12px',
+            background: '#f9fafb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            color: '#6b7280',
+          }}
+        >
+          💡 <strong>Astuce :</strong> Cliquez directement sur le PDF pour ajouter un commentaire à
+          l&apos;endroit précis
         </div>
       </aside>
     </div>

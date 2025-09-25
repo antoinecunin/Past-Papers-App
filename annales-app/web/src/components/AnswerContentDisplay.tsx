@@ -54,7 +54,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
 
   const renderContent = (contentToRender: AnswerContent, truncated = false) => {
     switch (contentToRender.type) {
-      case 'text':
+      case 'text': {
         const textData = truncated ? truncateText(contentToRender.data) : contentToRender.data;
         const shouldShowTextToggle = contentToRender.data.length > 150;
         return (
@@ -62,7 +62,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
             {textData}
             {shouldShowTextToggle && (
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);
                 }}
@@ -73,6 +73,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
             )}
           </div>
         );
+      }
 
       case 'image':
         return (
@@ -81,7 +82,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
               src={contentToRender.data}
               alt="Commentaire image"
               style={imageStyle}
-              onError={(e) => {
+              onError={e => {
                 const img = e.target as HTMLImageElement;
                 const errorDiv = img.nextElementSibling as HTMLDivElement;
                 img.style.display = 'none';
@@ -93,20 +94,17 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
           </div>
         );
 
-      case 'latex':
+      case 'latex': {
         const latexData = truncated ? truncateText(contentToRender.data) : contentToRender.data;
         const renderedLatex = contentToRender.rendered || renderLatex(latexData);
         const shouldShowLatexToggle = contentToRender.data.length > 150;
 
         return (
           <div style={{ maxWidth: '100%' }}>
-            <div
-              dangerouslySetInnerHTML={{ __html: renderedLatex }}
-              style={latexRenderStyle}
-            />
+            <div dangerouslySetInnerHTML={{ __html: renderedLatex }} style={latexRenderStyle} />
             {shouldShowLatexToggle && (
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);
                 }}
@@ -117,15 +115,18 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
             )}
             <details style={{ marginTop: '4px' }}>
               <summary style={summaryStyle}>Code LaTeX</summary>
-              <div style={latexCodeStyle}>
-                {latexData}
-              </div>
+              <div style={latexCodeStyle}>{latexData}</div>
             </details>
           </div>
         );
+      }
 
       default:
-        return <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>{contentToRender.data}</div>;
+        return (
+          <div style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+            {contentToRender.data}
+          </div>
+        );
     }
   };
 
@@ -134,7 +135,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
       <div style={editContainerStyle}>
         <select
           value={editContent.type}
-          onChange={(e) => {
+          onChange={e => {
             const newType = e.target.value as ContentType;
             const newContent = { ...editContent, type: newType };
             // Supprimer le rendered quand on change de type
@@ -149,7 +150,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
         </select>
         <textarea
           value={editContent.data}
-          onChange={(e) => {
+          onChange={e => {
             const newContent = { ...editContent, data: e.target.value };
             // Si c'est du LaTeX, supprimer le rendered existant pour forcer la régénération
             if (newContent.type === 'latex') {
@@ -191,7 +192,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
         onClick={handleContentClick}
         onDoubleClick={startEdit}
         style={{
-          cursor: content.data.length > 150 ? 'pointer' : (onEdit ? 'pointer' : 'default')
+          cursor: content.data.length > 150 ? 'pointer' : onEdit ? 'pointer' : 'default',
         }}
       >
         {renderContent(content, !isExpanded)}
@@ -200,8 +201,8 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
         <button
           onClick={startEdit}
           style={editButtonStyle}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
         >
           ✏️
         </button>
@@ -218,21 +219,21 @@ const toggleButtonStyle: React.CSSProperties = {
   color: '#2563eb',
   cursor: 'pointer',
   fontSize: '12px',
-  textDecoration: 'underline'
+  textDecoration: 'underline',
 };
 
 const imageStyle: React.CSSProperties = {
   maxWidth: '100%',
   maxHeight: '200px',
   borderRadius: '4px',
-  display: 'block'
+  display: 'block',
 };
 
 const errorDivStyle: React.CSSProperties = {
   display: 'none',
   color: '#dc2626',
   fontSize: '12px',
-  wordWrap: 'break-word'
+  wordWrap: 'break-word',
 };
 
 const latexRenderStyle: React.CSSProperties = {
@@ -240,13 +241,13 @@ const latexRenderStyle: React.CSSProperties = {
   overflowX: 'auto',
   overflowY: 'hidden',
   WebkitOverflowScrolling: 'touch',
-  scrollbarWidth: 'thin'
+  scrollbarWidth: 'thin',
 };
 
 const summaryStyle: React.CSSProperties = {
   fontSize: '10px',
   color: '#6b7280',
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 const latexCodeStyle: React.CSSProperties = {
@@ -258,21 +259,21 @@ const latexCodeStyle: React.CSSProperties = {
   marginTop: '4px',
   wordWrap: 'break-word',
   overflowWrap: 'break-word',
-  maxWidth: '100%'
+  maxWidth: '100%',
 };
 
 const editContainerStyle: React.CSSProperties = {
   border: '1px solid #2563eb',
   borderRadius: '4px',
   padding: '8px',
-  background: '#f8fafc'
+  background: '#f8fafc',
 };
 
 const selectStyle: React.CSSProperties = {
   marginBottom: '8px',
   padding: '4px',
   fontSize: '12px',
-  width: '100%'
+  width: '100%',
 };
 
 const textareaStyle: React.CSSProperties = {
@@ -282,7 +283,7 @@ const textareaStyle: React.CSSProperties = {
   fontSize: '12px',
   border: '1px solid #d1d5db',
   borderRadius: '4px',
-  resize: 'vertical'
+  resize: 'vertical',
 };
 
 const latexPreviewStyle: React.CSSProperties = {
@@ -295,13 +296,13 @@ const latexPreviewStyle: React.CSSProperties = {
   overflowX: 'auto',
   overflowY: 'hidden',
   wordWrap: 'break-word',
-  overflowWrap: 'break-word'
+  overflowWrap: 'break-word',
 };
 
 const buttonContainerStyle: React.CSSProperties = {
   marginTop: '8px',
   display: 'flex',
-  gap: '8px'
+  gap: '8px',
 };
 
 const saveButtonStyle: React.CSSProperties = {
@@ -311,7 +312,7 @@ const saveButtonStyle: React.CSSProperties = {
   border: 'none',
   borderRadius: '4px',
   fontSize: '12px',
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 const cancelButtonStyle: React.CSSProperties = {
@@ -321,7 +322,7 @@ const cancelButtonStyle: React.CSSProperties = {
   border: 'none',
   borderRadius: '4px',
   fontSize: '12px',
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 const editButtonStyle: React.CSSProperties = {
@@ -336,5 +337,5 @@ const editButtonStyle: React.CSSProperties = {
   fontSize: '10px',
   cursor: 'pointer',
   opacity: 0,
-  transition: 'opacity 0.2s'
+  transition: 'opacity 0.2s',
 };

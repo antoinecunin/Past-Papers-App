@@ -3,9 +3,15 @@ import { useDropzone } from 'react-dropzone';
 
 export default function FileDrop({ onFiles }: { onFiles: (files: File[]) => void }) {
   const onDrop = useCallback((accepted: File[]) => onFiles(accepted), [onFiles]);
-  const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop, accept: {'application/pdf': ['.pdf']}});
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'application/pdf': ['.pdf'] },
+  });
   return (
-    <div {...getRootProps()} className="border-2 border-dashed border-gray-300 p-8 rounded-lg cursor-pointer text-center hover:border-blue-500 transition-colors">
+    <div
+      {...getRootProps()}
+      className="border-2 border-dashed border-gray-300 p-8 rounded-lg cursor-pointer text-center hover:border-blue-500 transition-colors"
+    >
       <input {...getInputProps()} />
       <div className="text-gray-600">
         {isDragActive ? (

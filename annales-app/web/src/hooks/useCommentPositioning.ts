@@ -7,7 +7,6 @@ interface ClickPosition {
   yPosition: number; // [0,1] relatif à la page
 }
 
-
 interface UseCommentPositioningReturn {
   pendingPosition: ClickPosition | null;
   handlePageClick: (pageElement: HTMLElement, pageIndex: number, event: React.MouseEvent) => void;
@@ -25,69 +24,71 @@ export function useCommentPositioning(
 ): UseCommentPositioningReturn {
   const [pendingPosition, setPendingPosition] = useState<ClickPosition | null>(null);
 
-  const handlePageClick = useCallback((
-    pageElement: HTMLElement,
-    pageIndex: number,
-    event: React.MouseEvent
-  ) => {
-    // Empêcher la propagation pour éviter les clics multiples
-    event.stopPropagation();
+  const handlePageClick = useCallback(
+    (pageElement: HTMLElement, pageIndex: number, event: React.MouseEvent) => {
+      // Empêcher la propagation pour éviter les clics multiples
+      event.stopPropagation();
 
-    // Calculer la position relative dans la page
-    const pageRect = pageElement.getBoundingClientRect();
-    const relativeY = (event.clientY - pageRect.top) / pageRect.height;
+      // Calculer la position relative dans la page
+      const pageRect = pageElement.getBoundingClientRect();
+      const relativeY = (event.clientY - pageRect.top) / pageRect.height;
 
-    // Contraindre entre 0 et 1
-    const clampedY = Math.max(0, Math.min(1, relativeY));
+      // Contraindre entre 0 et 1
+      const clampedY = Math.max(0, Math.min(1, relativeY));
 
-    setPendingPosition({
-      pageIndex,
-      yPosition: clampedY
-    });
-  }, []);
-
-  const confirmComment = useCallback(async (content: string | AnswerContent) => {
-    if (!pendingPosition) return;
-
-    try {
-      // Normaliser le contenu vers le nouveau format
-      let answerContent: AnswerContent;
-      if (typeof content === 'string') {
-        // Rétrocompatibilité pour les anciens appels
-        answerContent = { type: 'text', data: content };
-      } else {
-        answerContent = { ...content };
-
-        // Pré-rendre le LaTeX si nécessaire
-        if (answerContent.type === 'latex' && !answerContent.rendered) {
-          answerContent.rendered = renderLatex(answerContent.data);
-        }
-      }
-
-      const payload = {
-        examId,
-        page: pendingPosition.pageIndex + 1, // API utilise 1-based
-        yTop: pendingPosition.yPosition,
-        content: answerContent,
-      };
-
-      const response = await fetch('/api/answers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      setPendingPosition({
+        pageIndex,
+        yPosition: clampedY,
       });
+    },
+    []
+  );
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création du commentaire');
+  const confirmComment = useCallback(
+    async (content: string | AnswerContent) => {
+      if (!pendingPosition) return;
+
+      try {
+        // Normaliser le contenu vers le nouveau format
+        let answerContent: AnswerContent;
+        if (typeof content === 'string') {
+          // Rétrocompatibilité pour les anciens appels
+          answerContent = { type: 'text', data: content };
+        } else {
+          answerContent = { ...content };
+
+          // Pré-rendre le LaTeX si nécessaire
+          if (answerContent.type === 'latex' && !answerContent.rendered) {
+            answerContent.rendered = renderLatex(answerContent.data);
+          }
+        }
+
+        const payload = {
+          examId,
+          page: pendingPosition.pageIndex + 1, // API utilise 1-based
+          yTop: pendingPosition.yPosition,
+          content: answerContent,
+        };
+
+        const response = await fetch('/api/answers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors de la création du commentaire');
+        }
+
+        setPendingPosition(null);
+        onCommentAdded();
+      } catch (error) {
+        console.error('Erreur:', error);
+        // TODO: Afficher une notification d'erreur à l'utilisateur
       }
-
-      setPendingPosition(null);
-      onCommentAdded();
-    } catch (error) {
-      console.error('Erreur:', error);
-      // TODO: Afficher une notification d'erreur à l'utilisateur
-    }
-  }, [examId, pendingPosition, onCommentAdded]);
+    },
+    [examId, pendingPosition, onCommentAdded]
+  );
 
   const cancelComment = useCallback(() => {
     setPendingPosition(null);
@@ -97,6 +98,6 @@ export function useCommentPositioning(
     pendingPosition,
     handlePageClick,
     confirmComment,
-    cancelComment
+    cancelComment,
   };
 }

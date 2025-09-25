@@ -15,7 +15,7 @@ export function CommentIndicator({
   yPosition,
   isActive = false,
   onClick,
-  commentCount = 1
+  commentCount = 1,
 }: CommentIndicatorProps) {
   const topPercent = yPosition * 100;
 
@@ -64,7 +64,7 @@ export function NewCommentIndicator({ yPosition, onConfirm, onCancel }: NewComme
       <form onSubmit={handleSubmit} className="space-y-2">
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={e => setText(e.target.value)}
           placeholder="Votre commentaire..."
           className="w-full p-2 text-sm border border-gray-200 rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           rows={3}

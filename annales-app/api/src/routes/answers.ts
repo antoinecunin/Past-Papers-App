@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
     if (!examId || !Types.ObjectId.isValid(examId)) {
       return res.status(400).json({ error: 'examId (ObjectId) requis' });
     }
-    const filter: any = { examId };
+    const filter: { examId: string; page?: number } = { examId };
     if (page) {
       const p = Number(page);
       if (!Number.isInteger(p) || p < 1) {
@@ -105,14 +105,22 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const docData: any = { examId, page, yTop, yBottom, author };
+    const docData: {
+      examId: string;
+      page: number;
+      yTop: number;
+      yBottom?: number;
+      author?: string;
+      content?: object;
+      text?: string;
+    } = { examId, page: page!, yTop: yTop!, author, ...(yBottom && { yBottom }) };
 
     // Nouveau format prioritaire
     if (hasContent) {
       docData.content = {
         type: content.type,
         data: content.data.trim(),
-        ...(content.rendered && { rendered: content.rendered })
+        ...(content.rendered && { rendered: content.rendered }),
       };
     } else {
       // Fallback ancien format
@@ -186,14 +194,18 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    const updateData: any = {};
+    const updateData: {
+      content?: object;
+      text?: string;
+      $unset?: { text?: 1; content?: 1 };
+    } = {};
 
     // Nouveau format prioritaire
     if (hasContent) {
       updateData.content = {
         type: content.type,
         data: content.data.trim(),
-        ...(content.rendered && { rendered: content.rendered })
+        ...(content.rendered && { rendered: content.rendered }),
       };
       // Supprimer l'ancien text si on utilise le nouveau format
       updateData.$unset = { text: 1 };

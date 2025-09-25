@@ -18,7 +18,6 @@ interface ExamListProps {
   onExamSelect?: (exam: Exam) => void;
 }
 
-
 /**
  * Composant pour afficher la liste des examens avec filtres et recherche
  * Suit les bonnes pratiques : gestion d'état, performance, accessibilité
@@ -53,8 +52,9 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   // Filtrage et recherche avec useMemo pour la performance
   const filteredExams = useMemo(() => {
     return exams.filter(exam => {
-      const matchesSearch = exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (exam.module?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      const matchesSearch =
+        exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (exam.module?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       const matchesYear = !selectedYear || exam.year?.toString() === selectedYear;
       const matchesModule = !selectedModule || exam.module === selectedModule;
 
@@ -138,7 +138,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
               type="text"
               placeholder="Rechercher par titre ou module..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
@@ -151,12 +151,14 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
             <select
               id="year-filter"
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
+              onChange={e => setSelectedYear(e.target.value)}
               className="w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
             >
               <option value="">Toutes les années</option>
               {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
+                <option key={year} value={year}>
+                  {year}
+                </option>
               ))}
             </select>
           </div>
@@ -169,12 +171,14 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
             <select
               id="module-filter"
               value={selectedModule}
-              onChange={(e) => setSelectedModule(e.target.value)}
+              onChange={e => setSelectedModule(e.target.value)}
               className="w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
             >
               <option value="">Tous les modules</option>
               {availableModules.map(module => (
-                <option key={module} value={module}>{module}</option>
+                <option key={module} value={module}>
+                  {module}
+                </option>
               ))}
             </select>
           </div>
@@ -191,18 +195,13 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
           <p className="mt-1 text-sm text-gray-500">
             {exams.length === 0
               ? 'Aucun examen disponible. Commencez par en uploader un !'
-              : 'Essayez de modifier vos critères de recherche.'
-            }
+              : 'Essayez de modifier vos critères de recherche.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredExams.map(exam => (
-            <ExamCard
-              key={exam._id}
-              exam={exam}
-              onSelect={onExamSelect}
-            />
+            <ExamCard key={exam._id} exam={exam} onSelect={onExamSelect} />
           ))}
         </div>
       )}

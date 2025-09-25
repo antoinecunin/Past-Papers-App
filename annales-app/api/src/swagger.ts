@@ -13,11 +13,7 @@ export function setupSwagger(app: Express) {
       servers: [{ url: '/api' }],
     },
     // En prod, seul dist/** existe ; en dev, on garde src/**
-    apis: [
-      './dist/routes/**/*.js',
-      './src/routes/**/*.ts',
-      './src/routes/**/*.js',
-    ],
+    apis: ['./dist/routes/**/*.js', './src/routes/**/*.ts', './src/routes/**/*.js'],
   };
 
   const spec = swaggerJSDoc(options);

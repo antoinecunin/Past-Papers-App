@@ -60,7 +60,9 @@ async function connectMongoWithRetry() {
         console.error('[api] mongo connect failed, giving up:', err);
         process.exit(1);
       }
-      console.warn(`[api] mongo not ready (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_MS}ms…`);
+      console.warn(
+        `[api] mongo not ready (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_MS}ms…`
+      );
       await new Promise(r => setTimeout(r, RETRY_MS));
     }
   }
@@ -74,7 +76,11 @@ connectMongoWithRetry().then(() => {
   const shutdown = async (signal: string) => {
     console.log(`[api] ${signal} received → graceful shutdown…`);
     server.close(() => console.log('[api] http server closed'));
-    try { await mongoose.disconnect(); } finally { process.exit(0); }
+    try {
+      await mongoose.disconnect();
+    } finally {
+      process.exit(0);
+    }
   };
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));

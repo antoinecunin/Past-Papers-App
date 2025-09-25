@@ -11,7 +11,7 @@ export const renderLatex = (latex: string): string => {
     return katex.renderToString(latex, {
       throwOnError: false,
       displayMode: false,
-      strict: false
+      strict: false,
     });
   } catch (error) {
     console.warn('Erreur de rendu LaTeX:', error);

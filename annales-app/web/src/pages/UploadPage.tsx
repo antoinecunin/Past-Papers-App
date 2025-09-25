@@ -22,24 +22,24 @@ export default function UploadPage() {
     <div className="max-w-xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Uploader une annale</h1>
       <div className="space-y-4 mb-6">
-        <input 
+        <input
           className="w-full p-3 border rounded-lg"
-          placeholder="Titre" 
-          value={title} 
-          onChange={e=>setTitle(e.target.value)} 
+          placeholder="Titre"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
         />
-        <input 
+        <input
           className="w-full p-3 border rounded-lg"
-          placeholder="Année" 
+          placeholder="Année"
           type="number"
-          value={year} 
-          onChange={e=>setYear(Number(e.target.value)||'')} 
+          value={year}
+          onChange={e => setYear(Number(e.target.value) || '')}
         />
-        <input 
+        <input
           className="w-full p-3 border rounded-lg"
-          placeholder="Module" 
-          value={module} 
-          onChange={e=>setModule(e.target.value)} 
+          placeholder="Module"
+          value={module}
+          onChange={e => setModule(e.target.value)}
         />
       </div>
       <FileDrop onFiles={handleUpload} />

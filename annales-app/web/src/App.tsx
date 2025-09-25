@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
-import UploadPage from './pages/UploadPage'
-import ExamList from './components/ExamList'
-import PdfAnnotator from './components/PdfAnnotator'
-import { BackIcon } from './components/ui/Icon'
-import { useRouter } from './hooks/useRouter'
-import './App.css'
+import { useState, useEffect } from 'react';
+import UploadPage from './pages/UploadPage';
+import ExamList from './components/ExamList';
+import PdfAnnotator from './components/PdfAnnotator';
+import { BackIcon } from './components/ui/Icon';
+import { useRouter } from './hooks/useRouter';
+import './App.css';
 
 interface Exam {
   _id: string;
@@ -29,7 +29,7 @@ function App() {
         return await response.json();
       }
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'examen:', error);
+      console.error("Erreur lors du chargement de l'examen:", error);
     }
     return null;
   };
@@ -73,7 +73,7 @@ function App() {
         if (!selectedExam) {
           return (
             <div className="text-center py-8">
-              <p className="text-gray-500">Chargement de l'examen...</p>
+              <p className="text-gray-500">Chargement de l&apos;examen...</p>
             </div>
           );
         }
@@ -90,7 +90,9 @@ function App() {
               <div className="flex-1">
                 <h1 className="text-xl font-semibold text-gray-900">{selectedExam.title}</h1>
                 {selectedExam.module && selectedExam.year && (
-                  <p className="text-sm text-gray-600">{selectedExam.module} - {selectedExam.year}</p>
+                  <p className="text-sm text-gray-600">
+                    {selectedExam.module} - {selectedExam.year}
+                  </p>
                 )}
               </div>
             </div>
@@ -110,7 +112,7 @@ function App() {
       <nav className="bg-white shadow-sm border-b p-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-6">
-            <h1 className="text-lg font-semibold text-gray-900">Plateforme d'Annales</h1>
+            <h1 className="text-lg font-semibold text-gray-900">Plateforme d&apos;Annales</h1>
             <div className="flex space-x-2">
               <button
                 onClick={() => navigate('exams')}
@@ -137,17 +139,16 @@ function App() {
 
           {isPage('viewer') && selectedExam && (
             <div className="text-sm text-gray-500">
-              {selectedExam.pages && `${selectedExam.pages} page${selectedExam.pages > 1 ? 's' : ''}`}
+              {selectedExam.pages &&
+                `${selectedExam.pages} page${selectedExam.pages > 1 ? 's' : ''}`}
             </div>
           )}
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto p-4">
-        {renderCurrentPage()}
-      </main>
+      <main className="max-w-6xl mx-auto p-4">{renderCurrentPage()}</main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

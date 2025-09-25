@@ -5,23 +5,28 @@ const s3 = new S3Client({
   region: process.env.S3_REGION,
   endpoint: `http://${process.env.S3_ENDPOINT}`,
   forcePathStyle: true,
-  credentials: { accessKeyId: process.env.S3_ACCESS_KEY!, secretAccessKey: process.env.S3_SECRET_KEY! }
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY!,
+    secretAccessKey: process.env.S3_SECRET_KEY!,
+  },
 });
 
 export async function uploadBuffer(key: string, buffer: Buffer, contentType: string) {
-  await s3.send(new PutObjectCommand({
-    Bucket: process.env.S3_BUCKET!,
-    Key: key,
-    Body: buffer,
-    ContentType: contentType
-  }));
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET!,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    })
+  );
   return key;
 }
 
 export async function downloadFile(key: string) {
   const command = new GetObjectCommand({
     Bucket: process.env.S3_BUCKET!,
-    Key: key
+    Key: key,
   });
 
   const response = await s3.send(command);
@@ -36,7 +41,7 @@ export async function downloadFile(key: string) {
     stream,
     contentType: response.ContentType,
     contentLength: response.ContentLength,
-    lastModified: response.LastModified
+    lastModified: response.LastModified,
   };
 }
 

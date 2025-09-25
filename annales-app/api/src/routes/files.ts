@@ -3,7 +3,6 @@ import multer from 'multer';
 import { uploadBuffer, objectKey, downloadFile } from '../services/s3.js';
 import { Exam } from '../models/Exam.js';
 import { Types } from 'mongoose';
-// @ts-ignore
 import { PDFDocument } from 'pdf-lib';
 
 export const router = Router();
@@ -36,7 +35,11 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'missing file' });
   const { title, year, module } = req.body;
-  const key = objectKey('annales', `${year || 'unknown'}`, req.file.originalname.replace(/\s+/g,'_'));
+  const key = objectKey(
+    'annales',
+    `${year || 'unknown'}`,
+    req.file.originalname.replace(/\s+/g, '_')
+  );
   await uploadBuffer(key, req.file.buffer, req.file.mimetype);
 
   // lire pages via pdf-lib
@@ -101,13 +104,12 @@ router.get('/:examId/download', async (req, res) => {
     // Stream du fichier vers la réponse
     stream.pipe(res);
 
-    stream.on('error', (error) => {
+    stream.on('error', error => {
       console.error('Erreur stream S3:', error);
       if (!res.headersSent) {
         res.status(500).json({ error: 'Erreur lors du téléchargement' });
       }
     });
-
   } catch (error) {
     console.error('Erreur téléchargement:', error);
     if (!res.headersSent) {

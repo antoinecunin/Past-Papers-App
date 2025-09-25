@@ -29,7 +29,7 @@ export default function ExamCard({ exam, onSelect }: ExamCardProps) {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -39,7 +39,7 @@ export default function ExamCard({ exam, onSelect }: ExamCardProps) {
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
+      onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           handleClick();
@@ -69,16 +69,16 @@ export default function ExamCard({ exam, onSelect }: ExamCardProps) {
         {exam.pages && (
           <div className="flex items-center space-x-1">
             <DocumentIcon />
-            <span className="text-xs text-gray-600">{exam.pages} page{exam.pages > 1 ? 's' : ''}</span>
+            <span className="text-xs text-gray-600">
+              {exam.pages} page{exam.pages > 1 ? 's' : ''}
+            </span>
           </div>
         )}
       </div>
 
       {/* Footer avec date et action */}
       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-        <span className="text-xs text-gray-500">
-          {formatDate(exam.createdAt)}
-        </span>
+        <span className="text-xs text-gray-500">{formatDate(exam.createdAt)}</span>
         <div className="flex items-center space-x-1 text-blue-600 hover:text-blue-700">
           <EyeIcon className="text-blue-600 hover:text-blue-700" />
           <span className="text-xs font-medium">Voir</span>

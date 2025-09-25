@@ -25,12 +25,12 @@ export function useRouter() {
       return { path, page: 'upload', params: {} };
     }
 
-    const examMatch = path.match(/^\/exam\/([^\/]+)$/);
+    const examMatch = path.match(/^\/exam\/([^/]+)$/);
     if (examMatch) {
       return {
         path,
         page: 'viewer',
-        params: { examId: examMatch[1] }
+        params: { examId: examMatch[1] },
       };
     }
 
@@ -79,18 +79,18 @@ export function useRouter() {
 
   // Mettre à jour le titre de la page selon la route
   useEffect(() => {
-    let title = 'Plateforme d\'Annales';
+    let title = "Plateforme d'Annales";
 
     switch (currentRoute.page) {
       case 'upload':
-        title = 'Upload - Plateforme d\'Annales';
+        title = "Upload - Plateforme d'Annales";
         break;
       case 'viewer':
-        title = 'Examen - Plateforme d\'Annales';
+        title = "Examen - Plateforme d'Annales";
         break;
       case 'exams':
       default:
-        title = 'Examens - Plateforme d\'Annales';
+        title = "Examens - Plateforme d'Annales";
         break;
     }
 
@@ -132,6 +132,6 @@ export function useRouter() {
     replace,
     // Helpers pour vérifier la page actuelle
     isPage: (page: Route['page']) => currentRoute.page === page,
-    getExamId: () => currentRoute.params.examId
+    getExamId: () => currentRoute.params.examId,
   };
 }
