@@ -96,7 +96,7 @@ const renderMixedLatex = (text: string): string => {
               '\\K': '\\mathbb{K}',
             },
           });
-        } catch (error) {
+        } catch {
           return `<span style="color: #dc2626;">[Math Error: ${mathContent}]</span>`;
         }
       } else {

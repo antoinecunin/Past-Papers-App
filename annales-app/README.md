@@ -8,14 +8,14 @@ Une plateforme containerisée pour le partage et l'annotation d'annales d'examen
 - **web**: React (build statique servi par Nginx)
 - **api**: Node.js/Express (TypeScript), Multer (upload), S3 SDK v3 pour MinIO, Swagger UI
 - **minio**: stockage S3-compatible (privé, réseau interne uniquement)
-- **mongo**: métadonnées (exams, zones modifiables, réponses, etc.)
+- **mongo**: métadonnées (exams, commentaires, etc.)
 - **minio-setup**: job one-shot pour créer le bucket
 
 ## Fonctionnalités
 
 - Upload de PDFs d'annales avec métadonnées
-- Sélection de zones modifiables sur les PDFs
-- Soumission de réponses dans les zones définies
+- Ajout de commentaires sur les PDFs par position
+- Commentaires multi-formats (texte, image, LaTeX)
 - Export de PDFs avec réponses intégrées
 - API REST documentée avec Swagger
 - Accès restreint par IP
@@ -107,7 +107,7 @@ annales-app/
 ## Prochaines Étapes
 
 - [ ] Authentification (SSO ou Basic Auth)
-- [ ] Endpoint pour gérer les zones de réponse
+- [ ] Amélioration de l'export PDF avec commentaires
 - [ ] Export PDF avec réponses intégrées
 - [ ] Recherche et filtrage des examens
 - [ ] Rôles utilisateurs

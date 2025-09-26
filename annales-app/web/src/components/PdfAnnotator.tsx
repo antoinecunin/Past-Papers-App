@@ -17,7 +17,7 @@ type Props = {
 
 /**
  * Composant unique : lecteur PDF à gauche, commentaires (de la page visible) à droite.
- * - Les commentaires sont ancrés via (page, yTop[, yBottom]) normalisés.
+ * - Les commentaires sont ancrés via (page, yTop) normalisés.
  * - Au scroll, on détecte la page majoritairement visible et on rafraîchit la liste.
  * - Ajout d'un commentaire : capture du yTop actuel (centre de la zone visible).
  */
@@ -29,6 +29,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [allAnswers, setAllAnswers] = useState<Answer[]>([]); // Tous les commentaires pour affichage visuel
   const [selectedGroup, setSelectedGroup] = useState<Answer[] | null>(null); // Groupe de commentaires sélectionné
+  const [highlightedAnswers, setHighlightedAnswers] = useState<string[]>([]); // IDs des commentaires mis en valeur
+  const highlightTimeoutRef = useRef<number | null>(null); // Référence vers le timeout actuel
+  const currentHighlightedMarkerRef = useRef<HTMLElement | null>(null); // Référence vers le marqueur actuellement mis en valeur
 
   // Hook pour le positionnement par clic
   const { pendingPosition, handlePageClick, confirmComment, cancelComment } = useCommentPositioning(
@@ -194,6 +197,19 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           setSelectedGroup(null);
         }
 
+        // Reset la mise en valeur des commentaires et des marqueurs
+        if (highlightedAnswers.length > 0) {
+          setHighlightedAnswers([]);
+        }
+        if (currentHighlightedMarkerRef.current) {
+          currentHighlightedMarkerRef.current.classList.remove('highlighted-indicator');
+          currentHighlightedMarkerRef.current = null;
+        }
+        if (highlightTimeoutRef.current) {
+          clearTimeout(highlightTimeoutRef.current);
+          highlightTimeoutRef.current = null;
+        }
+
         const pageIndex = parseInt(pageWrapper.dataset.pageIndex, 10);
         handlePageClick(pageWrapper, pageIndex, event as unknown as React.MouseEvent);
       }
@@ -202,6 +218,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     container.addEventListener('click', handleClick);
     return () => container.removeEventListener('click', handleClick);
   }, [handlePageClick, selectedGroup]);
+
 
   // Fonction pour grouper les commentaires proches (dans un rayon de 5% de la hauteur)
   const groupCommentsByPosition = (comments: Answer[]) => {
@@ -274,6 +291,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         groups.forEach(group => {
           const indicator = document.createElement('div');
           indicator.className = 'comment-indicator';
+          // Ajouter les IDs des commentaires associés pour pouvoir les mettre en valeur
+          indicator.setAttribute('data-answer-ids', group.answers.map(a => a._id).join(','));
           indicator.style.position = 'absolute';
           indicator.style.right = '8px';
           indicator.style.top = `${group.avgPosition * 100}%`;
@@ -312,7 +331,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             e.preventDefault();
             e.stopPropagation();
 
-            // Sélectionner ce groupe de commentaires
+            // Sélectionner ce groupe de commentaires (filtrage déjà existant)
             setSelectedGroup(group.answers);
 
             // Scroll vers cette position
@@ -563,6 +582,42 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     loadAllAnswers();
   }, [loadAllAnswers, examId]);
 
+  // Injecter des styles CSS pour les indicateurs mis en valeur
+  useEffect(() => {
+    const styleId = 'highlighted-indicator-styles';
+    let existingStyle = document.getElementById(styleId);
+
+    if (!existingStyle) {
+      existingStyle = document.createElement('style');
+      existingStyle.id = styleId;
+      document.head.appendChild(existingStyle);
+    }
+
+    existingStyle.textContent = `
+      .highlighted-indicator {
+        background-color: #f59e0b !important;
+        transform: scale(1.2) !important;
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.6) !important;
+        z-index: 20 !important;
+        animation: pulse-highlight 0.6s ease-in-out;
+      }
+
+      @keyframes pulse-highlight {
+        0% { transform: scale(1) translateY(-50%); }
+        50% { transform: scale(1.3) translateY(-50%); }
+        100% { transform: scale(1) translateY(-50%); }
+      }
+    `;
+
+    return () => {
+      // Nettoyage lors du démontage du composant
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, []);
+
   // Fonction pour éditer un commentaire
   const editAnswer = useCallback(
     async (answerId: string, newContent: AnswerContent) => {
@@ -614,8 +669,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [loadAnswersForPage, loadAllAnswers, visiblePage]
   );
 
+
   return (
-    <div style={wrapperStyle}>
+    <div style={wrapperStyle} data-pdf-annotator>
       <div style={{ ...pdfPaneStyle, position: 'relative' }}>
         <div
           ref={containerRef}
@@ -654,7 +710,85 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         <ul style={commentListStyle}>
           {(selectedGroup || answers).map(a => (
-            <li key={a._id} style={commentItemStyle}>
+            <li
+              key={a._id}
+              onClick={() => {
+                // Mettre en valeur ce commentaire
+                setHighlightedAnswers([a._id]);
+
+                // Scroll vers l'indicateur correspondant et le mettre en valeur
+                const container = containerRef.current;
+                if (!container) return;
+
+                // Trouver tous les indicateurs et chercher celui correspondant à ce commentaire
+                const indicators = Array.from(container.querySelectorAll('.comment-indicator'));
+                let targetIndicator: HTMLElement | null = null;
+
+                for (const indicator of indicators) {
+                  const indicatorElement = indicator as HTMLElement;
+                  const answerIds = indicatorElement.getAttribute('data-answer-ids')?.split(',') || [];
+
+                  // Vérifier si cet indicateur contient notre commentaire
+                  if (answerIds.includes(a._id)) {
+                    targetIndicator = indicatorElement;
+                    break;
+                  }
+                }
+
+                if (targetIndicator) {
+                  // Si c'est le même marqueur que précédemment, reset le timer
+                  if (currentHighlightedMarkerRef.current === targetIndicator) {
+                    // Même marqueur : reset le timer
+                    if (highlightTimeoutRef.current) {
+                      clearTimeout(highlightTimeoutRef.current);
+                    }
+                  } else {
+                    // Marqueur différent : arrêter l'effet précédent
+                    if (currentHighlightedMarkerRef.current) {
+                      currentHighlightedMarkerRef.current.classList.remove('highlighted-indicator');
+                      if (highlightTimeoutRef.current) {
+                        clearTimeout(highlightTimeoutRef.current);
+                      }
+                    }
+                  }
+
+                  // Appliquer le nouvel effet
+                  currentHighlightedMarkerRef.current = targetIndicator;
+                  targetIndicator.classList.add('highlighted-indicator');
+                  targetIndicator.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                  // Créer un nouveau timeout
+                  highlightTimeoutRef.current = setTimeout(() => {
+                    targetIndicator?.classList.remove('highlighted-indicator');
+                    setHighlightedAnswers([]);
+                    currentHighlightedMarkerRef.current = null;
+                    highlightTimeoutRef.current = null;
+                  }, 3000);
+                }
+              }}
+              onMouseEnter={(e) => {
+                // Déclencher le hover sur les boutons d'action de l'AnswerContentDisplay
+                const buttons = e.currentTarget.querySelector('[data-action-buttons]') as HTMLElement;
+                if (buttons) {
+                  buttons.style.opacity = '1';
+                }
+              }}
+              onMouseLeave={(e) => {
+                // Retirer le hover des boutons d'action
+                const buttons = e.currentTarget.querySelector('[data-action-buttons]') as HTMLElement;
+                if (buttons) {
+                  buttons.style.opacity = '0';
+                }
+              }}
+              style={{
+                ...commentItemStyle,
+                cursor: 'pointer',
+                backgroundColor: highlightedAnswers.includes(a._id) ? '#fef3c7' : 'transparent',
+                transition: 'all 0.3s ease',
+                transform: highlightedAnswers.includes(a._id) ? 'scale(1.02)' : 'scale(1)',
+                boxShadow: highlightedAnswers.includes(a._id) ? '0 4px 8px rgba(245, 158, 11, 0.2)' : 'none',
+              }}
+            >
               <div style={commentMetaStyle}>
                 y={a.yTop.toFixed(2)} • Page {a.page} • {a.content.type.toUpperCase()}
               </div>
@@ -719,6 +853,7 @@ const sidebarHeaderStyle: React.CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   marginBottom: 12,
+  marginRight: '1rem', // Éviter que le texte soit masqué par la barre de scroll
 };
 const commentListStyle: React.CSSProperties = {
   listStyle: 'none',

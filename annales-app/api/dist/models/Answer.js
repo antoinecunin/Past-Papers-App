@@ -8,7 +8,6 @@ const AnswerSchema = new Schema({
     examId: { type: Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },
     page: { type: Number, required: true, min: 1, index: true },
     yTop: { type: Number, required: true, min: 0, max: 1 },
-    yBottom: { type: Number, min: 0, max: 1 },
     content: { type: AnswerContentSchema },
     text: { type: String, trim: true }, // Optionnel pour compatibilité
     author: { type: String, trim: true },

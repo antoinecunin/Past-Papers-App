@@ -10,8 +10,7 @@ export interface Answer {
   _id: string;
   examId: string;
   page: number;
-  yTop: number;
-  yBottom?: number;
+  yTop: number; // Position Y du commentaire [0,1]
   content: AnswerContent;
   author?: string;
   createdAt: string;

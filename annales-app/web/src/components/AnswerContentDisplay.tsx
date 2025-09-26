@@ -49,7 +49,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
       // Pour LaTeX, copier le contenu brut (avant compilation)
       const textToCopy = content.data;
       await navigator.clipboard.writeText(textToCopy);
-    } catch (error) {
+    } catch {
       // Fallback pour les navigateurs plus anciens
       const textArea = document.createElement('textarea');
       textArea.value = content.data;
@@ -175,7 +175,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
 
   if (isEditing && editContent) {
     return (
-      <div style={editContainerStyle}>
+      <div
+        style={editContainerStyle}
+        onClick={(e) => e.stopPropagation()} // Empêcher la propagation vers le parent
+      >
         <select
           value={editContent.type}
           onChange={e => {
@@ -211,7 +214,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
         {editContent.type === 'image' && editContent.data.trim() && (
           <div style={imagePreviewStyle} key={`image-preview-${editContent.data.trim()}`}>
             <strong style={{ fontSize: '10px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-              Aperçu de l'image :
+              Aperçu de l&apos;image :
             </strong>
             <img
               src={editContent.data.trim()}
@@ -255,7 +258,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
 
   if (showConfirmDelete) {
     return (
-      <div style={deleteConfirmStyle}>
+      <div
+        style={deleteConfirmStyle}
+        onClick={(e) => e.stopPropagation()} // Empêcher la propagation vers le parent
+      >
         <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#dc2626' }}>
           Êtes-vous sûr de vouloir supprimer ce commentaire ?
         </p>
@@ -273,7 +279,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
 
   return (
     <div
-      style={{ position: 'relative' }}
+      style={{
+        position: 'relative',
+        marginRight: '1rem', // Réserver un espace responsive pour les icônes
+      }}
       onMouseEnter={e => {
         const buttons = e.currentTarget.querySelector('[data-action-buttons]') as HTMLElement;
         if (buttons) buttons.style.opacity = '1';
@@ -286,7 +295,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
       <div
         onClick={handleContentClick}
         style={{
-          cursor: content.data.length > 150 ? 'pointer' : 'default',
+          cursor: 'inherit', // Hériter du curseur du parent (pointer)
           userSelect: 'auto',
         }}
       >
@@ -300,7 +309,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
         <div style={actionButtonsStyle} data-action-buttons>
           {/* Bouton copier */}
           <button
-            onClick={handleCopy}
+            onClick={(e) => {
+              e.stopPropagation(); // Empêcher la propagation vers le parent
+              handleCopy();
+            }}
             style={actionButtonStyle}
             title="Copier le contenu"
           >
@@ -310,7 +322,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
           {/* Bouton éditer */}
           {onEdit && (
             <button
-              onClick={startEdit}
+              onClick={(e) => {
+                e.stopPropagation(); // Empêcher la propagation vers le parent
+                startEdit();
+              }}
               style={actionButtonStyle}
               title="Modifier"
             >
@@ -321,7 +336,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
           {/* Bouton supprimer */}
           {onDelete && (
             <button
-              onClick={confirmDelete}
+              onClick={(e) => {
+                e.stopPropagation(); // Empêcher la propagation vers le parent
+                confirmDelete();
+              }}
               style={actionButtonStyle}
               title="Supprimer"
             >
@@ -449,20 +467,6 @@ const cancelButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-const editButtonStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '0',
-  right: '0',
-  background: 'rgba(37, 99, 235, 0.8)',
-  color: 'white',
-  border: 'none',
-  borderRadius: '0 0 0 4px',
-  padding: '2px 6px',
-  fontSize: '10px',
-  cursor: 'pointer',
-  opacity: 0,
-  transition: 'opacity 0.2s',
-};
 
 const actionButtonsStyle: React.CSSProperties = {
   position: 'absolute',
@@ -472,6 +476,7 @@ const actionButtonsStyle: React.CSSProperties = {
   gap: '2px',
   opacity: 0,
   transition: 'opacity 0.2s',
+  pointerEvents: 'auto',
 };
 
 const actionButtonStyle: React.CSSProperties = {

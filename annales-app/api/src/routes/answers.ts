@@ -22,7 +22,7 @@ export const router = Router();
  *       200:
  *         description: OK
  *   post:
- *     summary: Créer un commentaire ancré sur (page, yTop[, yBottom])
+ *     summary: Créer un commentaire ancré sur (page, yTop)
  *     requestBody:
  *       required: true
  *       content:
@@ -34,7 +34,6 @@ export const router = Router();
  *               examId: { type: string }
  *               page: { type: integer, minimum: 1 }
  *               yTop: { type: number, minimum: 0, maximum: 1 }
- *               yBottom: { type: number, minimum: 0, maximum: 1 }
  *               content:
  *                 type: object
  *                 properties:
@@ -71,11 +70,10 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { examId, page, yTop, yBottom, content, author } = req.body as {
+    const { examId, page, yTop, content, author } = req.body as {
       examId?: string;
       page?: number;
       yTop?: number;
-      yBottom?: number;
       content?: { type: string; data: string; rendered?: string };
       author?: string;
     };
@@ -109,7 +107,6 @@ router.post('/', async (req, res) => {
       page: page!,
       yTop: yTop!,
       author,
-      ...(yBottom && { yBottom }),
       content: {
         type: content.type,
         data: content.data.trim(),
