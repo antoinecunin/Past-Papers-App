@@ -8,6 +8,7 @@ import { router as health } from './routes/health.js';
 import { router as exams } from './routes/exams.js';
 import { router as files } from './routes/files.js';
 import { router as answers } from './routes/answers.js';
+import { router as auth } from './routes/auth.js';
 import { setupSwagger } from './swagger.js';
 const app = express();
 app.use(helmet());
@@ -29,6 +30,7 @@ const corsOptions = {
 app.use('/api', cors(corsOptions));
 app.options('/api/*', cors(corsOptions));
 app.use('/api/health', health);
+app.use('/api/auth', auth);
 app.use('/api/exams', exams);
 app.use('/api/files', files);
 app.use('/api/answers', answers);

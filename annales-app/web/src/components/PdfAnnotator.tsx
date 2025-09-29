@@ -49,11 +49,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const currentPositionRef = useRef<{ pageIndex: number; yPosition: number } | null>(null);
 
   // Wrappers pour remettre à zéro les refs
-  const wrappedConfirmComment = useCallback(async (content: AnswerContent) => {
-    hasFocusedRef.current = false;
-    currentPositionRef.current = null;
-    return confirmComment(content);
-  }, [confirmComment]);
+  const wrappedConfirmComment = useCallback(
+    async (content: AnswerContent) => {
+      hasFocusedRef.current = false;
+      currentPositionRef.current = null;
+      return confirmComment(content);
+    },
+    [confirmComment]
+  );
 
   const wrappedCancelComment = useCallback(() => {
     hasFocusedRef.current = false;
@@ -219,7 +222,6 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     return () => container.removeEventListener('click', handleClick);
   }, [handlePageClick, selectedGroup]);
 
-
   // Fonction pour grouper les commentaires proches (dans un rayon de 5% de la hauteur)
   const groupCommentsByPosition = (comments: Answer[]) => {
     const groups: { answers: Answer[]; avgPosition: number }[] = [];
@@ -362,7 +364,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     // Ajouter le nouvel indicateur si nécessaire
     if (pendingPosition) {
       // Vérifier si c'est vraiment un nouveau commentaire ou juste un changement de page
-      const isSamePosition = currentPositionRef.current &&
+      const isSamePosition =
+        currentPositionRef.current &&
         currentPositionRef.current.pageIndex === pendingPosition.pageIndex &&
         currentPositionRef.current.yPosition === pendingPosition.yPosition;
 
@@ -531,7 +534,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             indicator.scrollIntoView({
               behavior: 'smooth',
               block: 'center',
-              inline: 'nearest'
+              inline: 'nearest',
             });
             // Focus après le scroll
             setTimeout(() => textarea.focus(), 300);
@@ -669,7 +672,6 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [loadAnswersForPage, loadAllAnswers, visiblePage]
   );
 
-
   return (
     <div style={wrapperStyle} data-pdf-annotator>
       <div style={{ ...pdfPaneStyle, position: 'relative' }}>
@@ -726,7 +728,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
                 for (const indicator of indicators) {
                   const indicatorElement = indicator as HTMLElement;
-                  const answerIds = indicatorElement.getAttribute('data-answer-ids')?.split(',') || [];
+                  const answerIds =
+                    indicatorElement.getAttribute('data-answer-ids')?.split(',') || [];
 
                   // Vérifier si cet indicateur contient notre commentaire
                   if (answerIds.includes(a._id)) {
@@ -766,16 +769,20 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                   }, 3000);
                 }
               }}
-              onMouseEnter={(e) => {
+              onMouseEnter={e => {
                 // Déclencher le hover sur les boutons d'action de l'AnswerContentDisplay
-                const buttons = e.currentTarget.querySelector('[data-action-buttons]') as HTMLElement;
+                const buttons = e.currentTarget.querySelector(
+                  '[data-action-buttons]'
+                ) as HTMLElement;
                 if (buttons) {
                   buttons.style.opacity = '1';
                 }
               }}
-              onMouseLeave={(e) => {
+              onMouseLeave={e => {
                 // Retirer le hover des boutons d'action
-                const buttons = e.currentTarget.querySelector('[data-action-buttons]') as HTMLElement;
+                const buttons = e.currentTarget.querySelector(
+                  '[data-action-buttons]'
+                ) as HTMLElement;
                 if (buttons) {
                   buttons.style.opacity = '0';
                 }
@@ -786,7 +793,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 backgroundColor: highlightedAnswers.includes(a._id) ? '#fef3c7' : 'transparent',
                 transition: 'all 0.3s ease',
                 transform: highlightedAnswers.includes(a._id) ? 'scale(1.02)' : 'scale(1)',
-                boxShadow: highlightedAnswers.includes(a._id) ? '0 4px 8px rgba(245, 158, 11, 0.2)' : 'none',
+                boxShadow: highlightedAnswers.includes(a._id)
+                  ? '0 4px 8px rgba(245, 158, 11, 0.2)'
+                  : 'none',
               }}
             >
               <div style={commentMetaStyle}>

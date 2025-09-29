@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import UploadPage from './pages/UploadPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import ExamList from './components/ExamList';
 import PdfAnnotator from './components/PdfAnnotator';
 import { BackIcon, DownloadIcon } from './components/ui/Icon';
 import { useRouter } from './hooks/useRouter';
+import { useAuthStore } from './stores/authStore';
 import './App.css';
 
 interface Exam {
@@ -19,6 +25,7 @@ interface Exam {
 
 function App() {
   const { currentRoute, navigate, isPage, getExamId } = useRouter();
+  const { user, logout } = useAuthStore();
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   // Charger un examen depuis son ID (pour les URL directes)
@@ -82,6 +89,26 @@ function App() {
   }, [currentRoute, selectedExam, isPage, getExamId, navigate]);
 
   const renderCurrentPage = () => {
+    // Pages d'authentification - toujours accessibles
+    switch (currentRoute.page) {
+      case 'login':
+        return <LoginPage />;
+      case 'register':
+        return <RegisterPage />;
+      case 'forgot-password':
+        return <ForgotPasswordPage />;
+      case 'reset-password':
+        return <ResetPasswordPage />;
+      case 'verify-email':
+        return <VerifyEmailPage />;
+    }
+
+    // Pages protégées - nécessitent une authentification
+    if (!user) {
+      navigate('login');
+      return null;
+    }
+
     switch (currentRoute.page) {
       case 'upload':
         return <UploadPage />;
@@ -137,46 +164,76 @@ function App() {
     }
   };
 
+  // Masquer la navigation pour les pages d'authentification
+  const shouldShowNavigation =
+    user &&
+    !['login', 'register', 'forgot-password', 'reset-password', 'verify-email'].includes(
+      currentRoute.page
+    );
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b p-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-lg font-semibold text-gray-900">Plateforme d&apos;Annales</h1>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => navigate('exams')}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  isPage('exams')
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Examens
-              </button>
-              <button
-                onClick={() => navigate('upload')}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  isPage('upload')
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Upload
-              </button>
+      {shouldShowNavigation && (
+        <nav className="bg-white shadow-sm border-b p-4">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <h1 className="text-lg font-semibold text-gray-900">Plateforme d&apos;Annales</h1>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => navigate('exams')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    isPage('exams')
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Examens
+                </button>
+                <button
+                  onClick={() => navigate('upload')}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    isPage('upload')
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Upload
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              {isPage('viewer') && selectedExam && (
+                <div className="text-sm text-gray-500">
+                  {selectedExam.pages &&
+                    `${selectedExam.pages} page${selectedExam.pages > 1 ? 's' : ''}`}
+                </div>
+              )}
+
+              {user && (
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600">
+                    {user.firstName} {user.lastName}
+                  </span>
+                  <button
+                    onClick={() => {
+                      logout();
+                      navigate('login');
+                    }}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Déconnexion
+                  </button>
+                </div>
+              )}
             </div>
           </div>
+        </nav>
+      )}
 
-          {isPage('viewer') && selectedExam && (
-            <div className="text-sm text-gray-500">
-              {selectedExam.pages &&
-                `${selectedExam.pages} page${selectedExam.pages > 1 ? 's' : ''}`}
-            </div>
-          )}
-        </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto p-4">{renderCurrentPage()}</main>
+      <main className={shouldShowNavigation ? 'max-w-6xl mx-auto p-4' : ''}>
+        {renderCurrentPage()}
+      </main>
     </div>
   );
 }

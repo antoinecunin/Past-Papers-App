@@ -9,7 +9,11 @@ interface AnswerContentDisplayProps {
   onDelete?: (answerId: string) => Promise<void>;
 }
 
-export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answer, onEdit, onDelete }) => {
+export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
+  answer,
+  onEdit,
+  onDelete,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [editContent, setEditContent] = useState<AnswerContent | null>(null);
@@ -177,7 +181,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
     return (
       <div
         style={editContainerStyle}
-        onClick={(e) => e.stopPropagation()} // Empêcher la propagation vers le parent
+        onClick={e => e.stopPropagation()} // Empêcher la propagation vers le parent
       >
         <select
           value={editContent.type}
@@ -213,7 +217,9 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
         )}
         {editContent.type === 'image' && editContent.data.trim() && (
           <div style={imagePreviewStyle} key={`image-preview-${editContent.data.trim()}`}>
-            <strong style={{ fontSize: '10px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+            <strong
+              style={{ fontSize: '10px', color: '#6b7280', display: 'block', marginBottom: '4px' }}
+            >
               Aperçu de l&apos;image :
             </strong>
             <img
@@ -255,12 +261,11 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
     }
   };
 
-
   if (showConfirmDelete) {
     return (
       <div
         style={deleteConfirmStyle}
-        onClick={(e) => e.stopPropagation()} // Empêcher la propagation vers le parent
+        onClick={e => e.stopPropagation()} // Empêcher la propagation vers le parent
       >
         <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#dc2626' }}>
           Êtes-vous sûr de vouloir supprimer ce commentaire ?
@@ -309,7 +314,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
         <div style={actionButtonsStyle} data-action-buttons>
           {/* Bouton copier */}
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation(); // Empêcher la propagation vers le parent
               handleCopy();
             }}
@@ -322,7 +327,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
           {/* Bouton éditer */}
           {onEdit && (
             <button
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation(); // Empêcher la propagation vers le parent
                 startEdit();
               }}
@@ -336,7 +341,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({ answ
           {/* Bouton supprimer */}
           {onDelete && (
             <button
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation(); // Empêcher la propagation vers le parent
                 confirmDelete();
               }}
@@ -466,7 +471,6 @@ const cancelButtonStyle: React.CSSProperties = {
   fontSize: '12px',
   cursor: 'pointer',
 };
-
 
 const actionButtonsStyle: React.CSSProperties = {
   position: 'absolute',

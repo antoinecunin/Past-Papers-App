@@ -10,13 +10,15 @@ import 'katex/dist/katex.min.css';
  * Preprocesses LaTeX content to handle common issues
  */
 const preprocessLatex = (latex: string): string => {
-  return latex
-    // Remplace les sauts de ligne backslash par des espaces
-    .replace(/\\\s*\n/g, ' ')
-    .replace(/\\\s*$/g, ' ')
-    // Nettoie les espaces multiples
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    latex
+      // Remplace les sauts de ligne backslash par des espaces
+      .replace(/\\\s*\n/g, ' ')
+      .replace(/\\\s*$/g, ' ')
+      // Nettoie les espaces multiples
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 };
 
 /**
@@ -53,7 +55,7 @@ const renderMixedLatex = (text: string): string => {
     let mathStart = 0;
 
     for (let i = 0; i < text.length; i++) {
-      if (text[i] === '$' && (i === 0 || text[i-1] !== '\\')) {
+      if (text[i] === '$' && (i === 0 || text[i - 1] !== '\\')) {
         if (!inMath) {
           // Début de math - ajouter le texte précédent
           if (i > currentPos) {
@@ -75,41 +77,42 @@ const renderMixedLatex = (text: string): string => {
       parts.push(text.substring(currentPos));
     }
 
-    return parts.map(part => {
-      if (part.startsWith('$') && part.endsWith('$')) {
-        // Expression mathématique - enlever les $ et rendre avec KaTeX
-        const mathContent = part.slice(1, -1);
-        try {
-          return katex.renderToString(mathContent, {
-            throwOnError: false,
-            displayMode: false,
-            strict: 'ignore',
-            trust: true,
-            output: 'html',
-            fleqn: false,
-            macros: {
-              '\\R': '\\mathbb{R}',
-              '\\N': '\\mathbb{N}',
-              '\\Z': '\\mathbb{Z}',
-              '\\Q': '\\mathbb{Q}',
-              '\\C': '\\mathbb{C}',
-              '\\K': '\\mathbb{K}',
-            },
-          });
-        } catch {
-          return `<span style="color: #dc2626;">[Math Error: ${mathContent}]</span>`;
+    return parts
+      .map(part => {
+        if (part.startsWith('$') && part.endsWith('$')) {
+          // Expression mathématique - enlever les $ et rendre avec KaTeX
+          const mathContent = part.slice(1, -1);
+          try {
+            return katex.renderToString(mathContent, {
+              throwOnError: false,
+              displayMode: false,
+              strict: 'ignore',
+              trust: true,
+              output: 'html',
+              fleqn: false,
+              macros: {
+                '\\R': '\\mathbb{R}',
+                '\\N': '\\mathbb{N}',
+                '\\Z': '\\mathbb{Z}',
+                '\\Q': '\\mathbb{Q}',
+                '\\C': '\\mathbb{C}',
+                '\\K': '\\mathbb{K}',
+              },
+            });
+          } catch {
+            return `<span style="color: #dc2626;">[Math Error: ${mathContent}]</span>`;
+          }
+        } else {
+          // Texte normal - échapper les caractères HTML et préserver la mise en forme
+          return part
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
         }
-      } else {
-        // Texte normal - échapper les caractères HTML et préserver la mise en forme
-        return part
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#x27;');
-      }
-    }).join('');
-
+      })
+      .join('');
   } catch (error) {
     console.warn('Erreur de rendu LaTeX mixte:', error);
     return `<span style="color: #dc2626; font-family: monospace;">[Erreur LaTeX: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}]</span>`;
