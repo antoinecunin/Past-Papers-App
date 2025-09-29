@@ -1,5 +1,5 @@
 import { AuthUtils } from '../utils/auth.js';
-import { UserModel } from '../models/User.js';
+import { UserModel, UserRole } from '../models/User.js';
 export const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -23,6 +23,7 @@ export const authMiddleware = async (req, res, next) => {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
+            role: user.role,
             isVerified: user.isVerified,
         };
         next();
@@ -47,6 +48,7 @@ export const optionalAuthMiddleware = async (req, res, next) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                role: user.role,
                 isVerified: user.isVerified,
             };
         }
@@ -56,4 +58,43 @@ export const optionalAuthMiddleware = async (req, res, next) => {
         // Ignore les erreurs d'authentification en mode optionnel
         next();
     }
+};
+/**
+ * Utilitaires d'autorisation pour vérifier les permissions
+ */
+export class AuthorizationUtils {
+    /**
+     * Vérifie si l'utilisateur est administrateur
+     */
+    static isAdmin(user) {
+        return user?.role === UserRole.ADMIN;
+    }
+    /**
+     * Vérifie si l'utilisateur peut supprimer une ressource
+     * (propriétaire ou admin)
+     */
+    static canDelete(user, resourceOwnerId) {
+        if (!user)
+            return false;
+        return this.isAdmin(user) || user.id === resourceOwnerId;
+    }
+    /**
+     * Vérifie si l'utilisateur peut modifier une ressource
+     * (propriétaire uniquement - admin ne peut pas modifier les commentaires d'autrui)
+     */
+    static canEdit(user, resourceOwnerId) {
+        if (!user)
+            return false;
+        return user.id === resourceOwnerId;
+    }
+}
+/**
+ * Middleware pour vérifier que l'utilisateur est administrateur
+ */
+export const requireAdmin = (req, res, next) => {
+    if (!AuthorizationUtils.isAdmin(req.user)) {
+        res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+        return;
+    }
+    next();
 };

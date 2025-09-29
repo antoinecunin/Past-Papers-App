@@ -9,6 +9,7 @@ interface Exam {
   pages?: number;
   createdAt: string;
   updatedAt: string;
+  uploadedBy: string;
 }
 
 interface ExamCardProps {

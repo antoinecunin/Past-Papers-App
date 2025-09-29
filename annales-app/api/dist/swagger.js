@@ -9,6 +9,15 @@ export function setupSwagger(app) {
                 version: '1.0.0',
             },
             servers: [{ url: '/api' }],
+            components: {
+                securitySchemes: {
+                    bearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer',
+                        bearerFormat: 'JWT',
+                    },
+                },
+            },
         },
         // En prod, seul dist/** existe ; en dev, on garde src/**
         apis: ['./dist/routes/**/*.js', './src/routes/**/*.ts', './src/routes/**/*.js'],

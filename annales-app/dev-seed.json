@@ -8,6 +8,15 @@
       "lastName": "User",
       "isVerified": true,
       "description": "Utilisateur de test avec email vérifié"
+    },
+    {
+      "email": "admin@etu.unistra.fr",
+      "password": "admin123",
+      "firstName": "Admin",
+      "lastName": "User",
+      "role": "admin",
+      "isVerified": true,
+      "description": "Utilisateur administrateur pour les tests"
     }
   ],
   "files": [

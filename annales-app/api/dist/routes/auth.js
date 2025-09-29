@@ -214,6 +214,7 @@ router.post('/login', authLimiter, async (req, res) => {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                role: user.role,
                 isVerified: user.isVerified,
             },
         });
@@ -427,7 +428,7 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
  * /api/auth/dev/verify-user:
  *   post:
  *     summary: Marquer un utilisateur comme vérifié (développement uniquement)
- *     tags: [Auth]
+ *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Exam } from '../models/Exam.js';
 import { AnswerModel } from '../models/Answer.js';
 import { Types } from 'mongoose';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
+import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
 import { deleteFile } from '../services/s3.js';
 export const router = Router();
 
@@ -100,8 +100,8 @@ router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => 
       return res.status(404).json({ error: 'Examen non trouvé' });
     }
 
-    // Vérifier que l'utilisateur est le propriétaire
-    if (exam.uploadedBy.toString() !== req.user!.id) {
+    // Vérifier que l'utilisateur peut supprimer (propriétaire ou admin)
+    if (!AuthorizationUtils.canDelete(req.user, exam.uploadedBy.toString())) {
       return res.status(403).json({ error: 'Vous ne pouvez supprimer que vos propres examens' });
     }
 

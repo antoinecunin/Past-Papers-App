@@ -21,19 +21,43 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
  *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required: [file]
  *             properties:
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: Fichier PDF à télécharger (max 50MB)
  *               title:
  *                 type: string
+ *                 description: Titre de l'examen
  *               year:
  *                 type: integer
+ *                 description: Année de l'examen
  *               module:
  *                 type: string
+ *                 description: Module ou matière
  *     responses:
- *       200: { description: OK }
- *       401: { description: Non authentifié }
+ *       200:
+ *         description: Upload réussi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 examId:
+ *                   type: string
+ *                 key:
+ *                   type: string
+ *                 pages:
+ *                   type: integer
+ *       400:
+ *         description: Fichier manquant ou invalide
+ *       401:
+ *         description: Non authentifié
+ *       413:
+ *         description: Fichier trop volumineux (>50MB)
+ *       500:
+ *         description: Erreur serveur
  */
 router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
     if (!req.file)
@@ -50,7 +74,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
         module,
         fileKey: key,
         pages,
-        uploadedBy: req.user.id
+        uploadedBy: req.user.id,
     });
     res.json({ examId: exam._id, key, pages });
 });
@@ -59,6 +83,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
  * /files/{examId}/download:
  *   get:
  *     summary: Télécharger le PDF d'un examen
+ *     tags: [Files]
  *     parameters:
  *       - in: path
  *         name: examId
@@ -74,6 +99,17 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
  *             schema:
  *               type: string
  *               format: binary
+ *         headers:
+ *           Content-Disposition:
+ *             schema:
+ *               type: string
+ *               example: inline; filename="exam.pdf"
+ *           Cache-Control:
+ *             schema:
+ *               type: string
+ *               example: public, max-age=3600
+ *       400:
+ *         description: ID invalide
  *       404:
  *         description: Examen non trouvé
  *       500:

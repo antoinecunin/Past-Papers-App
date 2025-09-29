@@ -1,21 +1,42 @@
 import axios from 'axios';
 import { useState } from 'react';
 import FileDrop from '../components/FileDrop';
+import { useAuthStore } from '../stores/authStore';
 
 export default function UploadPage() {
+  const { token } = useAuthStore();
   const [title, setTitle] = useState('');
   const [year, setYear] = useState<number | ''>('');
   const [module, setModule] = useState('');
 
   async function handleUpload(files: File[]) {
-    const file = files[0];
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('title', title);
-    fd.append('year', String(year || ''));
-    fd.append('module', module);
-    const { data } = await axios.post('/api/files/upload', fd);
-    alert(`Upload ok, examId=${data.examId}`);
+    if (!token) {
+      alert('Vous devez être connecté pour uploader un fichier');
+      return;
+    }
+
+    try {
+      const file = files[0];
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('title', title);
+      fd.append('year', String(year || ''));
+      fd.append('module', module);
+
+      const { data } = await axios.post('/api/files/upload', fd, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      alert(`Upload réussi ! ID de l'examen: ${data.examId}`);
+    } catch (error) {
+      console.error('Erreur upload:', error);
+      if (axios.isAxiosError(error)) {
+        alert(`Erreur d'upload: ${error.response?.data?.error || error.message}`);
+      } else {
+        alert('Erreur inattendue lors de l\'upload');
+      }
+    }
   }
 
   return (

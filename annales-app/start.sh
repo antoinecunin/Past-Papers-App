@@ -206,6 +206,7 @@ if curl -sf "http://localhost:$WEB_PORT/api/health" >/dev/null; then
         USER_FIRSTNAME=$(jq -r ".users[$i].firstName" "$SEED_CONFIG")
         USER_LASTNAME=$(jq -r ".users[$i].lastName" "$SEED_CONFIG")
         USER_VERIFIED=$(jq -r ".users[$i].isVerified // false" "$SEED_CONFIG")
+        USER_ROLE=$(jq -r ".users[$i].role // \"user\"" "$SEED_CONFIG")
 
         if [ "$VERBOSE" = "true" ]; then
           echo "   👤 Création: $USER_EMAIL ($USER_FIRSTNAME $USER_LASTNAME)"
@@ -233,6 +234,23 @@ if curl -sf "http://localhost:$WEB_PORT/api/health" >/dev/null; then
 
             if [ $? -eq 0 ]; then
               echo "   ✅ Email vérifié automatiquement"
+
+              # Si l'utilisateur doit être admin, définir le rôle via MongoDB
+              if [ "$USER_ROLE" = "admin" ]; then
+                echo "   🔑 Configuration du rôle administrateur pour $USER_EMAIL"
+                # Détecter le nom du container MongoDB
+                MONGO_CONTAINER=$(docker ps --format "table {{.Names}}" | grep mongo | head -1)
+                if [ -n "$MONGO_CONTAINER" ]; then
+                  MONGO_UPDATE_RESULT=$(docker exec "$MONGO_CONTAINER" mongosh annales-dev --eval "db.users.updateOne({email:'$USER_EMAIL'}, {\$set: {role: 'admin'}})" 2>/dev/null)
+                  if [[ "$MONGO_UPDATE_RESULT" == *"modifiedCount: 1"* ]]; then
+                    echo "   ✅ Rôle administrateur configuré"
+                  else
+                    echo "   ⚠️  Échec configuration rôle admin (pourra être fait manuellement)"
+                  fi
+                else
+                  echo "   ⚠️  Container MongoDB non trouvé pour configuration rôle admin"
+                fi
+              fi
             else
               echo "   ⚠️  Échec vérification auto (l'utilisateur devra vérifier manuellement)"
             fi

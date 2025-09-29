@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AnswerModel } from '../models/Answer.js';
 import { Types } from 'mongoose';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
+import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
 
 export const router = Router();
 
@@ -232,8 +232,8 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'Commentaire non trouvé' });
     }
 
-    // Vérifier que l'utilisateur est le propriétaire
-    if (existingAnswer.authorId?.toString() !== req.user!.id) {
+    // Vérifier que l'utilisateur peut modifier (propriétaire uniquement)
+    if (!AuthorizationUtils.canEdit(req.user, existingAnswer.authorId?.toString() || '')) {
       return res
         .status(403)
         .json({ error: 'Vous ne pouvez modifier que vos propres commentaires' });
@@ -299,8 +299,8 @@ router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => 
       return res.status(404).json({ error: 'Commentaire non trouvé' });
     }
 
-    // Vérifier que l'utilisateur est le propriétaire
-    if (existingAnswer.authorId?.toString() !== req.user!.id) {
+    // Vérifier que l'utilisateur peut supprimer (propriétaire ou admin)
+    if (!AuthorizationUtils.canDelete(req.user, existingAnswer.authorId?.toString() || '')) {
       return res
         .status(403)
         .json({ error: 'Vous ne pouvez supprimer que vos propres commentaires' });

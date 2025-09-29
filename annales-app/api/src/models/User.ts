@@ -1,11 +1,17 @@
 import { Schema, model, Types } from 'mongoose';
 
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 export interface User {
   _id: Types.ObjectId;
   email: string;
   password: string;
   firstName: string;
   lastName: string;
+  role: UserRole;
   isVerified: boolean;
   verificationToken?: string;
   verificationExpires?: Date;
@@ -46,6 +52,12 @@ const UserSchema = new Schema<User>(
       required: true,
       trim: true,
       maxlength: 50,
+    },
+    role: {
+      type: String,
+      enum: Object.values(UserRole),
+      default: UserRole.USER,
+      required: true,
     },
     isVerified: {
       type: Boolean,

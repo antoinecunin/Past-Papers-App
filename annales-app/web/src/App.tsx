@@ -10,6 +10,7 @@ import PdfAnnotator from './components/PdfAnnotator';
 import { BackIcon, DownloadIcon } from './components/ui/Icon';
 import { useRouter } from './hooks/useRouter';
 import { useAuthStore } from './stores/authStore';
+import { PermissionUtils } from './utils/permissions';
 import './App.css';
 
 interface Exam {
@@ -185,8 +186,8 @@ function App() {
                   <span className="font-medium">Télécharger PDF</span>
                 </button>
 
-                {/* Bouton de suppression (seulement si propriétaire) */}
-                {user && selectedExam.uploadedBy === user.id && (
+                {/* Bouton de suppression (propriétaire ou admin) */}
+                {PermissionUtils.canDelete(user, selectedExam.uploadedBy) && (
                   <button
                     onClick={handleDeleteExam}
                     className="flex items-center space-x-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-900 rounded-lg transition-colors"
@@ -264,9 +265,16 @@ function App() {
 
               {user && (
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">
-                    {user.firstName} {user.lastName}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      {user.firstName} {user.lastName}
+                    </span>
+                    {PermissionUtils.isAdmin(user) && (
+                      <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">
+                        Admin
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => {
                       logout();

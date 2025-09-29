@@ -3,6 +3,7 @@ import * as pdfjs from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { useCommentPositioning } from '../hooks/useCommentPositioning';
 import { renderLatex } from '../utils/latex';
+import { PermissionUtils } from '../utils/permissions';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
 import { useAuthStore } from '../stores/authStore';
@@ -812,8 +813,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               </div>
               <AnswerContentDisplay
                 answer={a}
-                onEdit={user && a.authorId === user.id ? editAnswer : undefined}
-                onDelete={user && a.authorId === user.id ? deleteAnswer : undefined}
+                onEdit={PermissionUtils.canEdit(user, a.authorId || '') ? editAnswer : undefined}
+                onDelete={PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined}
               />
             </li>
           ))}

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthUtils, JwtPayload } from '../utils/auth.js';
-import { UserModel } from '../models/User.js';
+import { UserModel, UserRole } from '../models/User.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -8,6 +8,7 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     firstName: string;
     lastName: string;
+    role: UserRole;
     isVerified: boolean;
   };
 }
@@ -44,6 +45,7 @@ export const authMiddleware = async (
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      role: user.role,
       isVerified: user.isVerified,
     };
 
@@ -76,6 +78,7 @@ export const optionalAuthMiddleware = async (
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        role: user.role,
         isVerified: user.isVerified,
       };
     }
@@ -85,4 +88,49 @@ export const optionalAuthMiddleware = async (
     // Ignore les erreurs d'authentification en mode optionnel
     next();
   }
+};
+
+/**
+ * Utilitaires d'autorisation pour vérifier les permissions
+ */
+export class AuthorizationUtils {
+  /**
+   * Vérifie si l'utilisateur est administrateur
+   */
+  static isAdmin(user: AuthenticatedRequest['user']): boolean {
+    return user?.role === UserRole.ADMIN;
+  }
+
+  /**
+   * Vérifie si l'utilisateur peut supprimer une ressource
+   * (propriétaire ou admin)
+   */
+  static canDelete(user: AuthenticatedRequest['user'], resourceOwnerId: string): boolean {
+    if (!user) return false;
+    return this.isAdmin(user) || user.id === resourceOwnerId;
+  }
+
+  /**
+   * Vérifie si l'utilisateur peut modifier une ressource
+   * (propriétaire uniquement - admin ne peut pas modifier les commentaires d'autrui)
+   */
+  static canEdit(user: AuthenticatedRequest['user'], resourceOwnerId: string): boolean {
+    if (!user) return false;
+    return user.id === resourceOwnerId;
+  }
+}
+
+/**
+ * Middleware pour vérifier que l'utilisateur est administrateur
+ */
+export const requireAdmin = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!AuthorizationUtils.isAdmin(req.user)) {
+    res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+    return;
+  }
+  next();
 };

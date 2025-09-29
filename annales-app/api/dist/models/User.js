@@ -1,4 +1,9 @@
 import { Schema, model } from 'mongoose';
+export var UserRole;
+(function (UserRole) {
+    UserRole["USER"] = "user";
+    UserRole["ADMIN"] = "admin";
+})(UserRole || (UserRole = {}));
 const UserSchema = new Schema({
     email: {
         type: String,
@@ -29,6 +34,12 @@ const UserSchema = new Schema({
         required: true,
         trim: true,
         maxlength: 50,
+    },
+    role: {
+        type: String,
+        enum: Object.values(UserRole),
+        default: UserRole.USER,
+        required: true,
     },
     isVerified: {
         type: Boolean,
