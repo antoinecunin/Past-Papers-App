@@ -15,13 +15,14 @@ interface Exam {
 interface ExamCardProps {
   exam: Exam;
   onSelect?: (exam: Exam) => void;
+  onReport?: (examId: string) => void;
 }
 
 /**
  * Composant pour afficher une carte d'examen individuelle
  * Respecte les patterns de design existants du projet
  */
-export default function ExamCard({ exam, onSelect }: ExamCardProps) {
+export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
   const handleClick = () => {
     onSelect?.(exam);
   };
@@ -41,6 +42,11 @@ export default function ExamCard({ exam, onSelect }: ExamCardProps) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleReport = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Empêche l'ouverture de l'examen
+    onReport?.(exam._id);
   };
 
   const formatDate = (dateString: string) => {
@@ -107,6 +113,25 @@ export default function ExamCard({ exam, onSelect }: ExamCardProps) {
             <DownloadIcon className="text-gray-600 hover:text-gray-800" />
             <span className="text-xs font-medium">PDF</span>
           </button>
+
+          {/* Bouton signaler */}
+          {onReport && (
+            <button
+              onClick={handleReport}
+              className="flex items-center space-x-1 text-orange-600 hover:text-orange-800 transition-colors"
+              title="Signaler cet examen"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+              <span className="text-xs font-medium">⚠️</span>
+            </button>
+          )}
 
           {/* Bouton voir */}
           <div className="flex items-center space-x-1 text-blue-600 hover:text-blue-700">

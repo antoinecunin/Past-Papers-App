@@ -682,6 +682,52 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [loadAnswersForPage, loadAllAnswers, visiblePage, token]
   );
 
+  // Fonction pour signaler un commentaire
+  const reportAnswer = useCallback(
+    async (answerId: string) => {
+      if (!token) return;
+
+      const reason = prompt(`Pourquoi signaler ce commentaire ?\n\nOptions:\n- inappropriate_content (Contenu inapproprié)\n- spam (Spam)\n- wrong_subject (Mauvais sujet)\n- copyright_violation (Violation de droits d'auteur)\n- other (Autre)\n\nEntrez votre choix:`);
+
+      if (!reason) return;
+
+      const validReasons = ['inappropriate_content', 'spam', 'wrong_subject', 'copyright_violation', 'other'];
+      if (!validReasons.includes(reason)) {
+        alert('Raison invalide. Utilisez: inappropriate_content, spam, wrong_subject, copyright_violation, ou other');
+        return;
+      }
+
+      const description = prompt('Description optionnelle du problème:');
+
+      try {
+        const response = await fetch('/api/reports', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            type: 'comment',
+            targetId: answerId,
+            reason,
+            description: description || undefined,
+          }),
+        });
+
+        if (response.ok) {
+          alert('Signalement envoyé avec succès');
+        } else {
+          const errorData = await response.json();
+          alert(`Erreur lors du signalement: ${errorData.error}`);
+        }
+      } catch (error) {
+        console.error('Erreur lors du signalement:', error);
+        alert('Erreur lors du signalement');
+      }
+    },
+    [token]
+  );
+
   return (
     <div style={wrapperStyle} data-pdf-annotator>
       <div style={{ ...pdfPaneStyle, position: 'relative' }}>
@@ -815,6 +861,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 answer={a}
                 onEdit={PermissionUtils.canEdit(user, a.authorId || '') ? editAnswer : undefined}
                 onDelete={PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined}
+                onReport={reportAnswer}
               />
             </li>
           ))}

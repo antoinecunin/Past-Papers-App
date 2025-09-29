@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ExamCard from './ExamCard';
 import { ErrorIcon, EmptyStateIcon } from './ui/Icon';
+import { useAuthStore } from '../stores/authStore';
 
 interface Exam {
   _id: string;
@@ -24,6 +25,7 @@ interface ExamListProps {
  * Suit les bonnes pratiques : gestion d'état, performance, accessibilité
  */
 export default function ExamList({ onExamSelect }: ExamListProps) {
+  const { token } = useAuthStore();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +80,48 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
     setSearchTerm('');
     setSelectedYear('');
     setSelectedModule('');
+  };
+
+  const handleReportExam = async (examId: string) => {
+    if (!token) return;
+
+    const reason = prompt(`Pourquoi signaler cet examen ?\n\nOptions:\n- inappropriate_content (Contenu inapproprié)\n- spam (Spam)\n- wrong_subject (Mauvais sujet)\n- copyright_violation (Violation de droits d'auteur)\n- other (Autre)\n\nEntrez votre choix:`);
+
+    if (!reason) return;
+
+    const validReasons = ['inappropriate_content', 'spam', 'wrong_subject', 'copyright_violation', 'other'];
+    if (!validReasons.includes(reason)) {
+      alert('Raison invalide. Utilisez: inappropriate_content, spam, wrong_subject, copyright_violation, ou other');
+      return;
+    }
+
+    const description = prompt('Description optionnelle du problème:');
+
+    try {
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type: 'exam',
+          targetId: examId,
+          reason,
+          description: description || undefined,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Signalement envoyé avec succès');
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors du signalement: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors du signalement:', error);
+      alert('Erreur lors du signalement');
+    }
   };
 
   if (loading) {
@@ -202,7 +246,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredExams.map(exam => (
-            <ExamCard key={exam._id} exam={exam} onSelect={onExamSelect} />
+            <ExamCard key={exam._id} exam={exam} onSelect={onExamSelect} onReport={handleReportExam} />
           ))}
         </div>
       )}

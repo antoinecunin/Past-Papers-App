@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import UploadPage from './pages/UploadPage';
+import AdminReportsPage from './pages/AdminReportsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -103,6 +104,49 @@ function App() {
     }
   };
 
+  // Signalement de l'examen sélectionné
+  const handleReportExam = async () => {
+    if (!selectedExam || !user || !token) return;
+
+    const reason = prompt(`Pourquoi signaler cet examen ?\n\nOptions:\n- inappropriate_content (Contenu inapproprié)\n- spam (Spam)\n- wrong_subject (Mauvais sujet)\n- copyright_violation (Violation de droits d'auteur)\n- other (Autre)\n\nEntrez votre choix:`);
+
+    if (!reason) return;
+
+    const validReasons = ['inappropriate_content', 'spam', 'wrong_subject', 'copyright_violation', 'other'];
+    if (!validReasons.includes(reason)) {
+      alert('Raison invalide. Utilisez: inappropriate_content, spam, wrong_subject, copyright_violation, ou other');
+      return;
+    }
+
+    const description = prompt('Description optionnelle du problème:');
+
+    try {
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type: 'exam',
+          targetId: selectedExam._id,
+          reason,
+          description: description || undefined,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Signalement envoyé avec succès');
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors du signalement: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors du signalement:', error);
+      alert('Erreur lors du signalement');
+    }
+  };
+
   // Effet pour synchroniser l'état avec l'URL au chargement
   useEffect(() => {
     const examId = getExamId();
@@ -144,6 +188,8 @@ function App() {
     switch (currentRoute.page) {
       case 'upload':
         return <UploadPage />;
+      case 'admin-reports':
+        return <AdminReportsPage />;
       case 'exams':
         return <ExamList onExamSelect={handleExamSelect} />;
       case 'viewer':
@@ -184,6 +230,23 @@ function App() {
                 >
                   <DownloadIcon size="md" className="text-gray-600" />
                   <span className="font-medium">Télécharger PDF</span>
+                </button>
+
+                {/* Bouton de signalement */}
+                <button
+                  onClick={handleReportExam}
+                  className="flex items-center space-x-2 px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 hover:text-orange-900 rounded-lg transition-colors"
+                  title="Signaler cet examen"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
+                  </svg>
+                  <span className="font-medium">Signaler</span>
                 </button>
 
                 {/* Bouton de suppression (propriétaire ou admin) */}
@@ -252,6 +315,18 @@ function App() {
                 >
                   Upload
                 </button>
+                {PermissionUtils.isAdmin(user) && (
+                  <button
+                    onClick={() => navigate('admin-reports')}
+                    className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                      isPage('admin-reports')
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                    }`}
+                  >
+                    Signalements
+                  </button>
+                )}
               </div>
             </div>
 

@@ -7,12 +7,14 @@ interface AnswerContentDisplayProps {
   answer: Answer;
   onEdit?: (answerId: string, newContent: AnswerContent) => Promise<void>;
   onDelete?: (answerId: string) => Promise<void>;
+  onReport?: (answerId: string) => Promise<void>;
 }
 
 export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
   answer,
   onEdit,
   onDelete,
+  onReport,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -335,6 +337,27 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
               title="Modifier"
             >
               ✏️
+            </button>
+          )}
+
+          {/* Bouton signaler */}
+          {onReport && (
+            <button
+              onClick={e => {
+                e.stopPropagation(); // Empêcher la propagation vers le parent
+                onReport(answer._id.toString());
+              }}
+              style={actionButtonStyle}
+              title="Signaler ce commentaire"
+            >
+              <svg className="w-3 h-3 text-orange-500 hover:text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
             </button>
           )}
 

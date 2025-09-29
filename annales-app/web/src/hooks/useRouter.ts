@@ -11,6 +11,7 @@ export interface Route {
     | 'upload'
     | 'exams'
     | 'viewer'
+    | 'admin-reports'
     | 'login'
     | 'register'
     | 'forgot-password'
@@ -36,6 +37,8 @@ export function useRouter() {
     switch (page) {
       case 'upload':
         return '/upload';
+      case 'admin-reports':
+        return '/admin/reports';
       case 'login':
         return '/login';
       case 'register':
@@ -76,6 +79,10 @@ export function useRouter() {
 
     if (path === '/upload') {
       return { path, page: 'upload', params: {} };
+    }
+
+    if (path === '/admin/reports') {
+      return { path, page: 'admin-reports', params: {} };
     }
 
     if (path === '/login') {
@@ -149,6 +156,9 @@ export function useRouter() {
     switch (currentRoute.page) {
       case 'upload':
         title = "Upload - Plateforme d'Annales";
+        break;
+      case 'admin-reports':
+        title = "Signalements - Plateforme d'Annales";
         break;
       case 'viewer':
         title = "Examen - Plateforme d'Annales";
