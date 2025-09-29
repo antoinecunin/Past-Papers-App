@@ -4,6 +4,7 @@ import { uploadBuffer, objectKey, downloadFile } from '../services/s3.js';
 import { Exam } from '../models/Exam.js';
 import { Types } from 'mongoose';
 import { PDFDocument } from 'pdf-lib';
+import { authMiddleware } from '../middleware/auth.js';
 export const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 /**
@@ -11,6 +12,9 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
  * /files/upload:
  *   post:
  *     summary: Upload d'un PDF d'annales
+ *     tags: [Files]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -29,8 +33,9 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
  *                 type: string
  *     responses:
  *       200: { description: OK }
+ *       401: { description: Non authentifié }
  */
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
     if (!req.file)
         return res.status(400).json({ error: 'missing file' });
     const { title, year, module } = req.body;
@@ -39,7 +44,14 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     // lire pages via pdf-lib
     const pdf = await PDFDocument.load(req.file.buffer);
     const pages = pdf.getPageCount();
-    const exam = await Exam.create({ title, year, module, fileKey: key, pages });
+    const exam = await Exam.create({
+        title,
+        year,
+        module,
+        fileKey: key,
+        pages,
+        uploadedBy: req.user.id
+    });
     res.json({ examId: exam._id, key, pages });
 });
 /**

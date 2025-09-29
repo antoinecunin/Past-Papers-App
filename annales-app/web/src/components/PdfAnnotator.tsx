@@ -5,6 +5,7 @@ import { useCommentPositioning } from '../hooks/useCommentPositioning';
 import { renderLatex } from '../utils/latex';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
+import { useAuthStore } from '../stores/authStore';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -22,6 +23,7 @@ type Props = {
  * - Ajout d'un commentaire : capture du yTop actuel (centre de la zone visible).
  */
 export default function PdfAnnotator({ pdfUrl, examId }: Props) {
+  const { user, token } = useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState(0);
@@ -36,6 +38,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   // Hook pour le positionnement par clic
   const { pendingPosition, handlePageClick, confirmComment, cancelComment } = useCommentPositioning(
     examId,
+    token,
     () => {
       // Callback de rechargement après ajout de commentaire
       loadAnswersForPage(visiblePage);
@@ -220,7 +223,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
     container.addEventListener('click', handleClick);
     return () => container.removeEventListener('click', handleClick);
-  }, [handlePageClick, selectedGroup]);
+  }, [handlePageClick, selectedGroup, highlightedAnswers.length]);
 
   // Fonction pour grouper les commentaires proches (dans un rayon de 5% de la hauteur)
   const groupCommentsByPosition = (comments: Answer[]) => {
@@ -632,7 +635,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         const response = await fetch(`/api/answers/${answerId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ content: newContent }),
         });
 
@@ -647,7 +653,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         throw error;
       }
     },
-    [loadAnswersForPage, loadAllAnswers, visiblePage]
+    [loadAnswersForPage, loadAllAnswers, visiblePage, token]
   );
 
   // Fonction pour supprimer un commentaire
@@ -656,6 +662,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       try {
         const response = await fetch(`/api/answers/${answerId}`, {
           method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!response.ok) {
@@ -669,7 +678,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         throw error;
       }
     },
-    [loadAnswersForPage, loadAllAnswers, visiblePage]
+    [loadAnswersForPage, loadAllAnswers, visiblePage, token]
   );
 
   return (
@@ -801,7 +810,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               <div style={commentMetaStyle}>
                 y={a.yTop.toFixed(2)} • Page {a.page} • {a.content.type.toUpperCase()}
               </div>
-              <AnswerContentDisplay answer={a} onEdit={editAnswer} onDelete={deleteAnswer} />
+              <AnswerContentDisplay
+                answer={a}
+                onEdit={user && a.authorId === user.id ? editAnswer : undefined}
+                onDelete={user && a.authorId === user.id ? deleteAnswer : undefined}
+              />
             </li>
           ))}
           {!(selectedGroup || answers).length && (

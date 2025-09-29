@@ -20,6 +20,7 @@ interface UseCommentPositioningReturn {
  */
 export function useCommentPositioning(
   examId: string,
+  token: string | null,
   onCommentAdded: () => void
 ): UseCommentPositioningReturn {
   const [pendingPosition, setPendingPosition] = useState<ClickPosition | null>(null);
@@ -65,7 +66,10 @@ export function useCommentPositioning(
 
         const response = await fetch('/api/answers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
 
@@ -80,7 +84,7 @@ export function useCommentPositioning(
         // TODO: Afficher une notification d'erreur à l'utilisateur
       }
     },
-    [examId, pendingPosition, onCommentAdded]
+    [examId, token, pendingPosition, onCommentAdded]
   );
 
   const cancelComment = useCallback(() => {

@@ -195,39 +195,7 @@ if curl -sf "http://localhost:$WEB_PORT/api/health" >/dev/null; then
       exit 1
     fi
     
-    # Traiter chaque fichier de la configuration
-    TOTAL_FILES=$(jq '.files | length' "$SEED_CONFIG")
-    echo "📄 Upload de $TOTAL_FILES fichiers de test..."
-    
-    for i in $(seq 0 $((TOTAL_FILES - 1))); do
-      FILE_PATH=$(jq -r ".files[$i].path" "$SEED_CONFIG")
-      FILE_TITLE=$(jq -r ".files[$i].title" "$SEED_CONFIG")
-      FILE_YEAR=$(jq -r ".files[$i].year" "$SEED_CONFIG")
-      FILE_MODULE=$(jq -r ".files[$i].module" "$SEED_CONFIG")
-      FILE_DESC=$(jq -r ".files[$i].description" "$SEED_CONFIG")
-      
-      if [ -f "$FILE_PATH" ]; then
-        if [ "$VERBOSE" = "true" ]; then
-          echo "   📄 Uploading: $FILE_TITLE ($FILE_MODULE $FILE_YEAR)"
-        fi
-        
-        RESPONSE=$(curl -sf -X POST "http://localhost:$WEB_PORT/api/files/upload" \
-          -F "file=@${FILE_PATH};type=application/pdf" \
-          -F "title=$FILE_TITLE" \
-          -F "year=$FILE_YEAR" \
-          -F "module=$FILE_MODULE" 2>/dev/null)
-        
-        if [ $? -eq 0 ]; then
-          echo "   ✅ $FILE_TITLE"
-        else
-          echo "   ❌ Échec upload: $FILE_TITLE"
-        fi
-      else
-        echo "   ⚠️  Fichier manquant: $FILE_PATH"
-      fi
-    done
-
-    # Traiter chaque utilisateur de test de la configuration
+    # Traiter chaque utilisateur de test de la configuration AVANT l'upload
     TOTAL_USERS=$(jq '.users | length' "$SEED_CONFIG" 2>/dev/null || echo "0")
     if [ "$TOTAL_USERS" -gt 0 ]; then
       echo "👤 Création de $TOTAL_USERS utilisateurs de test..."
@@ -274,6 +242,63 @@ if curl -sf "http://localhost:$WEB_PORT/api/health" >/dev/null; then
         fi
       done
     fi
+
+    # Maintenant récupérer le token JWT du premier utilisateur de test pour l'upload
+    TEST_USER_EMAIL=$(jq -r '.users[0].email // empty' "$SEED_CONFIG")
+    TEST_USER_PASSWORD=$(jq -r '.users[0].password // empty' "$SEED_CONFIG")
+    AUTH_TOKEN=""
+
+    if [ -n "$TEST_USER_EMAIL" ] && [ -n "$TEST_USER_PASSWORD" ]; then
+      echo "🔐 Connexion pour l'upload avec $TEST_USER_EMAIL"
+      LOGIN_RESPONSE=$(curl -sf -X POST "http://localhost:$WEB_PORT/api/auth/login" \
+        -H "Content-Type: application/json" \
+        -d "{\"email\": \"$TEST_USER_EMAIL\", \"password\": \"$TEST_USER_PASSWORD\"}" 2>/dev/null)
+
+      if [ $? -eq 0 ]; then
+        AUTH_TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.token // empty')
+        echo "   ✅ Token récupéré pour l'upload"
+      else
+        echo "   ❌ Échec récupération token, upload sans authentification"
+      fi
+    fi
+
+    # Traiter chaque fichier de la configuration
+    TOTAL_FILES=$(jq '.files | length' "$SEED_CONFIG")
+    echo "📄 Upload de $TOTAL_FILES fichiers de test..."
+
+    for i in $(seq 0 $((TOTAL_FILES - 1))); do
+      FILE_PATH=$(jq -r ".files[$i].path" "$SEED_CONFIG")
+      FILE_TITLE=$(jq -r ".files[$i].title" "$SEED_CONFIG")
+      FILE_YEAR=$(jq -r ".files[$i].year" "$SEED_CONFIG")
+      FILE_MODULE=$(jq -r ".files[$i].module" "$SEED_CONFIG")
+      FILE_DESC=$(jq -r ".files[$i].description" "$SEED_CONFIG")
+      
+      if [ -f "$FILE_PATH" ]; then
+        if [ "$VERBOSE" = "true" ]; then
+          echo "   📄 Uploading: $FILE_TITLE ($FILE_MODULE $FILE_YEAR)"
+        fi
+        
+        if [ -n "$AUTH_TOKEN" ]; then
+          RESPONSE=$(curl -sf -X POST "http://localhost:$WEB_PORT/api/files/upload" \
+            -H "Authorization: Bearer $AUTH_TOKEN" \
+            -F "file=@${FILE_PATH};type=application/pdf" \
+            -F "title=$FILE_TITLE" \
+            -F "year=$FILE_YEAR" \
+            -F "module=$FILE_MODULE" 2>/dev/null)
+        else
+          echo "   ⚠️  Pas de token d'authentification, skip: $FILE_TITLE"
+          continue
+        fi
+        
+        if [ $? -eq 0 ]; then
+          echo "   ✅ $FILE_TITLE"
+        else
+          echo "   ❌ Échec upload: $FILE_TITLE"
+        fi
+      else
+        echo "   ⚠️  Fichier manquant: $FILE_PATH"
+      fi
+    done
 
     echo "✅ Données de test créées"
   fi

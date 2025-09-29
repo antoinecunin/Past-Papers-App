@@ -7,6 +7,7 @@ const ExamSchema = new Schema(
     module: String,
     fileKey: { type: String, required: true }, // chemin S3 (e.g. annales/2024/foo.pdf)
     pages: Number,
+    uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // qui a uploadé
   },
   { timestamps: true }
 );

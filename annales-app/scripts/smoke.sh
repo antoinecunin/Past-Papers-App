@@ -52,8 +52,17 @@ code=$(curl -sI "$BASE" | awk 'NR==1{print $2}')
 [ "$code" = "200" ] || fail "web root ($code)"
 pass "web"
 
-# upload
+# upload (avec authentification)
+# D'abord se connecter avec l'utilisateur de test
+login_resp=$(curl -sf -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@etu.unistra.fr", "password": "azerty24"}')
+token=$(echo "$login_resp" | jq -r '.token // empty')
+[ -n "$token" ] || fail "auth login pour upload"
+
+# Ensuite uploader avec le token
 resp=$(curl -sf -X POST "$BASE/api/files/upload" \
+  -H "Authorization: Bearer $token" \
   -F "file=@${PDF};type=application/pdf" \
   -F "title=Smoke $(date +%s)" \
   -F "year=2021" \

@@ -15,7 +15,8 @@ export interface Answer {
   yTop: number; // [0,1] position Y du commentaire
   content?: AnswerContent; // Nouveau format
   text?: string; // Ancien format (compatibilité)
-  author?: string;
+  author?: string; // Ancien format (compatibilité)
+  authorId?: Types.ObjectId; // Nouveau format - référence utilisateur
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,7 +37,8 @@ const AnswerSchema = new Schema<Answer>(
     yTop: { type: Number, required: true, min: 0, max: 1 },
     content: { type: AnswerContentSchema },
     text: { type: String, trim: true }, // Optionnel pour compatibilité
-    author: { type: String, trim: true },
+    author: { type: String, trim: true }, // Optionnel pour compatibilité
+    authorId: { type: Schema.Types.ObjectId, ref: 'User', index: true }, // Nouveau champ
   },
   { timestamps: true }
 );

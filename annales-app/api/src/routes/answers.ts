@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AnswerModel } from '../models/Answer.js';
 import { Types } from 'mongoose';
+import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 
 export const router = Router();
 
@@ -8,21 +9,31 @@ export const router = Router();
  * @swagger
  * /answers:
  *   get:
- *     summary: Lister les réponses d’un examen (optionnellement filtrées par page)
+ *     summary: Lister les réponses d'un examen (optionnellement filtrées par page)
+ *     tags: [Answers]
  *     parameters:
  *       - in: query
  *         name: examId
  *         required: true
  *         schema: { type: string }
+ *         description: ID de l'examen
  *       - in: query
  *         name: page
  *         required: false
  *         schema: { type: integer, minimum: 1 }
+ *         description: Numéro de page (optionnel)
  *     responses:
  *       200:
- *         description: OK
+ *         description: Liste des commentaires
+ *       400:
+ *         description: Paramètres invalides
+ *       500:
+ *         description: Erreur serveur
  *   post:
  *     summary: Créer un commentaire ancré sur (page, yTop)
+ *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -31,19 +42,44 @@ export const router = Router();
  *             type: object
  *             required: [examId, page, yTop, content]
  *             properties:
- *               examId: { type: string }
- *               page: { type: integer, minimum: 1 }
- *               yTop: { type: number, minimum: 0, maximum: 1 }
+ *               examId:
+ *                 type: string
+ *                 description: ID de l'examen
+ *               page:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Numéro de page
+ *               yTop:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 1
+ *                 description: Position Y relative (0-1)
  *               content:
  *                 type: object
+ *                 required: [type, data]
  *                 properties:
- *                   type: { type: string, enum: [text, image, latex] }
- *                   data: { type: string }
- *                   rendered: { type: string }
- *               author: { type: string }
+ *                   type:
+ *                     type: string
+ *                     enum: [text, image, latex]
+ *                     description: Type de contenu
+ *                   data:
+ *                     type: string
+ *                     description: Contenu du commentaire
+ *                   rendered:
+ *                     type: string
+ *                     description: Version rendue (optionnel)
+ *               author:
+ *                 type: string
+ *                 description: Nom de l'auteur (compatibilité)
  *     responses:
  *       200:
- *         description: OK
+ *         description: Commentaire créé avec succès
+ *       400:
+ *         description: Paramètres invalides
+ *       401:
+ *         description: Non authentifié
+ *       500:
+ *         description: Erreur serveur
  */
 
 router.get('/', async (req, res) => {
@@ -68,7 +104,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { examId, page, yTop, content, author } = req.body as {
       examId?: string;
@@ -106,7 +142,8 @@ router.post('/', async (req, res) => {
       examId,
       page: page!,
       yTop: yTop!,
-      author,
+      author, // Compatibilité ancien format
+      authorId: req.user!.id, // Nouveau format avec ID utilisateur
       content: {
         type: content.type,
         data: content.data.trim(),
@@ -126,12 +163,16 @@ router.post('/', async (req, res) => {
  * @swagger
  * /answers/{id}:
  *   put:
- *     summary: Modifier un commentaire existant
+ *     summary: Modifier un commentaire existant (propriétaire uniquement)
+ *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *         description: ID du commentaire
  *     requestBody:
  *       required: true
  *       content:
@@ -147,9 +188,19 @@ router.post('/', async (req, res) => {
  *                   rendered: { type: string }
  *     responses:
  *       200:
- *         description: OK
+ *         description: Commentaire modifié avec succès
+ *       400:
+ *         description: ID invalide ou contenu invalide
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non autorisé (pas le propriétaire)
+ *       404:
+ *         description: Commentaire non trouvé
+ *       500:
+ *         description: Erreur serveur
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
     const { content } = req.body as {
@@ -174,6 +225,20 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'content.data requis' });
     }
 
+    // Trouver le commentaire et vérifier la propriété
+    const existingAnswer = await AnswerModel.findById(id);
+
+    if (!existingAnswer) {
+      return res.status(404).json({ error: 'Commentaire non trouvé' });
+    }
+
+    // Vérifier que l'utilisateur est le propriétaire
+    if (existingAnswer.authorId?.toString() !== req.user!.id) {
+      return res
+        .status(403)
+        .json({ error: 'Vous ne pouvez modifier que vos propres commentaires' });
+    }
+
     const updateData = {
       content: {
         type: content.type,
@@ -183,10 +248,6 @@ router.put('/:id', async (req, res) => {
     };
 
     const doc = await AnswerModel.findByIdAndUpdate(id, updateData, { new: true });
-
-    if (!doc) {
-      return res.status(404).json({ error: 'Commentaire non trouvé' });
-    }
 
     return res.json({ success: true, answer: doc });
   } catch (err) {
@@ -199,19 +260,31 @@ router.put('/:id', async (req, res) => {
  * @swagger
  * /answers/{id}:
  *   delete:
- *     summary: Supprimer un commentaire
+ *     summary: Supprimer un commentaire (propriétaire uniquement)
+ *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *         description: ID du commentaire
  *     responses:
  *       200:
- *         description: OK
+ *         description: Commentaire supprimé avec succès
+ *       400:
+ *         description: ID invalide
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non autorisé (pas le propriétaire)
  *       404:
  *         description: Commentaire non trouvé
+ *       500:
+ *         description: Erreur serveur
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
 
@@ -219,11 +292,21 @@ router.delete('/:id', async (req, res) => {
       return res.status(400).json({ error: 'ID invalide' });
     }
 
-    const doc = await AnswerModel.findByIdAndDelete(id);
+    // Trouver le commentaire et vérifier la propriété
+    const existingAnswer = await AnswerModel.findById(id);
 
-    if (!doc) {
+    if (!existingAnswer) {
       return res.status(404).json({ error: 'Commentaire non trouvé' });
     }
+
+    // Vérifier que l'utilisateur est le propriétaire
+    if (existingAnswer.authorId?.toString() !== req.user!.id) {
+      return res
+        .status(403)
+        .json({ error: 'Vous ne pouvez supprimer que vos propres commentaires' });
+    }
+
+    await AnswerModel.findByIdAndDelete(id);
 
     return res.json({ success: true, message: 'Commentaire supprimé' });
   } catch (err) {

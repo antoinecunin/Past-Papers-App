@@ -21,11 +21,12 @@ interface Exam {
   pages?: number;
   createdAt: string;
   updatedAt: string;
+  uploadedBy: string;
 }
 
 function App() {
   const { currentRoute, navigate, isPage, getExamId } = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   // Charger un examen depuis son ID (pour les URL directes)
@@ -69,6 +70,36 @@ function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Suppression de l'examen sélectionné
+  const handleDeleteExam = async () => {
+    if (!selectedExam || !user || !token) return;
+
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer "${selectedExam.title}" ?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/exams/${selectedExam._id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert('Examen supprimé avec succès');
+        navigate('exams');
+        setSelectedExam(null);
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors de la suppression: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert("Erreur lors de la suppression de l'examen");
+    }
   };
 
   // Effet pour synchroniser l'état avec l'URL au chargement
@@ -143,15 +174,36 @@ function App() {
                 </div>
               </div>
 
-              {/* Bouton de téléchargement */}
-              <button
-                onClick={handleDownloadPdf}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 rounded-lg transition-colors"
-                title="Télécharger le PDF"
-              >
-                <DownloadIcon size="md" className="text-gray-600" />
-                <span className="font-medium">Télécharger PDF</span>
-              </button>
+              <div className="flex items-center space-x-3">
+                {/* Bouton de téléchargement */}
+                <button
+                  onClick={handleDownloadPdf}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 rounded-lg transition-colors"
+                  title="Télécharger le PDF"
+                >
+                  <DownloadIcon size="md" className="text-gray-600" />
+                  <span className="font-medium">Télécharger PDF</span>
+                </button>
+
+                {/* Bouton de suppression (seulement si propriétaire) */}
+                {user && selectedExam.uploadedBy === user.id && (
+                  <button
+                    onClick={handleDeleteExam}
+                    className="flex items-center space-x-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-900 rounded-lg transition-colors"
+                    title="Supprimer cet examen"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    <span className="font-medium">Supprimer</span>
+                  </button>
+                )}
+              </div>
             </div>
             <PdfAnnotator
               pdfUrl={`/api/files/${selectedExam._id}/download`}
