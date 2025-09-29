@@ -2,21 +2,28 @@ import nodemailer from 'nodemailer';
 class EmailService {
     transporter;
     constructor() {
+        // Validation des variables d'environnement requises
+        if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+            throw new Error('Variables SMTP_USER et SMTP_PASS requises');
+        }
+        if (!process.env.EMAIL_FROM_ADDRESS) {
+            throw new Error('Variable EMAIL_FROM_ADDRESS requise');
+        }
         this.transporter = nodemailer.createTransport({
-            host: 'smtp-relay.brevo.com',
-            port: 587,
-            secure: false, // true for 465, false for other ports
+            host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+            port: parseInt(process.env.SMTP_PORT || '587', 10),
+            secure: process.env.SMTP_SECURE === 'true',
             auth: {
-                user: 'REDACTED_SMTP_USER',
-                pass: 'REDACTED_SMTP_PASS',
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
             },
         });
     }
     async sendEmail(options) {
         const mailOptions = {
             from: {
-                name: 'Annales - Unistra',
-                address: 'no-reply@antoinecunin.fr',
+                name: process.env.EMAIL_FROM_NAME || 'Annales - Unistra',
+                address: process.env.EMAIL_FROM_ADDRESS || 'no-reply@localhost',
             },
             to: options.to,
             subject: options.subject,

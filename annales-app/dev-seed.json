@@ -1,5 +1,15 @@
 {
   "description": "Configuration des données de test pour l'environnement de développement",
+  "users": [
+    {
+      "email": "test@etu.unistra.fr",
+      "password": "azerty24",
+      "firstName": "Test",
+      "lastName": "User",
+      "isVerified": true,
+      "description": "Utilisateur de test avec email vérifié"
+    }
+  ],
   "files": [
     {
       "path": "M12_controle_final.pdf",

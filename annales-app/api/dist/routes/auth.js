@@ -422,4 +422,59 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
         res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
+/**
+ * @swagger
+ * /api/auth/dev/verify-user:
+ *   post:
+ *     summary: Marquer un utilisateur comme vérifié (développement uniquement)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: test@etu.unistra.fr
+ *     responses:
+ *       200:
+ *         description: Utilisateur marqué comme vérifié
+ *       400:
+ *         description: Email non fourni
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       403:
+ *         description: Disponible uniquement en développement
+ */
+router.post('/dev/verify-user', async (req, res) => {
+    // Route disponible uniquement en développement
+    if (process.env.NODE_ENV !== 'development') {
+        return res.status(403).json({ error: 'Route disponible uniquement en développement' });
+    }
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'Email requis' });
+        }
+        const user = await UserModel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        }
+        // Marquer comme vérifié
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        user.verificationExpires = undefined;
+        await user.save();
+        res.json({ message: 'Utilisateur marqué comme vérifié', email });
+    }
+    catch (error) {
+        console.error('Erreur lors de la vérification dev:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+});
 export { router };

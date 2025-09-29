@@ -226,7 +226,55 @@ if curl -sf "http://localhost:$WEB_PORT/api/health" >/dev/null; then
         echo "   ⚠️  Fichier manquant: $FILE_PATH"
       fi
     done
-    
+
+    # Traiter chaque utilisateur de test de la configuration
+    TOTAL_USERS=$(jq '.users | length' "$SEED_CONFIG" 2>/dev/null || echo "0")
+    if [ "$TOTAL_USERS" -gt 0 ]; then
+      echo "👤 Création de $TOTAL_USERS utilisateurs de test..."
+
+      for i in $(seq 0 $((TOTAL_USERS - 1))); do
+        USER_EMAIL=$(jq -r ".users[$i].email" "$SEED_CONFIG")
+        USER_PASSWORD=$(jq -r ".users[$i].password" "$SEED_CONFIG")
+        USER_FIRSTNAME=$(jq -r ".users[$i].firstName" "$SEED_CONFIG")
+        USER_LASTNAME=$(jq -r ".users[$i].lastName" "$SEED_CONFIG")
+        USER_VERIFIED=$(jq -r ".users[$i].isVerified // false" "$SEED_CONFIG")
+
+        if [ "$VERBOSE" = "true" ]; then
+          echo "   👤 Création: $USER_EMAIL ($USER_FIRSTNAME $USER_LASTNAME)"
+        fi
+
+        # Créer l'utilisateur via l'API register puis le vérifier si nécessaire
+        REGISTER_RESPONSE=$(curl -sf -X POST "http://localhost:$WEB_PORT/api/auth/register" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"email\": \"$USER_EMAIL\",
+            \"password\": \"$USER_PASSWORD\",
+            \"firstName\": \"$USER_FIRSTNAME\",
+            \"lastName\": \"$USER_LASTNAME\"
+          }" 2>/dev/null)
+
+        if [ $? -eq 0 ]; then
+          echo "   ✅ $USER_EMAIL"
+
+          # Si l'utilisateur doit être vérifié, on utilise la route de dev
+          if [ "$USER_VERIFIED" = "true" ]; then
+            echo "   📧 Vérification email automatique pour $USER_EMAIL"
+            VERIFY_RESPONSE=$(curl -sf -X POST "http://localhost:$WEB_PORT/api/auth/dev/verify-user" \
+              -H "Content-Type: application/json" \
+              -d "{\"email\": \"$USER_EMAIL\"}" 2>/dev/null)
+
+            if [ $? -eq 0 ]; then
+              echo "   ✅ Email vérifié automatiquement"
+            else
+              echo "   ⚠️  Échec vérification auto (l'utilisateur devra vérifier manuellement)"
+            fi
+          fi
+        else
+          echo "   ❌ Échec création utilisateur: $USER_EMAIL"
+        fi
+      done
+    fi
+
     echo "✅ Données de test créées"
   fi
 else
