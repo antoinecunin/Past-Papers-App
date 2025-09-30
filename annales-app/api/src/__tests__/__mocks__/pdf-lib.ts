@@ -1,6 +1,6 @@
 // Mock de pdf-lib pour les tests
 export class PDFDocument {
-  static async load(buffer: Buffer | Uint8Array): Promise<PDFDocument> {
+  static async load(_buffer: Buffer | Uint8Array): Promise<PDFDocument> {
     return new PDFDocument();
   }
 

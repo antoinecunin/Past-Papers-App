@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import { router as reportsRouter } from '../../routes/reports.js';
-import { ReportModel, ReportStatus, ReportType, ReportReason } from '../../models/Report.js';
+import { ReportModel } from '../../models/Report.js';
 import { Exam } from '../../models/Exam.js';
 import { AnswerModel } from '../../models/Answer.js';
 import { createAuthenticatedUser } from '../helpers/auth.helper.js';
@@ -11,6 +11,74 @@ import { Types } from 'mongoose';
  * Tests pour /api/reports
  * Teste le système de signalement et modération
  */
+describe('GET /api/reports/metadata', () => {
+  let app: express.Application;
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/api/reports', reportsRouter);
+  });
+
+  it('should return report metadata without authentication', async () => {
+    const response = await request(app).get('/api/reports/metadata');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('types');
+    expect(response.body).toHaveProperty('reasons');
+    expect(response.body).toHaveProperty('statuses');
+  });
+
+  it('should return types with labels', async () => {
+    const response = await request(app).get('/api/reports/metadata');
+
+    expect(Array.isArray(response.body.types)).toBe(true);
+    expect(response.body.types.length).toBeGreaterThan(0);
+    expect(response.body.types[0]).toHaveProperty('value');
+    expect(response.body.types[0]).toHaveProperty('label');
+    expect(response.body.types[0]).toHaveProperty('description');
+  });
+
+  it('should return reasons with labels', async () => {
+    const response = await request(app).get('/api/reports/metadata');
+
+    expect(Array.isArray(response.body.reasons)).toBe(true);
+    expect(response.body.reasons.length).toBeGreaterThan(0);
+    expect(response.body.reasons[0]).toHaveProperty('value');
+    expect(response.body.reasons[0]).toHaveProperty('label');
+    expect(response.body.reasons[0]).toHaveProperty('description');
+  });
+
+  it('should return statuses with labels', async () => {
+    const response = await request(app).get('/api/reports/metadata');
+
+    expect(Array.isArray(response.body.statuses)).toBe(true);
+    expect(response.body.statuses.length).toBeGreaterThan(0);
+    expect(response.body.statuses[0]).toHaveProperty('value');
+    expect(response.body.statuses[0]).toHaveProperty('label');
+    expect(response.body.statuses[0]).toHaveProperty('description');
+  });
+
+  it('should include all expected report types', async () => {
+    const response = await request(app).get('/api/reports/metadata');
+
+    const types = response.body.types.map((t: { value: string }) => t.value);
+    expect(types).toContain('exam');
+    expect(types).toContain('comment');
+  });
+
+  it('should include all expected report reasons', async () => {
+    const response = await request(app).get('/api/reports/metadata');
+
+    const reasons = response.body.reasons.map((r: { value: string }) => r.value);
+    expect(reasons).toContain('inappropriate_content');
+    expect(reasons).toContain('spam');
+    expect(reasons).toContain('wrong_subject');
+    expect(reasons).toContain('copyright_violation');
+    expect(reasons).toContain('other');
+  });
+});
+
 describe('POST /api/reports', () => {
   let app: express.Application;
 
@@ -241,7 +309,7 @@ describe('GET /api/reports', () => {
   });
 
   it('should return reports list for admin', async () => {
-    const { token: adminToken, user: admin } = await createAuthenticatedUser({
+    const { token: adminToken } = await createAuthenticatedUser({
       email: 'admin@etu.unistra.fr',
       role: 'admin',
     });
@@ -294,7 +362,7 @@ describe('GET /api/reports', () => {
   });
 
   it('should filter reports by status', async () => {
-    const { token: adminToken, user: admin } = await createAuthenticatedUser({
+    const { token: adminToken } = await createAuthenticatedUser({
       email: 'admin2@etu.unistra.fr',
       role: 'admin',
     });
@@ -322,7 +390,7 @@ describe('GET /api/reports', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.reports.length).toBeGreaterThan(0);
-    expect(response.body.reports.every((r: any) => r.status === 'pending')).toBe(true);
+    expect(response.body.reports.every((r: { status: string }) => r.status === 'pending')).toBe(true);
   });
 
   it('should paginate results', async () => {
@@ -371,7 +439,7 @@ describe('PUT /api/reports/:id/review', () => {
   });
 
   it('should return 400 for invalid action', async () => {
-    const { token: adminToken, user: admin } = await createAuthenticatedUser({
+    const { token: adminToken } = await createAuthenticatedUser({
       email: 'admin4@etu.unistra.fr',
       role: 'admin',
     });
@@ -402,7 +470,7 @@ describe('PUT /api/reports/:id/review', () => {
   });
 
   it('should approve and delete content', async () => {
-    const { token: adminToken, user: admin } = await createAuthenticatedUser({
+    const { token: adminToken, user: _admin } = await createAuthenticatedUser({
       email: 'admin5@etu.unistra.fr',
       role: 'admin',
     });
@@ -434,7 +502,7 @@ describe('PUT /api/reports/:id/review', () => {
     // Vérifier que le signalement a été mis à jour
     const updatedReport = await ReportModel.findById(report._id);
     expect(updatedReport?.status).toBe('approved');
-    expect(updatedReport?.reviewedBy?.toString()).toBe(admin._id.toString());
+    expect(updatedReport?.reviewedBy?.toString()).toBe(_admin._id.toString());
 
     // Vérifier que l'examen a été supprimé
     const deletedExam = await Exam.findById(exam._id);
@@ -442,7 +510,7 @@ describe('PUT /api/reports/:id/review', () => {
   });
 
   it('should reject report', async () => {
-    const { token: adminToken, user: admin } = await createAuthenticatedUser({
+    const { token: adminToken } = await createAuthenticatedUser({
       email: 'admin6@etu.unistra.fr',
       role: 'admin',
     });

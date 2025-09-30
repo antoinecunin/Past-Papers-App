@@ -5,8 +5,65 @@ import { AnswerModel } from '../models/Answer.js';
 import { Types } from 'mongoose';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
 import { deleteFile } from '../services/s3.js';
+import { REPORT_TYPES, REPORT_REASONS, REPORT_STATUSES } from '../constants/reportMetadata.js';
 
 export const router = Router();
+
+/**
+ * @swagger
+ * /reports/metadata:
+ *   get:
+ *     summary: Récupérer les métadonnées des signalements (types, raisons, statuts)
+ *     tags: [Reports]
+ *     responses:
+ *       200:
+ *         description: Métadonnées des signalements
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 types:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       value:
+ *                         type: string
+ *                       label:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                 reasons:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       value:
+ *                         type: string
+ *                       label:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                 statuses:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       value:
+ *                         type: string
+ *                       label:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ */
+router.get('/metadata', (req, res) => {
+  res.json({
+    types: REPORT_TYPES,
+    reasons: REPORT_REASONS,
+    statuses: REPORT_STATUSES,
+  });
+});
 
 /**
  * @swagger

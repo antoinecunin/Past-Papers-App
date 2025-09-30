@@ -41,17 +41,11 @@ describe('GET /api/exams', () => {
     const { user, token } = await createAuthenticatedUser();
 
     // Créer plusieurs examens avec délai pour garantir l'ordre de création
-    const exam1 = await ExamModel.create(
-      createExamData({ title: 'Exam 1', year: 2024, uploadedBy: user._id })
-    );
+    await ExamModel.create(createExamData({ title: 'Exam 1', year: 2024, uploadedBy: user._id }));
     await new Promise((resolve) => setTimeout(resolve, 10));
-    const exam2 = await ExamModel.create(
-      createExamData({ title: 'Exam 2', year: 2023, uploadedBy: user._id })
-    );
+    await ExamModel.create(createExamData({ title: 'Exam 2', year: 2023, uploadedBy: user._id }));
     await new Promise((resolve) => setTimeout(resolve, 10));
-    const exam3 = await ExamModel.create(
-      createExamData({ title: 'Exam 3', year: 2022, uploadedBy: user._id })
-    );
+    await ExamModel.create(createExamData({ title: 'Exam 3', year: 2022, uploadedBy: user._id }));
 
     const response = await request(app)
       .get('/api/exams')

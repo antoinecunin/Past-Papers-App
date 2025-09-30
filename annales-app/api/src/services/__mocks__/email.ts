@@ -6,13 +6,13 @@ class MockEmailService {
     return Promise.resolve();
   }
 
-  async sendVerificationEmail(email: string, verificationToken: string): Promise<void> {
+  async sendVerificationEmail(email: string, _verificationToken: string): Promise<void> {
     // Mock - ne fait rien
     console.log(`[MOCK] Verification email sent to ${email}`);
     return Promise.resolve();
   }
 
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  async sendPasswordResetEmail(email: string, _resetToken: string): Promise<void> {
     // Mock - ne fait rien
     console.log(`[MOCK] Password reset email sent to ${email}`);
     return Promise.resolve();
