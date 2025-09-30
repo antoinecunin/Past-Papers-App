@@ -29,7 +29,7 @@ const renderMixedLatex = (text: string): string => {
   try {
     // Vérifier s'il y a des délimiteurs $
     if (!text.includes('$')) {
-      // Pas de maths, traiter comme du LaTeX pur (ancienne logique)
+      // Pas de délimiteurs, traiter comme du LaTeX pur
       return katex.renderToString(text, {
         throwOnError: false,
         displayMode: false,

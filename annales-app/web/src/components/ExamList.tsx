@@ -3,6 +3,7 @@ import axios from 'axios';
 import ExamCard from './ExamCard';
 import { ErrorIcon, EmptyStateIcon } from './ui/Icon';
 import { useAuthStore } from '../stores/authStore';
+import { useRouter } from '../hooks/useRouter';
 
 interface Exam {
   _id: string;
@@ -26,6 +27,7 @@ interface ExamListProps {
  */
 export default function ExamList({ onExamSelect }: ExamListProps) {
   const { token } = useAuthStore();
+  const { navigate } = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,13 +38,28 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   // Chargement des examens
   useEffect(() => {
     const loadExams = async () => {
+      // Vérifier si l'utilisateur est connecté
+      if (!token) {
+        navigate('login');
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get<Exam[]>('/api/exams');
+        const response = await axios.get<Exam[]>('/api/exams', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setExams(response.data);
       } catch (err) {
         console.error('Erreur lors du chargement des examens:', err);
+        // Si erreur 401, rediriger vers login
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          navigate('login');
+          return;
+        }
         setError('Impossible de charger les examens. Veuillez réessayer.');
       } finally {
         setLoading(false);
@@ -50,7 +67,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
     };
 
     loadExams();
-  }, []);
+  }, [token, navigate]);
 
   // Filtrage et recherche avec useMemo pour la performance
   const filteredExams = useMemo(() => {

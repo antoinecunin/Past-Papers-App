@@ -9,9 +9,15 @@ export const router = Router();
 /**
  * @openapi
  * /exams:
- *   get: { summary: Liste examens, responses: { 200: { description: OK } } }
+ *   get:
+ *     summary: Liste examens
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: OK
  */
-router.get('/', async (_req, res) => {
+router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
   const items = await Exam.find().sort({ createdAt: -1 }).lean();
   res.json(items);
 });
@@ -21,6 +27,8 @@ router.get('/', async (_req, res) => {
  * /exams/{id}:
  *   get:
  *     summary: Récupère un examen par son ID
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -33,7 +41,7 @@ router.get('/', async (_req, res) => {
  *       404:
  *         description: Examen non trouvé
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
 

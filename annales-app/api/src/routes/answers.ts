@@ -11,6 +11,8 @@ export const router = Router();
  *   get:
  *     summary: Lister les réponses d'un examen (optionnellement filtrées par page)
  *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: examId
@@ -68,9 +70,6 @@ export const router = Router();
  *                   rendered:
  *                     type: string
  *                     description: Version rendue (optionnel)
- *               author:
- *                 type: string
- *                 description: Nom de l'auteur (compatibilité)
  *     responses:
  *       200:
  *         description: Commentaire créé avec succès
@@ -82,7 +81,7 @@ export const router = Router();
  *         description: Erreur serveur
  */
 
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { examId, page } = req.query as { examId?: string; page?: string };
     if (!examId || !Types.ObjectId.isValid(examId)) {
@@ -106,12 +105,11 @@ router.get('/', async (req, res) => {
 
 router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
-    const { examId, page, yTop, content, author } = req.body as {
+    const { examId, page, yTop, content } = req.body as {
       examId?: string;
       page?: number;
       yTop?: number;
       content?: { type: string; data: string; rendered?: string };
-      author?: string;
     };
 
     if (!examId || !Types.ObjectId.isValid(examId)) {
@@ -142,8 +140,7 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
       examId,
       page: page!,
       yTop: yTop!,
-      author, // Compatibilité ancien format
-      authorId: req.user!.id, // Nouveau format avec ID utilisateur
+      authorId: req.user!.id,
       content: {
         type: content.type,
         data: content.data.trim(),

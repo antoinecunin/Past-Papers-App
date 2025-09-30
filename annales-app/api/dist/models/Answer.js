@@ -9,9 +9,7 @@ const AnswerSchema = new Schema({
     page: { type: Number, required: true, min: 1, index: true },
     yTop: { type: Number, required: true, min: 0, max: 1 },
     content: { type: AnswerContentSchema },
-    text: { type: String, trim: true }, // Optionnel pour compatibilité
-    author: { type: String, trim: true }, // Optionnel pour compatibilité
-    authorId: { type: Schema.Types.ObjectId, ref: 'User', index: true }, // Nouveau champ
+    authorId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
 }, { timestamps: true });
 AnswerSchema.index({ examId: 1, page: 1, yTop: 1 });
 export const AnswerModel = model('Answer', AnswerSchema);

@@ -84,6 +84,8 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
  *   get:
  *     summary: Télécharger le PDF d'un examen
  *     tags: [Files]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: examId
@@ -108,6 +110,8 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
  *             schema:
  *               type: string
  *               example: public, max-age=3600
+ *       401:
+ *         description: Non authentifié
  *       400:
  *         description: ID invalide
  *       404:
@@ -115,7 +119,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
  *       500:
  *         description: Erreur serveur
  */
-router.get('/:examId/download', async (req, res) => {
+router.get('/:examId/download', authMiddleware, async (req, res) => {
     try {
         const { examId } = req.params;
         // Validation de l'ObjectId

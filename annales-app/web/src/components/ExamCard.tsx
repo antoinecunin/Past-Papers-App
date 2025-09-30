@@ -1,4 +1,5 @@
 import { ModuleIcon, DocumentIcon, EyeIcon, DownloadIcon } from './ui/Icon';
+import { useAuthStore } from '../stores/authStore';
 
 interface Exam {
   _id: string;
@@ -23,25 +24,49 @@ interface ExamCardProps {
  * Respecte les patterns de design existants du projet
  */
 export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
+  const { token } = useAuthStore();
+
   const handleClick = () => {
     onSelect?.(exam);
   };
 
-  const handleDownload = (e: React.MouseEvent) => {
+  const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Empêche l'ouverture de l'examen
 
-    // Créer un nom de fichier lisible
-    const filename = `${exam.title.replace(/[^a-zA-Z0-9]/g, '_')}${exam.year ? `_${exam.year}` : ''}.pdf`;
+    if (!token) return;
 
-    // Créer un lien temporaire pour déclencher le téléchargement
-    const link = document.createElement('a');
-    link.href = `/api/files/${exam._id}/download`;
-    link.download = filename;
-    link.style.display = 'none';
+    try {
+      // Télécharger le fichier avec authentification
+      const response = await fetch(`/api/files/${exam._id}/download`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+
+      // Créer un blob et déclencher le téléchargement
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const filename = `${exam.title.replace(/[^a-zA-Z0-9]/g, '_')}${exam.year ? `_${exam.year}` : ''}.pdf`;
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Libérer la mémoire
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      alert('Erreur lors du téléchargement du fichier');
+    }
   };
 
   const handleReport = (e: React.MouseEvent) => {

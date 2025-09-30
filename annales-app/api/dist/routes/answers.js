@@ -9,6 +9,8 @@ export const router = Router();
  *   get:
  *     summary: Lister les réponses d'un examen (optionnellement filtrées par page)
  *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: examId
@@ -66,9 +68,6 @@ export const router = Router();
  *                   rendered:
  *                     type: string
  *                     description: Version rendue (optionnel)
- *               author:
- *                 type: string
- *                 description: Nom de l'auteur (compatibilité)
  *     responses:
  *       200:
  *         description: Commentaire créé avec succès
@@ -79,7 +78,7 @@ export const router = Router();
  *       500:
  *         description: Erreur serveur
  */
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
     try {
         const { examId, page } = req.query;
         if (!examId || !Types.ObjectId.isValid(examId)) {
@@ -103,7 +102,7 @@ router.get('/', async (req, res) => {
 });
 router.post('/', authMiddleware, async (req, res) => {
     try {
-        const { examId, page, yTop, content, author } = req.body;
+        const { examId, page, yTop, content } = req.body;
         if (!examId || !Types.ObjectId.isValid(examId)) {
             return res.status(400).json({ error: 'examId (ObjectId) requis' });
         }
@@ -129,8 +128,7 @@ router.post('/', authMiddleware, async (req, res) => {
             examId,
             page: page,
             yTop: yTop,
-            author, // Compatibilité ancien format
-            authorId: req.user.id, // Nouveau format avec ID utilisateur
+            authorId: req.user.id,
             content: {
                 type: content.type,
                 data: content.data.trim(),

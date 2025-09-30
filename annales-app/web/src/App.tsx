@@ -57,21 +57,41 @@ function App() {
   };
 
   // Téléchargement du PDF de l'examen sélectionné
-  const handleDownloadPdf = () => {
-    if (!selectedExam) return;
+  const handleDownloadPdf = async () => {
+    if (!selectedExam || !token) return;
 
-    // Créer un nom de fichier lisible
-    const filename = `${selectedExam.title.replace(/[^a-zA-Z0-9]/g, '_')}${selectedExam.year ? `_${selectedExam.year}` : ''}.pdf`;
+    try {
+      // Télécharger le fichier avec authentification
+      const response = await fetch(`/api/files/${selectedExam._id}/download`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    // Créer un lien temporaire pour déclencher le téléchargement
-    const link = document.createElement('a');
-    link.href = `/api/files/${selectedExam._id}/download`;
-    link.download = filename;
-    link.style.display = 'none';
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Créer un blob et déclencher le téléchargement
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const filename = `${selectedExam.title.replace(/[^a-zA-Z0-9]/g, '_')}${selectedExam.year ? `_${selectedExam.year}` : ''}.pdf`;
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Libérer la mémoire
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      alert('Erreur lors du téléchargement du fichier');
+    }
   };
 
   // Suppression de l'examen sélectionné

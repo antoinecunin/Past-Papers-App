@@ -10,7 +10,7 @@ const router = Router();
 // Rate limiting pour les routes sensibles
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 tentatives par IP
+  max: process.env.NODE_ENV === 'development' ? 100 : 5, // Plus permissif en dev
   message: { error: 'Trop de tentatives, réessayez dans 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,

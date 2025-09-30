@@ -72,7 +72,22 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const loadingTask = pdfjs.getDocument({ url: pdfUrl });
+      if (!token) return;
+
+      // Charger le PDF avec authentification
+      const response = await fetch(pdfUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load PDF');
+      }
+
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
       const doc = await loadingTask.promise;
       if (cancelled) return;
       setPdfDoc(doc);
@@ -81,7 +96,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [pdfUrl]);
+  }, [pdfUrl, token]);
 
   // Rendu des pages (canvas) dans le container
   useEffect(() => {
@@ -551,10 +566,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   // Fonction pour charger les commentaires d'une page spécifique
   const loadAnswersForPage = useCallback(
     async (page: number) => {
-      if (!examId || !page) return;
+      if (!examId || !page || !token) return;
       try {
         const url = `/api/answers?examId=${encodeURIComponent(examId)}&page=${page}`;
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error('Failed to load answers');
         const data: Answer[] = await res.json();
         setAnswers(data.sort((a, b) => a.yTop - b.yTop));
@@ -562,22 +581,26 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         console.error(err);
       }
     },
-    [examId]
+    [examId, token]
   );
 
   // Fonction pour charger tous les commentaires (pour les indicateurs visuels)
   const loadAllAnswers = useCallback(async () => {
-    if (!examId) return;
+    if (!examId || !token) return;
     try {
       const url = `/api/answers?examId=${encodeURIComponent(examId)}`;
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) throw new Error('Failed to load all answers');
       const data: Answer[] = await res.json();
       setAllAnswers(data);
     } catch (err) {
       console.error(err);
     }
-  }, [examId]);
+  }, [examId, token]);
 
   // Charger les commentaires de la page visible
   useEffect(() => {
