@@ -10,7 +10,7 @@ const router = Router();
 // Rate limiting pour les routes sensibles
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'development' ? 100 : 5, // Plus permissif en dev
+  max: process.env.NODE_ENV === 'test' ? 1000 : process.env.NODE_ENV === 'development' ? 100 : 5,
   message: { error: 'Trop de tentatives, réessayez dans 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -18,7 +18,7 @@ const authLimiter = rateLimit({
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 3, // 3 inscriptions par IP
+  max: process.env.NODE_ENV === 'test' ? 100 : 3, // Permissif en test
   message: { error: "Limite d'inscriptions atteinte, réessayez dans 1 heure" },
   standardHeaders: true,
   legacyHeaders: false,

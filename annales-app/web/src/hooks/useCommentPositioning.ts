@@ -80,8 +80,8 @@ export function useCommentPositioning(
         setPendingPosition(null);
         onCommentAdded();
       } catch (error) {
-        console.error('Erreur:', error);
-        // TODO: Afficher une notification d'erreur à l'utilisateur
+        console.error('Erreur lors de la création du commentaire:', error);
+        alert('Erreur lors de la création du commentaire. Veuillez réessayer.');
       }
     },
     [examId, token, pendingPosition, onCommentAdded]
