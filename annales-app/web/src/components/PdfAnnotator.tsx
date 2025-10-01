@@ -7,6 +7,7 @@ import { PermissionUtils } from '../utils/permissions';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
 import { useAuthStore } from '../stores/authStore';
+import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -710,17 +711,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     async (answerId: string) => {
       if (!token) return;
 
-      const reason = prompt(`Pourquoi signaler ce commentaire ?\n\nOptions:\n- inappropriate_content (Contenu inapproprié)\n- spam (Spam)\n- wrong_subject (Mauvais sujet)\n- copyright_violation (Violation de droits d'auteur)\n- other (Autre)\n\nEntrez votre choix:`);
-
-      if (!reason) return;
-
-      const validReasons = ['inappropriate_content', 'spam', 'wrong_subject', 'copyright_violation', 'other'];
-      if (!validReasons.includes(reason)) {
-        alert('Raison invalide. Utilisez: inappropriate_content, spam, wrong_subject, copyright_violation, ou other');
-        return;
-      }
-
-      const description = prompt('Description optionnelle du problème:');
+      const reportData = await showReportModal('Signaler ce commentaire', 'comment');
+      if (!reportData) return;
 
       try {
         const response = await fetch('/api/reports', {
@@ -732,20 +724,20 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           body: JSON.stringify({
             type: 'comment',
             targetId: answerId,
-            reason,
-            description: description || undefined,
+            reason: reportData.reason,
+            description: reportData.description || undefined,
           }),
         });
 
         if (response.ok) {
-          alert('Signalement envoyé avec succès');
+          await showReportSuccess();
         } else {
           const errorData = await response.json();
-          alert(`Erreur lors du signalement: ${errorData.error}`);
+          await showReportError(errorData.error);
         }
       } catch (error) {
         console.error('Erreur lors du signalement:', error);
-        alert('Erreur lors du signalement');
+        await showReportError();
       }
     },
     [token]

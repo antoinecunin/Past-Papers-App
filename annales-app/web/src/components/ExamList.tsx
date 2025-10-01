@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import Swal from 'sweetalert2';
 import ExamCard from './ExamCard';
 import { AlertCircle, X, FileX, Search, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
 import { Input } from './ui/Input';
+import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
 
 interface Exam {
   _id: string;
@@ -104,49 +104,8 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   const handleReportExam = async (examId: string) => {
     if (!token) return;
 
-    const result = await Swal.fire({
-      title: 'Signaler cet examen',
-      html: `
-        <div style="text-align: left;">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
-            Raison du signalement
-          </label>
-          <select id="swal-reason" class="swal2-input" style="margin: 0 0 16px 0; width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <option value="">Sélectionnez une raison</option>
-            <option value="inappropriate_content">Contenu inapproprié</option>
-            <option value="spam">Spam</option>
-            <option value="wrong_subject">Mauvais sujet</option>
-            <option value="copyright_violation">Violation de droits d'auteur</option>
-            <option value="other">Autre</option>
-          </select>
-          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
-            Description (optionnel)
-          </label>
-          <textarea id="swal-description" class="swal2-textarea" placeholder="Décrivez le problème..." style="margin: 0; width: 100%; min-height: 100px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
-        </div>
-      `,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Envoyer',
-      cancelButtonText: 'Annuler',
-      confirmButtonColor: '#f59e0b',
-      cancelButtonColor: '#64748b',
-      preConfirm: () => {
-        const reason = (document.getElementById('swal-reason') as HTMLSelectElement)?.value;
-        const description = (document.getElementById('swal-description') as HTMLTextAreaElement)?.value;
-
-        if (!reason) {
-          Swal.showValidationMessage('Veuillez sélectionner une raison');
-          return false;
-        }
-
-        return { reason, description };
-      },
-    });
-
-    if (!result.isConfirmed || !result.value) return;
-
-    const { reason, description } = result.value;
+    const reportData = await showReportModal('Signaler cet examen', 'exam');
+    if (!reportData) return;
 
     try {
       const response = await fetch('/api/reports', {
@@ -158,35 +117,20 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
         body: JSON.stringify({
           type: 'exam',
           targetId: examId,
-          reason,
-          description: description || undefined,
+          reason: reportData.reason,
+          description: reportData.description || undefined,
         }),
       });
 
       if (response.ok) {
-        await Swal.fire({
-          title: 'Signalement envoyé',
-          text: 'Votre signalement a été envoyé avec succès',
-          icon: 'success',
-          confirmButtonColor: '#10b981',
-        });
+        await showReportSuccess();
       } else {
         const errorData = await response.json();
-        await Swal.fire({
-          title: 'Erreur',
-          text: `Erreur lors du signalement: ${errorData.error}`,
-          icon: 'error',
-          confirmButtonColor: '#ef4444',
-        });
+        await showReportError(errorData.error);
       }
     } catch (error) {
       console.error('Erreur lors du signalement:', error);
-      await Swal.fire({
-        title: 'Erreur',
-        text: 'Erreur lors du signalement',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-      });
+      await showReportError();
     }
   };
 
