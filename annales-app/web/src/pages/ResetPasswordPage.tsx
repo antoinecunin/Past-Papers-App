@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { AlertCircle, X, Key, CheckCircle, LogIn } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
+import { useInstance } from '../hooks/useInstance';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -10,6 +14,7 @@ export default function ResetPasswordPage() {
 
   const { resetPassword, isLoading, error, clearError } = useAuthStore();
   const { navigate, currentRoute } = useRouter();
+  const { name } = useInstance();
 
   const token = currentRoute.params.token;
 
@@ -72,39 +77,29 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-success-bg/30 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+        <div className="w-full max-w-md mx-auto">
+          {/* Success card */}
+          <div className="bg-white rounded-2xl border border-border p-6 md:p-8 shadow-xl shadow-black/5">
             <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                <svg
-                  className="h-6 w-6 text-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
+                <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Mot de passe modifié</h3>
-              <p className="mt-2 text-sm text-gray-600">
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Mot de passe modifié</h3>
+              <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
                 Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter
                 avec votre nouveau mot de passe.
               </p>
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate('login')}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Se connecter
-                </button>
-              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                className="w-full gap-2 shadow-lg shadow-primary/20"
+                onClick={() => navigate('login')}
+              >
+                <LogIn className="w-5 h-5" />
+                <span>Se connecter</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -117,117 +112,123 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Nouveau mot de passe
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Choisissez un nouveau mot de passe sécurisé
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+      <div className="w-full max-w-md mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+            <Key className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
+            Nouveau mot de passe
+          </h1>
+          <p className="text-sm md:text-base text-secondary">{name}</p>
+          <p className="text-xs md:text-sm text-secondary/80 mt-2">
+            Choisissez un nouveau mot de passe sécurisé
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* Reset password card */}
+        <div className="bg-white rounded-2xl border border-border p-6 md:p-8 shadow-xl shadow-black/5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Error messages */}
             {(error || validationErrors.length > 0) && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-                {error && <div className="mb-2">{error}</div>}
-                {validationErrors.map((err, index) => (
-                  <div key={index} className="text-sm">
-                    {err}
-                  </div>
-                ))}
+              <div className="bg-error-bg border border-error/20 rounded-xl p-4 flex items-start gap-3 animate-in slide-in-from-top-2 duration-200">
+                <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  {error && <p className="text-sm text-error font-medium mb-1">{error}</p>}
+                  {validationErrors.map((err, index) => (
+                    <p key={index} className="text-sm text-error">
+                      {err}
+                    </p>
+                  ))}
+                </div>
                 <button
                   type="button"
-                  className="absolute top-0 bottom-0 right-0 px-4 py-3"
                   onClick={() => {
                     clearError();
                     setValidationErrors([]);
                   }}
+                  className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
+                  aria-label="Fermer le message d'erreur"
                 >
-                  <span className="sr-only">Fermer</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Nouveau mot de passe
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={handleInputChange(setPassword)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Au moins 8 caractères avec une lettre et un chiffre
-              </p>
-            </div>
+            {/* Nouveau mot de passe */}
+            <Input
+              label="Nouveau mot de passe"
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={handleInputChange(setPassword)}
+              placeholder="••••••••"
+              helperText="Au moins 8 caractères avec une lettre et un chiffre"
+            />
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirmer le mot de passe
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={handleInputChange(setConfirmPassword)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
+            {/* Confirmation mot de passe */}
+            <Input
+              label="Confirmer le mot de passe"
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={confirmPassword}
+              onChange={handleInputChange(setConfirmPassword)}
+              placeholder="••••••••"
+            />
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading || !password || !confirmPassword}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Modification...' : 'Modifier le mot de passe'}
-              </button>
-            </div>
+            {/* Submit button */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full gap-2 shadow-lg shadow-primary/20"
+              disabled={isLoading || !password || !confirmPassword}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Modification...</span>
+                </>
+              ) : (
+                <>
+                  <Key className="w-5 h-5" />
+                  <span>Modifier le mot de passe</span>
+                </>
+              )}
+            </Button>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">ou</span>
-              </div>
+          {/* Séparateur */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
             </div>
-
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => navigate('login')}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Retour à la connexion
-              </button>
+            <div className="relative flex justify-center">
+              <span className="px-3 bg-white text-sm text-secondary font-medium">
+                ou
+              </span>
             </div>
           </div>
+
+          {/* Bouton retour connexion */}
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            className="w-full gap-2"
+            onClick={() => navigate('login')}
+          >
+            <LogIn className="w-5 h-5" />
+            <span>Retour à la connexion</span>
+          </Button>
         </div>
       </div>
     </div>

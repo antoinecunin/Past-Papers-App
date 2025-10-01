@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { AlertCircle, X, UserPlus, CheckCircle, LogIn } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
+import { useInstance } from '../hooks/useInstance';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,6 +19,7 @@ export default function RegisterPage() {
 
   const { register, isLoading, error, clearError } = useAuthStore();
   const { navigate } = useRouter();
+  const { name } = useInstance();
 
   // Note: Pas de redirection automatique - permet à un utilisateur connecté de voir la page d'inscription
 
@@ -90,39 +95,29 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-success-bg/30 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+        <div className="w-full max-w-md mx-auto">
+          {/* Success card */}
+          <div className="bg-white rounded-2xl border border-border p-6 md:p-8 shadow-xl shadow-black/5">
             <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                <svg
-                  className="h-6 w-6 text-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
+                <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Inscription réussie !</h3>
-              <p className="mt-2 text-sm text-gray-600">
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Inscription réussie !</h3>
+              <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
                 Un email de vérification a été envoyé à votre adresse email. Veuillez cliquer sur le
                 lien contenu dans l&apos;email pour activer votre compte.
               </p>
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate('login')}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Aller à la page de connexion
-                </button>
-              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                className="w-full gap-2 shadow-lg shadow-primary/20"
+                onClick={() => navigate('login')}
+              >
+                <LogIn className="w-5 h-5" />
+                <span>Aller à la page de connexion</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -131,173 +126,170 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Créer un compte</h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Plateforme d&apos;Annales - Université de Strasbourg
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+      <div className="w-full max-w-md mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+            <UserPlus className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
+            Créer un compte
+          </h1>
+          <p className="text-sm md:text-base text-secondary">{name}</p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* Registration card */}
+        <div className="bg-white rounded-2xl border border-border p-6 md:p-8 shadow-xl shadow-black/5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Error messages */}
             {(error || validationErrors.length > 0) && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-                {error && <div className="mb-2">{error}</div>}
-                {validationErrors.map((err, index) => (
-                  <div key={index} className="text-sm">
-                    {err}
-                  </div>
-                ))}
+              <div className="bg-error-bg border border-error/20 rounded-xl p-4 flex items-start gap-3 animate-in slide-in-from-top-2 duration-200">
+                <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  {error && <p className="text-sm text-error font-medium mb-1">{error}</p>}
+                  {validationErrors.map((err, index) => (
+                    <p key={index} className="text-sm text-error">
+                      {err}
+                    </p>
+                  ))}
+                </div>
                 <button
                   type="button"
-                  className="absolute top-0 bottom-0 right-0 px-4 py-3"
                   onClick={() => {
                     clearError();
                     setValidationErrors([]);
                   }}
+                  className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
+                  aria-label="Fermer le message d'erreur"
                 >
-                  <span className="sr-only">Fermer</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  Prénom
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={handleInputChange('firstName')}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Nom
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={handleInputChange('lastName')}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
+            {/* Prénom et Nom */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Prénom"
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                value={formData.firstName}
+                onChange={handleInputChange('firstName')}
+                placeholder="Jean"
+              />
+              <Input
+                label="Nom"
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={handleInputChange('lastName')}
+                placeholder="Dupont"
+              />
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Adresse email universitaire
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange('email')}
-                  placeholder="votre.email@etu.unistra.fr"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Seuls les emails @etu.unistra.fr sont acceptés
-              </p>
-            </div>
+            {/* Email */}
+            <Input
+              label="Adresse email universitaire"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={formData.email}
+              onChange={handleInputChange('email')}
+              placeholder="votre.email@etu.unistra.fr"
+              helperText="Seuls les emails @etu.unistra.fr sont acceptés"
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Mot de passe
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleInputChange('password')}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Au moins 8 caractères avec une lettre et un chiffre
-              </p>
-            </div>
+            {/* Mot de passe */}
+            <Input
+              label="Mot de passe"
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={formData.password}
+              onChange={handleInputChange('password')}
+              placeholder="••••••••"
+              helperText="Au moins 8 caractères avec une lettre et un chiffre"
+            />
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirmer le mot de passe
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange('confirmPassword')}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
+            {/* Confirmation mot de passe */}
+            <Input
+              label="Confirmer le mot de passe"
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={formData.confirmPassword}
+              onChange={handleInputChange('confirmPassword')}
+              placeholder="••••••••"
+            />
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Inscription...' : 'Créer le compte'}
-              </button>
-            </div>
+            {/* Bouton inscription */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full gap-2 shadow-lg shadow-primary/20"
+              disabled={
+                isLoading ||
+                !formData.firstName ||
+                !formData.lastName ||
+                !formData.email ||
+                !formData.password ||
+                !formData.confirmPassword
+              }
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Inscription...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-5 h-5" />
+                  <span>Créer le compte</span>
+                </>
+              )}
+            </Button>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Déjà un compte ?</span>
-              </div>
-            </div>
+          {/* Footer CGU */}
+          <p className="text-center text-xs text-secondary mt-6">
+            En créant un compte, vous acceptez nos conditions d'utilisation
+          </p>
 
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => navigate('login')}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Se connecter
-              </button>
+          {/* Séparateur */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 bg-white text-sm text-secondary font-medium">
+                Déjà un compte ?
+              </span>
             </div>
           </div>
+
+          {/* Bouton connexion */}
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            className="w-full gap-2"
+            onClick={() => navigate('login')}
+          >
+            <LogIn className="w-5 h-5" />
+            <span>Se connecter</span>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { ModuleIcon, DocumentIcon, EyeIcon, DownloadIcon } from './ui/Icon';
+import { BookOpen, FileText, Eye, Download, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 
 interface Exam {
@@ -84,7 +84,7 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
 
   return (
     <div
-      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer"
+      className="bg-white border border-border rounded-xl p-4 md:p-5 hover:shadow-lg hover:border-primary/30 transition-all duration-150 cursor-pointer group"
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -96,29 +96,29 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
       }}
     >
       {/* En-tête avec titre et année */}
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="text-base font-semibold text-gray-900 flex-1 mr-2 leading-tight">
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <h3 className="text-base md:text-lg font-semibold text-secondary-dark flex-1 leading-tight group-hover:text-primary transition-colors">
           {exam.title}
         </h3>
         {exam.year && (
-          <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded shrink-0">
+          <span className="text-xs font-medium text-primary bg-primary-light px-2.5 py-1 rounded-lg shrink-0">
             {exam.year}
           </span>
         )}
       </div>
 
       {/* Métadonnées */}
-      <div className="space-y-1 mb-3">
+      <div className="space-y-2 mb-4">
         {exam.module && (
-          <div className="flex items-center space-x-1">
-            <ModuleIcon />
-            <span className="text-xs text-gray-600 font-medium">{exam.module}</span>
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-secondary flex-shrink-0" />
+            <span className="text-xs md:text-sm text-secondary font-medium truncate">{exam.module}</span>
           </div>
         )}
         {exam.pages && (
-          <div className="flex items-center space-x-1">
-            <DocumentIcon />
-            <span className="text-xs text-gray-600">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-secondary flex-shrink-0" />
+            <span className="text-xs md:text-sm text-secondary">
               {exam.pages} page{exam.pages > 1 ? 's' : ''}
             </span>
           </div>
@@ -126,16 +126,16 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
       </div>
 
       {/* Footer avec date et actions */}
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-        <span className="text-xs text-gray-500">{formatDate(exam.createdAt)}</span>
-        <div className="flex items-center space-x-3">
+      <div className="flex justify-between items-center pt-3 border-t border-border">
+        <span className="text-xs text-secondary/70">{formatDate(exam.createdAt)}</span>
+        <div className="flex items-center gap-2">
           {/* Bouton télécharger */}
           <button
             onClick={handleDownload}
-            className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/10 hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer"
             title="Télécharger le PDF"
           >
-            <DownloadIcon className="text-gray-600 hover:text-gray-800" />
+            <Download className="w-4 h-4" />
             <span className="text-xs font-medium">PDF</span>
           </button>
 
@@ -143,26 +143,12 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
           {onReport && (
             <button
               onClick={handleReport}
-              className="flex items-center space-x-1 text-orange-600 hover:text-orange-800 transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 hover:bg-warning/20 text-warning hover:text-warning transition-all cursor-pointer"
               title="Signaler cet examen"
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-              <span className="text-xs font-medium">⚠️</span>
+              <AlertTriangle className="w-4 h-4" />
             </button>
           )}
-
-          {/* Bouton voir */}
-          <div className="flex items-center space-x-1 text-blue-600 hover:text-blue-700">
-            <EyeIcon className="text-blue-600 hover:text-blue-700" />
-            <span className="text-xs font-medium">Voir</span>
-          </div>
         </div>
       </div>
     </div>

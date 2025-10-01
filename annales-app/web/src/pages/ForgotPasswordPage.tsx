@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { AlertCircle, X, Mail, LogIn, UserPlus, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
+import { useInstance } from '../hooks/useInstance';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -8,6 +12,7 @@ export default function ForgotPasswordPage() {
 
   const { forgotPassword, isLoading, error, clearError } = useAuthStore();
   const { navigate } = useRouter();
+  const { name } = useInstance();
 
   // Note: Pas de redirection automatique - permet à un utilisateur connecté d'accéder à cette page
 
@@ -33,48 +38,46 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-info-bg/30 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+        <div className="w-full max-w-md mx-auto">
+          {/* Success card */}
+          <div className="bg-white rounded-2xl border border-border p-6 md:p-8 shadow-xl shadow-black/5">
             <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-                <svg
-                  className="h-6 w-6 text-blue-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-info/10 mb-4">
+                <Mail className="w-8 h-8 text-info" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Email envoyé</h3>
-              <p className="mt-2 text-sm text-gray-600">
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Email envoyé</h3>
+              <p className="text-sm md:text-base text-secondary leading-relaxed mb-2">
                 Si cette adresse email est associée à un compte, vous recevrez un lien pour
                 réinitialiser votre mot de passe.
               </p>
-              <p className="mt-2 text-sm text-gray-500">Vérifiez votre boîte mail et vos spams.</p>
-              <div className="mt-6 space-y-3">
-                <button
+              <p className="text-xs text-secondary/80 mb-6">
+                Vérifiez votre boîte mail et vos spams.
+              </p>
+              <div className="space-y-3">
+                <Button
                   type="button"
+                  variant="primary"
+                  size="lg"
+                  className="w-full gap-2 shadow-lg shadow-primary/20"
                   onClick={() => navigate('login')}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  Retour à la connexion
-                </button>
-                <button
+                  <LogIn className="w-5 h-5" />
+                  <span>Retour à la connexion</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="w-full gap-2"
                   onClick={() => {
                     setSuccess(false);
                     setEmail('');
                   }}
-                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  Renvoyer un email
-                </button>
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Renvoyer un email</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -84,96 +87,111 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Mot de passe oublié
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Entrez votre adresse email pour recevoir un lien de réinitialisation
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+      <div className="w-full max-w-md mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+            <Mail className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
+            Mot de passe oublié
+          </h1>
+          <p className="text-sm md:text-base text-secondary">{name}</p>
+          <p className="text-xs md:text-sm text-secondary/80 mt-2">
+            Entrez votre adresse email pour recevoir un lien de réinitialisation
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* Reset password card */}
+        <div className="bg-white rounded-2xl border border-border p-6 md:p-8 shadow-xl shadow-black/5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Error message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-                <span className="block sm:inline">{error}</span>
+              <div className="bg-error-bg border border-error/20 rounded-xl p-4 flex items-start gap-3 animate-in slide-in-from-top-2 duration-200">
+                <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-error flex-1 font-medium">{error}</p>
                 <button
                   type="button"
-                  className="absolute top-0 bottom-0 right-0 px-4 py-3"
                   onClick={clearError}
+                  className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
+                  aria-label="Fermer le message d'erreur"
                 >
-                  <span className="sr-only">Fermer</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Adresse email
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="votre.email@etu.unistra.fr"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
+            {/* Email */}
+            <Input
+              label="Adresse email"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="votre.email@etu.unistra.fr"
+            />
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading || !email}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Envoi...' : 'Envoyer le lien de réinitialisation'}
-              </button>
-            </div>
+            {/* Submit button */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full gap-2 shadow-lg shadow-primary/20"
+              disabled={isLoading || !email}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Envoi...</span>
+                </>
+              ) : (
+                <>
+                  <Mail className="w-5 h-5" />
+                  <span>Envoyer le lien de réinitialisation</span>
+                </>
+              )}
+            </Button>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">ou</span>
-              </div>
+          {/* Séparateur */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
             </div>
-
-            <div className="mt-6 space-y-3">
-              <button
-                type="button"
-                onClick={() => navigate('login')}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Retour à la connexion
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('register')}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Créer un compte
-              </button>
+            <div className="relative flex justify-center">
+              <span className="px-3 bg-white text-sm text-secondary font-medium">
+                ou
+              </span>
             </div>
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              className="w-full gap-2"
+              onClick={() => navigate('login')}
+            >
+              <LogIn className="w-5 h-5" />
+              <span>Retour à la connexion</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              className="w-full gap-2"
+              onClick={() => navigate('register')}
+            >
+              <UserPlus className="w-5 h-5" />
+              <span>Créer un compte</span>
+            </Button>
           </div>
         </div>
       </div>

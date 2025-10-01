@@ -1,24 +1,49 @@
 import axios from 'axios';
 import { useState } from 'react';
+import { Upload, CheckCircle } from 'lucide-react';
 import FileDrop from '../components/FileDrop';
 import { useAuthStore } from '../stores/authStore';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 
 export default function UploadPage() {
   const { token } = useAuthStore();
   const [title, setTitle] = useState('');
   const [year, setYear] = useState<number | ''>('');
   const [module, setModule] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  async function handleUpload(files: File[]) {
+  function handleFileSelect(files: File[]) {
+    if (files.length > 0) {
+      setSelectedFile(files[0]);
+      setUploadSuccess(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
     if (!token) {
       alert('Vous devez être connecté pour uploader un fichier');
       return;
     }
 
+    if (!selectedFile) {
+      alert('Veuillez sélectionner un fichier PDF');
+      return;
+    }
+
+    if (!title.trim()) {
+      alert('Veuillez renseigner un titre');
+      return;
+    }
+
     try {
-      const file = files[0];
+      setIsUploading(true);
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', selectedFile);
       fd.append('title', title);
       fd.append('year', String(year || ''));
       fd.append('module', module);
@@ -28,7 +53,14 @@ export default function UploadPage() {
           Authorization: `Bearer ${token}`,
         },
       });
-      alert(`Upload réussi ! ID de l'examen: ${data.examId}`);
+
+      setUploadSuccess(true);
+      setTitle('');
+      setYear('');
+      setModule('');
+      setSelectedFile(null);
+
+      setTimeout(() => setUploadSuccess(false), 5000);
     } catch (error) {
       console.error('Erreur upload:', error);
       if (axios.isAxiosError(error)) {
@@ -36,34 +68,118 @@ export default function UploadPage() {
       } else {
         alert('Erreur inattendue lors de l\'upload');
       }
+    } finally {
+      setIsUploading(false);
     }
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Uploader une annale</h1>
-      <div className="space-y-4 mb-6">
-        <input
-          className="w-full p-3 border rounded-lg"
-          placeholder="Titre"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-        />
-        <input
-          className="w-full p-3 border rounded-lg"
-          placeholder="Année"
-          type="number"
-          value={year}
-          onChange={e => setYear(Number(e.target.value) || '')}
-        />
-        <input
-          className="w-full p-3 border rounded-lg"
-          placeholder="Module"
-          value={module}
-          onChange={e => setModule(e.target.value)}
-        />
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+          <Upload className="w-8 h-8 text-primary" />
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">
+          Uploader une annale
+        </h1>
+        <p className="text-sm md:text-base text-secondary">
+          Partagez vos examens avec la communauté
+        </p>
       </div>
-      <FileDrop onFiles={handleUpload} />
+
+      {/* Success message */}
+      {uploadSuccess && (
+        <div className="bg-success-bg border border-success/20 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2 duration-200">
+          <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+          <p className="text-sm text-success font-medium">
+            Upload réussi ! Votre annale a été ajoutée.
+          </p>
+        </div>
+      )}
+
+      {/* Upload form */}
+      <div className="bg-white border border-border rounded-xl p-6 md:p-8 shadow-xl shadow-black/5">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Titre */}
+          <Input
+            label="Titre de l'examen"
+            id="title"
+            name="title"
+            type="text"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex: Contrôle final Mathématiques"
+          />
+
+          {/* Année et Module */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Année"
+              id="year"
+              name="year"
+              type="number"
+              value={year === '' ? '' : year}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '') {
+                  setYear('');
+                } else {
+                  const num = Number(val);
+                  setYear(isNaN(num) ? '' : num);
+                }
+              }}
+              placeholder="Ex: 2024"
+              helperText="Optionnel"
+            />
+            <Input
+              label="Module"
+              id="module"
+              name="module"
+              type="text"
+              value={module}
+              onChange={(e) => setModule(e.target.value)}
+              placeholder="Ex: M12 - Algèbre"
+              helperText="Optionnel"
+            />
+          </div>
+
+          {/* File drop */}
+          <div>
+            <label className="block text-sm font-medium text-secondary-dark mb-2">
+              Fichier PDF
+            </label>
+            <FileDrop onFiles={handleFileSelect} />
+            {selectedFile && (
+              <p className="mt-2 text-sm text-secondary">
+                Fichier sélectionné : <span className="font-medium">{selectedFile.name}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Submit button */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            className="w-full gap-2 shadow-lg shadow-primary/20"
+            disabled={isUploading || !title.trim() || !selectedFile}
+          >
+            {isUploading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Upload en cours...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-5 h-5" />
+                <span>Uploader l'annale</span>
+              </>
+            )}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

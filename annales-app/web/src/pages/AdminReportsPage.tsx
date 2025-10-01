@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
+import { Shield, AlertCircle, RefreshCw, CheckCircle, XCircle, FileText, MessageSquare } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
+import { Button } from '../components/ui/Button';
 
 interface User {
   _id: string;
@@ -41,7 +44,7 @@ export default function AdminReportsPage() {
   const [filter, setFilter] = useState<{
     status?: string;
     type?: string;
-  }>({});
+  }>({ status: 'pending' });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchReports = useCallback(async () => {
@@ -76,8 +79,32 @@ export default function AdminReportsPage() {
     }
   }, [token, filter]);
 
-  const handleReviewReport = async (reportId: string, action: 'approve' | 'reject', note?: string) => {
+  const handleReviewReport = async (reportId: string, action: 'approve' | 'reject') => {
     if (!token) return;
+
+    const result = await Swal.fire({
+      title: action === 'approve' ? 'Approuver et supprimer' : 'Rejeter le signalement',
+      html: `
+        <div style="text-align: left;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
+            Note (optionnel)
+          </label>
+          <textarea id="swal-note" class="swal2-textarea" placeholder="Ajoutez une note..." style="margin: 0; width: 100%; min-height: 80px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
+        </div>
+      `,
+      icon: action === 'approve' ? 'warning' : 'question',
+      showCancelButton: true,
+      confirmButtonText: action === 'approve' ? 'Approuver & Supprimer' : 'Rejeter',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: action === 'approve' ? '#ef4444' : '#64748b',
+      cancelButtonColor: '#64748b',
+      preConfirm: () => {
+        const note = (document.getElementById('swal-note') as HTMLTextAreaElement)?.value;
+        return { note: note || undefined };
+      },
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       setActionLoading(reportId);
@@ -87,18 +114,34 @@ export default function AdminReportsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ action, note }),
+        body: JSON.stringify({ action, note: result.value?.note }),
       });
 
       if (response.ok) {
-        await fetchReports(); // Recharger la liste
+        await Swal.fire({
+          title: 'Succès',
+          text: action === 'approve' ? 'Signalement approuvé et contenu supprimé' : 'Signalement rejeté',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+        });
+        await fetchReports();
       } else {
         const errorData = await response.json();
-        alert(`Erreur: ${errorData.error}`);
+        await Swal.fire({
+          title: 'Erreur',
+          text: `Erreur: ${errorData.error}`,
+          icon: 'error',
+          confirmButtonColor: '#ef4444',
+        });
       }
     } catch (err) {
       console.error('Erreur traitement signalement:', err);
-      alert('Erreur lors du traitement du signalement');
+      await Swal.fire({
+        title: 'Erreur',
+        text: 'Erreur lors du traitement du signalement',
+        icon: 'error',
+        confirmButtonColor: '#ef4444',
+      });
     } finally {
       setActionLoading(null);
     }
@@ -111,10 +154,15 @@ export default function AdminReportsPage() {
   // Vérifier les permissions admin
   if (!user || !PermissionUtils.isAdmin(user)) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h1 className="text-lg font-semibold text-red-800 mb-2">Accès refusé</h1>
-          <p className="text-red-600">Cette page est réservée aux administrateurs.</p>
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-error-bg border border-error/20 rounded-xl p-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-6 h-6 text-error flex-shrink-0 mt-0.5" />
+            <div>
+              <h1 className="text-lg font-semibold text-error mb-1">Accès refusé</h1>
+              <p className="text-error">Cette page est réservée aux administrateurs.</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -133,9 +181,9 @@ export default function AdminReportsPage() {
 
   const getStatusBadge = (status: Report['status']) => {
     const badges = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800',
+      pending: 'bg-warning-bg text-warning border border-warning/20',
+      approved: 'bg-success-bg text-success border border-success/20',
+      rejected: 'bg-error-bg text-error border border-error/20',
     };
 
     const labels = {
@@ -145,7 +193,7 @@ export default function AdminReportsPage() {
     };
 
     return (
-      <span className={`px-2 py-1 text-xs rounded-full font-medium ${badges[status]}`}>
+      <span className={`px-2.5 py-1 text-xs rounded-lg font-medium ${badges[status]}`}>
         {labels[status]}
       </span>
     );
@@ -157,178 +205,204 @@ export default function AdminReportsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="text-center py-8">
-          <p className="text-gray-500">Chargement des signalements...</p>
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <span className="text-secondary">Chargement des signalements...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Gestion des signalements</h1>
-        <p className="text-gray-600">Gérez les signalements de contenu inapproprié.</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
+            <Shield className="w-6 h-6 text-warning" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">Gestion des signalements</h1>
+            <p className="text-sm md:text-base text-secondary mt-1">Gérez les signalements de contenu inapproprié</p>
+          </div>
+        </div>
+        <div className="text-sm text-secondary">
+          {reports.length} signalement{reports.length !== 1 ? 's' : ''}
+        </div>
       </div>
 
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">{error}</p>
+        <div className="bg-error-bg border border-error/20 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-error flex-shrink-0" />
+            <p className="text-error font-medium">{error}</p>
+          </div>
         </div>
       )}
 
       {/* Filtres */}
-      <div className="mb-6 flex gap-4">
-        <select
-          value={filter.status || ''}
-          onChange={(e) => setFilter({ ...filter, status: e.target.value || undefined })}
-          className="px-3 py-2 border border-gray-300 rounded-lg"
-        >
-          <option value="">Tous les statuts</option>
-          <option value="pending">En attente</option>
-          <option value="approved">Approuvés</option>
-          <option value="rejected">Rejetés</option>
-        </select>
+      <div className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={filter.status || ''}
+            onChange={(e) => setFilter({ ...filter, status: e.target.value || undefined })}
+            className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
+          >
+            <option value="">Tous les statuts</option>
+            <option value="pending">En attente</option>
+            <option value="approved">Approuvés</option>
+            <option value="rejected">Rejetés</option>
+          </select>
 
-        <select
-          value={filter.type || ''}
-          onChange={(e) => setFilter({ ...filter, type: e.target.value || undefined })}
-          className="px-3 py-2 border border-gray-300 rounded-lg"
-        >
-          <option value="">Tous les types</option>
-          <option value="exam">Examens</option>
-          <option value="comment">Commentaires</option>
-        </select>
+          <select
+            value={filter.type || ''}
+            onChange={(e) => setFilter({ ...filter, type: e.target.value || undefined })}
+            className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
+          >
+            <option value="">Tous les types</option>
+            <option value="exam">Examens</option>
+            <option value="comment">Commentaires</option>
+          </select>
 
-        <button
-          onClick={fetchReports}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Actualiser
-        </button>
+          <Button
+            onClick={fetchReports}
+            variant="secondary"
+            size="md"
+            className="gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Actualiser</span>
+          </Button>
+        </div>
       </div>
 
       {/* Liste des signalements */}
       {reports.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Aucun signalement trouvé.</p>
+        <div className="bg-white border border-border rounded-xl p-8 md:p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
+            <CheckCircle className="w-8 h-8 text-secondary" />
+          </div>
+          <h3 className="text-lg font-semibold text-secondary-dark mb-2">Aucun signalement</h3>
+          <p className="text-sm text-secondary">Aucun signalement ne correspond aux filtres sélectionnés.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Signalement
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Signalé par
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Statut
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {reports.map((report) => (
-                  <tr key={report._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-gray-900">
-                            {getTypeLabel(report.type)}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            #{report.targetId.slice(-8)}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Raison: {getReasonLabel(report.reason)}
-                        </div>
-                        {report.description && (
-                          <div className="text-sm text-gray-500 italic">
-                            &quot;{report.description}&quot;
-                          </div>
+        <div className="space-y-4">
+          {reports.map((report) => (
+            <div key={report._id} className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
+              <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                {/* Left: Report details */}
+                <div className="flex-1 space-y-3">
+                  {/* Type and ID */}
+                  <div className="flex items-center gap-2">
+                    {report.type === 'exam' ? (
+                      <FileText className="w-5 h-5 text-primary" />
+                    ) : (
+                      <MessageSquare className="w-5 h-5 text-info" />
+                    )}
+                    <span className="font-semibold text-secondary-dark">
+                      {getTypeLabel(report.type)}
+                    </span>
+                    <span className="text-xs text-secondary/70">
+                      #{report.targetId.slice(-8)}
+                    </span>
+                  </div>
+
+                  {/* Reason */}
+                  <div>
+                    <span className="text-sm font-medium text-secondary">Raison: </span>
+                    <span className="text-sm text-secondary-dark">{getReasonLabel(report.reason)}</span>
+                  </div>
+
+                  {/* Description */}
+                  {report.description && (
+                    <div className="text-sm text-secondary italic bg-bg-secondary p-3 rounded-lg">
+                      &quot;{report.description}&quot;
+                    </div>
+                  )}
+
+                  {/* Reporter */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-border">
+                    <span className="text-xs text-secondary">Signalé par:</span>
+                    <span className="text-xs font-medium text-secondary-dark">
+                      {report.reportedBy.firstName} {report.reportedBy.lastName}
+                    </span>
+                    <span className="text-xs text-secondary/70">
+                      ({report.reportedBy.email})
+                    </span>
+                  </div>
+
+                  {/* Date */}
+                  <div className="text-xs text-secondary/70">
+                    {new Date(report.createdAt).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                </div>
+
+                {/* Right: Status and Actions */}
+                <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[200px]">
+                  {/* Status badge */}
+                  <div>{getStatusBadge(report.status)}</div>
+
+                  {/* Reviewer info */}
+                  {report.reviewedBy && (
+                    <div className="text-xs text-secondary">
+                      <div>Par: {report.reviewedBy.firstName} {report.reviewedBy.lastName}</div>
+                      {report.reviewNote && (
+                        <div className="mt-1 italic">Note: {report.reviewNote}</div>
+                      )}
+                      <div className="mt-1">
+                        {new Date(report.reviewedAt!).toLocaleDateString('fr-FR')}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  {report.status === 'pending' && (
+                    <div className="flex gap-2 w-full lg:w-auto">
+                      <Button
+                        onClick={() => handleReviewReport(report._id, 'approve')}
+                        disabled={actionLoading === report._id}
+                        variant="danger"
+                        size="sm"
+                        className="gap-1.5 flex-1 lg:flex-initial"
+                      >
+                        {actionLoading === report._id ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Approuver</span>
+                          </>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {report.reportedBy.firstName} {report.reportedBy.lastName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {report.reportedBy.email}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(report.status)}
-                      {report.reviewedBy && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Par: {report.reviewedBy.firstName} {report.reviewedBy.lastName}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(report.createdAt).toLocaleDateString('fr-FR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </td>
-                    <td className="px-6 py-4">
-                      {report.status === 'pending' ? (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => {
-                              const note = prompt('Note optionnelle:');
-                              if (note !== null) {
-                                handleReviewReport(report._id, 'approve', note || undefined);
-                              }
-                            }}
-                            disabled={actionLoading === report._id}
-                            className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 transition-colors"
-                          >
-                            {actionLoading === report._id ? '...' : 'Approuver & Supprimer'}
-                          </button>
-                          <button
-                            onClick={() => {
-                              const note = prompt('Note optionnelle:');
-                              if (note !== null) {
-                                handleReviewReport(report._id, 'reject', note || undefined);
-                              }
-                            }}
-                            disabled={actionLoading === report._id}
-                            className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                          >
-                            {actionLoading === report._id ? '...' : 'Rejeter'}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-500">
-                          {report.reviewNote && (
-                            <div>Note: {report.reviewNote}</div>
-                          )}
-                          <div>
-                            {new Date(report.reviewedAt!).toLocaleDateString('fr-FR')}
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </Button>
+                      <Button
+                        onClick={() => handleReviewReport(report._id, 'reject')}
+                        disabled={actionLoading === report._id}
+                        variant="secondary"
+                        size="sm"
+                        className="gap-1.5 flex-1 lg:flex-initial"
+                      >
+                        {actionLoading === report._id ? (
+                          <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <XCircle className="w-4 h-4" />
+                            <span>Rejeter</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

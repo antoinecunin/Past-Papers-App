@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import UploadPage from './pages/UploadPage';
 import AdminReportsPage from './pages/AdminReportsPage';
 import LoginPage from './pages/LoginPage';
@@ -8,7 +9,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ExamList from './components/ExamList';
 import PdfAnnotator from './components/PdfAnnotator';
-import { BackIcon, DownloadIcon } from './components/ui/Icon';
+import { ArrowLeft, Download, AlertTriangle, Trash2 } from 'lucide-react';
+import { Button } from './components/ui/Button';
 import { useRouter } from './hooks/useRouter';
 import { useAuthStore } from './stores/authStore';
 import { PermissionUtils } from './utils/permissions';
@@ -128,17 +130,49 @@ function App() {
   const handleReportExam = async () => {
     if (!selectedExam || !user || !token) return;
 
-    const reason = prompt(`Pourquoi signaler cet examen ?\n\nOptions:\n- inappropriate_content (Contenu inapproprié)\n- spam (Spam)\n- wrong_subject (Mauvais sujet)\n- copyright_violation (Violation de droits d'auteur)\n- other (Autre)\n\nEntrez votre choix:`);
+    const result = await Swal.fire({
+      title: 'Signaler cet examen',
+      html: `
+        <div style="text-align: left;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
+            Raison du signalement
+          </label>
+          <select id="swal-reason" class="swal2-input" style="margin: 0 0 16px 0; width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <option value="">Sélectionnez une raison</option>
+            <option value="inappropriate_content">Contenu inapproprié</option>
+            <option value="spam">Spam</option>
+            <option value="wrong_subject">Mauvais sujet</option>
+            <option value="copyright_violation">Violation de droits d'auteur</option>
+            <option value="other">Autre</option>
+          </select>
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
+            Description (optionnel)
+          </label>
+          <textarea id="swal-description" class="swal2-textarea" placeholder="Décrivez le problème..." style="margin: 0; width: 100%; min-height: 100px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Envoyer',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#f59e0b',
+      cancelButtonColor: '#64748b',
+      preConfirm: () => {
+        const reason = (document.getElementById('swal-reason') as HTMLSelectElement)?.value;
+        const description = (document.getElementById('swal-description') as HTMLTextAreaElement)?.value;
 
-    if (!reason) return;
+        if (!reason) {
+          Swal.showValidationMessage('Veuillez sélectionner une raison');
+          return false;
+        }
 
-    const validReasons = ['inappropriate_content', 'spam', 'wrong_subject', 'copyright_violation', 'other'];
-    if (!validReasons.includes(reason)) {
-      alert('Raison invalide. Utilisez: inappropriate_content, spam, wrong_subject, copyright_violation, ou other');
-      return;
-    }
+        return { reason, description };
+      },
+    });
 
-    const description = prompt('Description optionnelle du problème:');
+    if (!result.isConfirmed || !result.value) return;
+
+    const { reason, description } = result.value;
 
     try {
       const response = await fetch('/api/reports', {
@@ -156,14 +190,29 @@ function App() {
       });
 
       if (response.ok) {
-        alert('Signalement envoyé avec succès');
+        await Swal.fire({
+          title: 'Signalement envoyé',
+          text: 'Votre signalement a été envoyé avec succès',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+        });
       } else {
         const errorData = await response.json();
-        alert(`Erreur lors du signalement: ${errorData.error}`);
+        await Swal.fire({
+          title: 'Erreur',
+          text: `Erreur lors du signalement: ${errorData.error}`,
+          icon: 'error',
+          confirmButtonColor: '#ef4444',
+        });
       }
     } catch (error) {
       console.error('Erreur lors du signalement:', error);
-      alert('Erreur lors du signalement');
+      await Swal.fire({
+        title: 'Erreur',
+        text: 'Erreur lors du signalement',
+        icon: 'error',
+        confirmButtonColor: '#ef4444',
+      });
     }
   };
 
@@ -215,80 +264,88 @@ function App() {
       case 'viewer':
         if (!selectedExam) {
           return (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Chargement de l&apos;examen...</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                <span className="text-secondary">Chargement de l&apos;examen...</span>
+              </div>
             </div>
           );
         }
         return (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={navigateBack}
-                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
-                >
-                  <BackIcon />
-                  <span>Retour aux examens</span>
-                </button>
-                <div className="flex-1">
-                  <h1 className="text-xl font-semibold text-gray-900">{selectedExam.title}</h1>
-                  {selectedExam.module && selectedExam.year && (
-                    <p className="text-sm text-gray-600">
-                      {selectedExam.module} - {selectedExam.year}
-                    </p>
+          <div className="space-y-4 md:space-y-6">
+            {/* Header avec actions */}
+            <div className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* Left: Back button + Title */}
+                <div className="flex items-start gap-4">
+                  <button
+                    onClick={navigateBack}
+                    className="flex items-center gap-2 text-primary hover:text-primary-hover transition-colors cursor-pointer mt-1"
+                    title="Retour aux examens"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div className="flex-1">
+                    <h1 className="text-xl md:text-2xl font-bold text-secondary-dark mb-1">
+                      {selectedExam.title}
+                    </h1>
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-secondary">
+                      {selectedExam.module && <span>{selectedExam.module}</span>}
+                      {selectedExam.module && selectedExam.year && <span>•</span>}
+                      {selectedExam.year && <span>{selectedExam.year}</span>}
+                      {selectedExam.pages && (
+                        <>
+                          <span>•</span>
+                          <span>{selectedExam.pages} page{selectedExam.pages > 1 ? 's' : ''}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Action buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Bouton de téléchargement */}
+                  <Button
+                    onClick={handleDownloadPdf}
+                    variant="secondary"
+                    size="md"
+                    className="gap-2"
+                    title="Télécharger le PDF"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden md:inline">Télécharger</span>
+                  </Button>
+
+                  {/* Bouton de signalement */}
+                  <button
+                    onClick={handleReportExam}
+                    className="flex items-center gap-2 px-3 md:px-4 h-10 bg-warning/10 hover:bg-warning/20 text-warning rounded-lg transition-colors cursor-pointer"
+                    title="Signaler cet examen"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="text-sm font-medium hidden md:inline">Signaler</span>
+                  </button>
+
+                  {/* Bouton de suppression (propriétaire ou admin) */}
+                  {PermissionUtils.canDelete(user, selectedExam.uploadedBy) && (
+                    <Button
+                      onClick={handleDeleteExam}
+                      variant="danger"
+                      size="md"
+                      className="gap-2"
+                      title="Supprimer cet examen"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="hidden md:inline">Supprimer</span>
+                    </Button>
                   )}
                 </div>
               </div>
-
-              <div className="flex items-center space-x-3">
-                {/* Bouton de téléchargement */}
-                <button
-                  onClick={handleDownloadPdf}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 rounded-lg transition-colors"
-                  title="Télécharger le PDF"
-                >
-                  <DownloadIcon size="md" className="text-gray-600" />
-                  <span className="font-medium">Télécharger PDF</span>
-                </button>
-
-                {/* Bouton de signalement */}
-                <button
-                  onClick={handleReportExam}
-                  className="flex items-center space-x-2 px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 hover:text-orange-900 rounded-lg transition-colors"
-                  title="Signaler cet examen"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
-                    />
-                  </svg>
-                  <span className="font-medium">Signaler</span>
-                </button>
-
-                {/* Bouton de suppression (propriétaire ou admin) */}
-                {PermissionUtils.canDelete(user, selectedExam.uploadedBy) && (
-                  <button
-                    onClick={handleDeleteExam}
-                    className="flex items-center space-x-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-900 rounded-lg transition-colors"
-                    title="Supprimer cet examen"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    <span className="font-medium">Supprimer</span>
-                  </button>
-                )}
-              </div>
             </div>
+
+            {/* PDF Annotator */}
             <PdfAnnotator
               pdfUrl={`/api/files/${selectedExam._id}/download`}
               examId={selectedExam._id}
@@ -317,7 +374,7 @@ function App() {
               <div className="flex space-x-2">
                 <button
                   onClick={() => navigate('exams')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                     isPage('exams')
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -327,7 +384,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => navigate('upload')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                     isPage('upload')
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -338,7 +395,7 @@ function App() {
                 {PermissionUtils.isAdmin(user) && (
                   <button
                     onClick={() => navigate('admin-reports')}
-                    className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                       isPage('admin-reports')
                         ? 'bg-purple-500 text-white'
                         : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
@@ -360,12 +417,13 @@ function App() {
 
               {user && (
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-900">
                       {user.firstName} {user.lastName}
                     </span>
                     {PermissionUtils.isAdmin(user) && (
-                      <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">
+                      <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">
                         Admin
                       </span>
                     )}
@@ -375,7 +433,7 @@ function App() {
                       logout();
                       navigate('login');
                     }}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    className="text-sm text-red-600 hover:text-red-700 font-medium cursor-pointer"
                   >
                     Déconnexion
                   </button>

@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import ExamCard from './ExamCard';
-import { ErrorIcon, EmptyStateIcon } from './ui/Icon';
+import { AlertCircle, X, FileX, Search, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
+import { Input } from './ui/Input';
 
 interface Exam {
   _id: string;
@@ -102,17 +104,49 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   const handleReportExam = async (examId: string) => {
     if (!token) return;
 
-    const reason = prompt(`Pourquoi signaler cet examen ?\n\nOptions:\n- inappropriate_content (Contenu inapproprié)\n- spam (Spam)\n- wrong_subject (Mauvais sujet)\n- copyright_violation (Violation de droits d'auteur)\n- other (Autre)\n\nEntrez votre choix:`);
+    const result = await Swal.fire({
+      title: 'Signaler cet examen',
+      html: `
+        <div style="text-align: left;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
+            Raison du signalement
+          </label>
+          <select id="swal-reason" class="swal2-input" style="margin: 0 0 16px 0; width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <option value="">Sélectionnez une raison</option>
+            <option value="inappropriate_content">Contenu inapproprié</option>
+            <option value="spam">Spam</option>
+            <option value="wrong_subject">Mauvais sujet</option>
+            <option value="copyright_violation">Violation de droits d'auteur</option>
+            <option value="other">Autre</option>
+          </select>
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
+            Description (optionnel)
+          </label>
+          <textarea id="swal-description" class="swal2-textarea" placeholder="Décrivez le problème..." style="margin: 0; width: 100%; min-height: 100px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Envoyer',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#f59e0b',
+      cancelButtonColor: '#64748b',
+      preConfirm: () => {
+        const reason = (document.getElementById('swal-reason') as HTMLSelectElement)?.value;
+        const description = (document.getElementById('swal-description') as HTMLTextAreaElement)?.value;
 
-    if (!reason) return;
+        if (!reason) {
+          Swal.showValidationMessage('Veuillez sélectionner une raison');
+          return false;
+        }
 
-    const validReasons = ['inappropriate_content', 'spam', 'wrong_subject', 'copyright_violation', 'other'];
-    if (!validReasons.includes(reason)) {
-      alert('Raison invalide. Utilisez: inappropriate_content, spam, wrong_subject, copyright_violation, ou other');
-      return;
-    }
+        return { reason, description };
+      },
+    });
 
-    const description = prompt('Description optionnelle du problème:');
+    if (!result.isConfirmed || !result.value) return;
+
+    const { reason, description } = result.value;
 
     try {
       const response = await fetch('/api/reports', {
@@ -130,23 +164,38 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
       });
 
       if (response.ok) {
-        alert('Signalement envoyé avec succès');
+        await Swal.fire({
+          title: 'Signalement envoyé',
+          text: 'Votre signalement a été envoyé avec succès',
+          icon: 'success',
+          confirmButtonColor: '#10b981',
+        });
       } else {
         const errorData = await response.json();
-        alert(`Erreur lors du signalement: ${errorData.error}`);
+        await Swal.fire({
+          title: 'Erreur',
+          text: `Erreur lors du signalement: ${errorData.error}`,
+          icon: 'error',
+          confirmButtonColor: '#ef4444',
+        });
       }
     } catch (error) {
       console.error('Erreur lors du signalement:', error);
-      alert('Erreur lors du signalement');
+      await Swal.fire({
+        title: 'Erreur',
+        text: 'Erreur lors du signalement',
+        icon: 'error',
+        confirmButtonColor: '#ef4444',
+      });
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="text-gray-600">Chargement des examens...</span>
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <span className="text-secondary">Chargement des examens...</span>
         </div>
       </div>
     );
@@ -154,24 +203,22 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center">
-          <div className="mr-2">
-            <ErrorIcon />
-          </div>
-          <span className="text-red-800">{error}</span>
+      <div className="bg-error-bg border border-error/20 rounded-xl p-4">
+        <div className="flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-error flex-shrink-0" />
+          <span className="text-error font-medium">{error}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* En-tête avec statistiques */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Examens disponibles</h1>
-          <p className="text-gray-600 text-sm">
+          <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">Examens disponibles</h1>
+          <p className="text-secondary text-sm md:text-base mt-1">
             {filteredExams.length} examen{filteredExams.length !== 1 ? 's' : ''}
             {filteredExams.length !== exams.length && ` sur ${exams.length}`}
           </p>
@@ -180,41 +227,40 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
         {(searchTerm || selectedYear || selectedModule) && (
           <button
             onClick={resetFilters}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="flex items-center gap-2 text-primary hover:text-primary-hover text-sm font-medium transition-colors cursor-pointer"
           >
-            Réinitialiser les filtres
+            <RotateCcw className="w-4 h-4" />
+            <span>Réinitialiser les filtres</span>
           </button>
         )}
       </div>
 
       {/* Filtres et recherche */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+      <div className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Recherche */}
-          <div>
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-              Rechercher
-            </label>
-            <input
+          <div className="relative">
+            <Input
               id="search"
               type="text"
               placeholder="Rechercher par titre ou module..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              label="Rechercher"
             />
+            <Search className="absolute right-3 top-9 w-4 h-4 text-secondary pointer-events-none" />
           </div>
 
           {/* Filtre par année */}
           <div>
-            <label htmlFor="year-filter" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="year-filter" className="block text-sm font-medium text-secondary-dark mb-1">
               Année
             </label>
             <select
               id="year-filter"
               value={selectedYear}
               onChange={e => setSelectedYear(e.target.value)}
-              className="w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+              className="w-full py-2 px-3 border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
             >
               <option value="">Toutes les années</option>
               {availableYears.map(year => (
@@ -227,14 +273,14 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
           {/* Filtre par module */}
           <div>
-            <label htmlFor="module-filter" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="module-filter" className="block text-sm font-medium text-secondary-dark mb-1">
               Module
             </label>
             <select
               id="module-filter"
               value={selectedModule}
               onChange={e => setSelectedModule(e.target.value)}
-              className="w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+              className="w-full py-2 px-3 border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
             >
               <option value="">Tous les modules</option>
               {availableModules.map(module => (
@@ -249,19 +295,19 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
       {/* Liste des examens */}
       {filteredExams.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="mx-auto mb-2">
-            <EmptyStateIcon />
+        <div className="bg-white border border-border rounded-xl p-8 md:p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
+            <FileX className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun examen trouvé</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-secondary-dark mb-2">Aucun examen trouvé</h3>
+          <p className="text-sm text-secondary">
             {exams.length === 0
               ? 'Aucun examen disponible. Commencez par en uploader un !'
               : 'Essayez de modifier vos critères de recherche.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredExams.map(exam => (
             <ExamCard key={exam._id} exam={exam} onSelect={onExamSelect} onReport={handleReportExam} />
           ))}
