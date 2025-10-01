@@ -35,8 +35,14 @@ function App() {
 
   // Charger un examen depuis son ID (pour les URL directes)
   const loadExamById = async (examId: string): Promise<Exam | null> => {
+    if (!token) return null;
+
     try {
-      const response = await fetch(`/api/exams/${examId}`);
+      const response = await fetch(`/api/exams/${examId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.ok) {
         return await response.json();
       }
