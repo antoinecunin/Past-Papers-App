@@ -96,7 +96,7 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-success-bg/30 flex flex-col justify-center p-4 md:p-6 lg:p-8">
-        <div className="w-full max-w-md mx-auto">
+        <div className="w-full max-w-lg mx-auto">
           {/* Success card */}
           <div className="bg-white rounded-2xl border border-border p-6 md:p-8 shadow-xl shadow-black/5">
             <div className="text-center">

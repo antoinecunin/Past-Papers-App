@@ -154,14 +154,12 @@ export default function AdminReportsPage() {
   // Vérifier les permissions admin
   if (!user || !PermissionUtils.isAdmin(user)) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-error-bg border border-error/20 rounded-xl p-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-error flex-shrink-0 mt-0.5" />
-            <div>
-              <h1 className="text-lg font-semibold text-error mb-1">Accès refusé</h1>
-              <p className="text-error">Cette page est réservée aux administrateurs.</p>
-            </div>
+      <div className="bg-error-bg border border-error/20 rounded-xl p-6">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-6 h-6 text-error flex-shrink-0 mt-0.5" />
+          <div>
+            <h1 className="text-lg font-semibold text-error mb-1">Accès refusé</h1>
+            <p className="text-error">Cette page est réservée aux administrateurs.</p>
           </div>
         </div>
       </div>

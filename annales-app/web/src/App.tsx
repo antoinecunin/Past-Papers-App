@@ -394,7 +394,7 @@ function App() {
         </nav>
       )}
 
-      <main className={shouldShowNavigation ? 'max-w-6xl mx-auto p-4' : ''}>
+      <main className={shouldShowNavigation ? 'max-w-[90rem] mx-auto p-4 md:p-6 lg:p-8' : ''}>
         {renderCurrentPage()}
       </main>
     </div>
