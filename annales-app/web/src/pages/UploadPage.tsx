@@ -9,7 +9,7 @@ import { Button } from '../components/ui/Button';
 export default function UploadPage() {
   const { token } = useAuthStore();
   const [title, setTitle] = useState('');
-  const [year, setYear] = useState<number | ''>('');
+  const [year, setYear] = useState<number>(new Date().getFullYear());
   const [module, setModule] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,12 +40,22 @@ export default function UploadPage() {
       return;
     }
 
+    if (!year) {
+      alert('Veuillez renseigner une année');
+      return;
+    }
+
+    if (!module.trim()) {
+      alert('Veuillez renseigner un module');
+      return;
+    }
+
     try {
       setIsUploading(true);
       const fd = new FormData();
       fd.append('file', selectedFile);
       fd.append('title', title);
-      fd.append('year', String(year || ''));
+      fd.append('year', String(year));
       fd.append('module', module);
 
       const { data } = await axios.post('/api/files/upload', fd, {
@@ -56,7 +66,7 @@ export default function UploadPage() {
 
       setUploadSuccess(true);
       setTitle('');
-      setYear('');
+      setYear(new Date().getFullYear());
       setModule('');
       setSelectedFile(null);
 
@@ -120,28 +130,32 @@ export default function UploadPage() {
               id="year"
               name="year"
               type="number"
-              value={year === '' ? '' : year}
+              required
+              min={1900}
+              max={new Date().getFullYear() + 1}
+              value={year}
               onChange={(e) => {
                 const val = e.target.value;
                 if (val === '') {
-                  setYear('');
+                  setYear(new Date().getFullYear());
                 } else {
                   const num = Number(val);
-                  setYear(isNaN(num) ? '' : num);
+                  if (!isNaN(num) && num >= 1900) {
+                    setYear(num);
+                  }
                 }
               }}
               placeholder="Ex: 2024"
-              helperText="Optionnel"
             />
             <Input
               label="Module"
               id="module"
               name="module"
               type="text"
+              required
               value={module}
               onChange={(e) => setModule(e.target.value)}
               placeholder="Ex: M12 - Algèbre"
-              helperText="Optionnel"
             />
           </div>
 
@@ -164,7 +178,15 @@ export default function UploadPage() {
             variant="primary"
             size="lg"
             className="w-full gap-2 shadow-lg shadow-primary/20"
-            disabled={isUploading || !title.trim() || !selectedFile}
+            disabled={
+              isUploading ||
+              !title.trim() ||
+              !year ||
+              year < 1900 ||
+              year > new Date().getFullYear() + 1 ||
+              !module.trim() ||
+              !selectedFile
+            }
           >
             {isUploading ? (
               <>

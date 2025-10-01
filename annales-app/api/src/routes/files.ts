@@ -23,7 +23,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required: [file]
+ *             required: [file, title, year, module]
  *             properties:
  *               file:
  *                 type: string
@@ -34,10 +34,10 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
  *                 description: Titre de l'examen
  *               year:
  *                 type: integer
- *                 description: Année de l'examen
+ *                 description: Année de l'examen (requis)
  *               module:
  *                 type: string
- *                 description: Module ou matière
+ *                 description: Module ou matière (requis)
  *     responses:
  *       200:
  *         description: Upload réussi
@@ -66,11 +66,28 @@ router.post(
   authMiddleware,
   upload.single('file'),
   async (req: AuthenticatedRequest, res) => {
-    if (!req.file) return res.status(400).json({ error: 'missing file' });
+    if (!req.file) return res.status(400).json({ error: 'Fichier manquant' });
+
     const { title, year, module } = req.body;
+
+    // Validation des champs requis
+    if (!title || !year || !module) {
+      return res.status(400).json({
+        error: 'Les champs titre, année et module sont obligatoires'
+      });
+    }
+
+    // Validation du type d'année
+    const yearNum = parseInt(year, 10);
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 1) {
+      return res.status(400).json({
+        error: 'Année invalide'
+      });
+    }
+
     const key = objectKey(
       'annales',
-      `${year || 'unknown'}`,
+      `${yearNum}`,
       req.file.originalname.replace(/\s+/g, '_')
     );
     await uploadBuffer(key, req.file.buffer, req.file.mimetype);
@@ -81,7 +98,7 @@ router.post(
 
     const exam = await Exam.create({
       title,
-      year,
+      year: yearNum,
       module,
       fileKey: key,
       pages,
