@@ -58,7 +58,7 @@ export default function UploadPage() {
       fd.append('year', String(year));
       fd.append('module', module);
 
-      const { data } = await axios.post('/api/files/upload', fd, {
+      await axios.post('/api/files/upload', fd, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -76,7 +76,7 @@ export default function UploadPage() {
       if (axios.isAxiosError(error)) {
         alert(`Erreur d'upload: ${error.response?.data?.error || error.message}`);
       } else {
-        alert('Erreur inattendue lors de l\'upload');
+        alert('Erreur inattendue lors de l&apos;upload');
       }
     } finally {
       setIsUploading(false);
@@ -196,7 +196,7 @@ export default function UploadPage() {
             ) : (
               <>
                 <Upload className="w-5 h-5" />
-                <span>Uploader l'annale</span>
+                <span>Uploader l&apos;annale</span>
               </>
             )}
           </Button>

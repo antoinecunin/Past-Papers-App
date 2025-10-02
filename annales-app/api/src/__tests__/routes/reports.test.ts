@@ -88,6 +88,10 @@ describe('POST /api/reports', () => {
     app.use('/api/reports', reportsRouter);
   });
 
+  afterEach(async () => {
+    await ReportModel.deleteMany({});
+  });
+
   it('should require authentication', async () => {
     const response = await request(app).post('/api/reports');
 
@@ -219,6 +223,8 @@ describe('POST /api/reports', () => {
 
     const exam = await Exam.create({
       title: 'Test',
+      year: 2024,
+      module: 'Test Module',
       fileKey: 'test.pdf',
       pages: 1,
       uploadedBy: user._id,
@@ -254,6 +260,8 @@ describe('POST /api/reports', () => {
 
     const exam = await Exam.create({
       title: 'Test',
+      year: 2024,
+      module: 'Test Module',
       fileKey: 'test.pdf',
       pages: 1,
       uploadedBy: user._id,
@@ -319,6 +327,8 @@ describe('GET /api/reports', () => {
     // Créer un examen et des signalements
     const exam = await Exam.create({
       title: 'Test',
+      year: 2024,
+      module: 'Test Module',
       fileKey: 'test.pdf',
       pages: 1,
       uploadedBy: user._id,
@@ -327,6 +337,8 @@ describe('GET /api/reports', () => {
     // Créer un autre examen pour éviter duplicate key
     const exam2 = await Exam.create({
       title: 'Test2',
+      year: 2024,
+      module: 'Test Module 2',
       fileKey: 'test2.pdf',
       pages: 1,
       uploadedBy: user._id,
@@ -371,6 +383,8 @@ describe('GET /api/reports', () => {
 
     const exam = await Exam.create({
       title: 'Test',
+      year: 2024,
+      module: 'Test Module',
       fileKey: 'test.pdf',
       pages: 1,
       uploadedBy: user._id,
@@ -448,6 +462,8 @@ describe('PUT /api/reports/:id/review', () => {
 
     const exam = await Exam.create({
       title: 'Test',
+      year: 2024,
+      module: 'Test Module',
       fileKey: 'test.pdf',
       pages: 1,
       uploadedBy: user._id,
@@ -479,6 +495,8 @@ describe('PUT /api/reports/:id/review', () => {
 
     const exam = await Exam.create({
       title: 'Test',
+      year: 2024,
+      module: 'Test Module',
       fileKey: 'test.pdf',
       pages: 1,
       uploadedBy: user._id,
@@ -519,6 +537,8 @@ describe('PUT /api/reports/:id/review', () => {
 
     const exam = await Exam.create({
       title: 'Test',
+      year: 2024,
+      module: 'Test Module',
       fileKey: 'test.pdf',
       pages: 1,
       uploadedBy: user._id,

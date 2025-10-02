@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ExamCard from './ExamCard';
-import { AlertCircle, X, FileX, Search, RotateCcw } from 'lucide-react';
+import { AlertCircle, FileX, Search, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
 import { Input } from './ui/Input';

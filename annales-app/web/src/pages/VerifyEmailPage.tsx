@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, X, Mail, CheckCircle, LogIn, UserPlus, RotateCcw } from 'lucide-react';
+import { AlertCircle, X, CheckCircle, LogIn, UserPlus, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
-import { useInstance } from '../hooks/useInstance';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 

@@ -35,7 +35,7 @@ describe('POST /api/files/upload', () => {
       .field('module', 'Test Module');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('missing file');
+    expect(response.body.error).toContain('Fichier manquant');
   });
 
   it.skip('should upload PDF and create exam', async () => {

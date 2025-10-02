@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import UploadPage from './pages/UploadPage';
 import AdminReportsPage from './pages/AdminReportsPage';
 import LoginPage from './pages/LoginPage';
@@ -34,7 +34,7 @@ function App() {
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   // Charger un examen depuis son ID (pour les URL directes)
-  const loadExamById = async (examId: string): Promise<Exam | null> => {
+  const loadExamById = useCallback(async (examId: string): Promise<Exam | null> => {
     if (!token) return null;
 
     try {
@@ -50,7 +50,7 @@ function App() {
       console.error("Erreur lors du chargement de l'examen:", error);
     }
     return null;
-  };
+  }, [token]);
 
   // Gérer la sélection d'un examen
   const handleExamSelect = (exam: Exam) => {
@@ -181,7 +181,7 @@ function App() {
         }
       });
     }
-  }, [currentRoute, selectedExam, isPage, getExamId, navigate]);
+  }, [currentRoute, selectedExam, isPage, getExamId, navigate, loadExamById]);
 
   const renderCurrentPage = () => {
     // Pages d'authentification - toujours accessibles

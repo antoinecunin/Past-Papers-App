@@ -264,7 +264,7 @@ export default function RegisterPage() {
 
           {/* Footer CGU */}
           <p className="text-center text-xs text-secondary mt-6">
-            En créant un compte, vous acceptez nos conditions d'utilisation
+            En créant un compte, vous acceptez nos conditions d&apos;utilisation
           </p>
 
           {/* Séparateur */}

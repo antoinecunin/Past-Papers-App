@@ -1,4 +1,4 @@
-import { BookOpen, FileText, Eye, Download, AlertTriangle } from 'lucide-react';
+import { BookOpen, FileText, Download, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 
 interface Exam {
