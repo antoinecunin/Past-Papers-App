@@ -87,29 +87,31 @@ annales-app/
 ## API Endpoints
 
 - `GET /api/health` - Health check
-- `GET /api/exams` - Liste des examens
-- `POST /api/files/upload` - Upload d'un PDF
-- `POST /api/answers` - Soumission d'une réponse
-- `GET /api/docs` - Documentation Swagger
+- `GET /api/docs` - Documentation Swagger (liste complète des endpoints)
+- `/api/auth/*` - Authentification (register, login, verify-email, forgot-password, reset-password)
+- `/api/exams/*` - Gestion des examens (CRUD)
+- `/api/files/*` - Upload et téléchargement de PDFs
+- `/api/answers/*` - Annotations sur les examens
+- `/api/reports/*` - Signalements et modération (admin)
 
 ## Sécurité
 
+- Authentification JWT avec vérification email
 - Filtrage IP au niveau Nginx
 - MinIO non exposé publiquement
 - CORS configuré
 - Helmet.js pour les en-têtes de sécurité
 - Limitation de taille des uploads (50MB)
+- Hachage des mots de passe (bcrypt)
 
 ## Configuration IP
 
 Éditez la variable `ALLOWED_CIDR` dans `.env` et ajustez le fichier `docker/nginx/nginx.conf` pour vos plages IP autorisées.
 
-## Prochaines Étapes
+## Fonctionnalités Implémentées
 
-- [ ] Authentification (SSO ou Basic Auth)
-- [ ] Amélioration de l'export PDF avec commentaires
-- [ ] Export PDF avec réponses intégrées
-- [ ] Recherche et filtrage des examens
-- [ ] Rôles utilisateurs
-- [ ] Tests automatisés
-- [ ] CI/CD GitLab
+- Authentification JWT avec vérification email et reset de mot de passe
+- Rôles utilisateurs (user/admin) avec contrôle d'accès
+- Système de signalement et modération (admin)
+- Tests automatisés (Jest + mongodb-memory-server)
+- Filtrage des examens par année et module
