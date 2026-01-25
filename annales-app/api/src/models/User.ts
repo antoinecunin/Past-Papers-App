@@ -65,14 +65,12 @@ const UserSchema = new Schema<User>(
     },
     verificationToken: {
       type: String,
-      sparse: true,
     },
     verificationExpires: {
       type: Date,
     },
     resetPasswordToken: {
       type: String,
-      sparse: true,
     },
     resetPasswordExpires: {
       type: Date,
@@ -82,8 +80,8 @@ const UserSchema = new Schema<User>(
 );
 
 // Index pour améliorer les performances des requêtes de vérification
-UserSchema.index({ verificationToken: 1 });
-UserSchema.index({ resetPasswordToken: 1 });
-UserSchema.index({ email: 1 });
+// sparse: true permet d'exclure les documents où le champ est null/undefined
+UserSchema.index({ verificationToken: 1 }, { sparse: true });
+UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
 
 export const UserModel = model<User>('User', UserSchema);

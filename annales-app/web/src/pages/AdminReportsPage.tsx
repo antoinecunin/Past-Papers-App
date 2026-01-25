@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import { Shield, AlertCircle, RefreshCw, CheckCircle, XCircle, FileText, MessageSquare } from 'lucide-react';
+import { Shield, AlertCircle, RefreshCw, CheckCircle, XCircle, FileText, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
 import { Button } from '../components/ui/Button';
+
+const REPORTS_PER_PAGE = 20;
 
 interface User {
   _id: string;
@@ -46,8 +48,10 @@ export default function AdminReportsPage() {
     type?: string;
   }>({ status: 'pending' });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [pagination, setPagination] = useState<ReportsResponse['pagination'] | null>(null);
 
-  const fetchReports = useCallback(async () => {
+  const fetchReports = useCallback(async (newOffset = offset) => {
     if (!token) return;
 
     try {
@@ -55,7 +59,8 @@ export default function AdminReportsPage() {
       const params = new URLSearchParams();
       if (filter.status) params.append('status', filter.status);
       if (filter.type) params.append('type', filter.type);
-      params.append('limit', '50');
+      params.append('limit', String(REPORTS_PER_PAGE));
+      params.append('offset', String(newOffset));
 
       const response = await fetch(`/api/reports?${params.toString()}`, {
         headers: {
@@ -66,6 +71,7 @@ export default function AdminReportsPage() {
       if (response.ok) {
         const data: ReportsResponse = await response.json();
         setReports(data.reports);
+        setPagination(data.pagination);
         setError(null);
       } else {
         const errorData = await response.json();
@@ -77,7 +83,7 @@ export default function AdminReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, filter]);
+  }, [token, filter, offset]);
 
   const handleReviewReport = async (reportId: string, action: 'approve' | 'reject') => {
     if (!token) return;
@@ -147,9 +153,29 @@ export default function AdminReportsPage() {
     }
   };
 
+  // Reset offset quand les filtres changent
   useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+    setOffset(0);
+    fetchReports(0);
+  }, [filter, token]);
+
+  // Handlers de pagination
+  const handlePreviousPage = () => {
+    const newOffset = Math.max(0, offset - REPORTS_PER_PAGE);
+    setOffset(newOffset);
+    fetchReports(newOffset);
+  };
+
+  const handleNextPage = () => {
+    if (pagination?.hasMore) {
+      const newOffset = offset + REPORTS_PER_PAGE;
+      setOffset(newOffset);
+      fetchReports(newOffset);
+    }
+  };
+
+  const currentPage = Math.floor(offset / REPORTS_PER_PAGE) + 1;
+  const totalPages = pagination ? Math.ceil(pagination.total / REPORTS_PER_PAGE) : 1;
 
   // Vérifier les permissions admin
   if (!user || !PermissionUtils.isAdmin(user)) {
@@ -226,7 +252,14 @@ export default function AdminReportsPage() {
           </div>
         </div>
         <div className="text-sm text-secondary">
-          {reports.length} signalement{reports.length !== 1 ? 's' : ''}
+          {pagination ? (
+            <>
+              {pagination.total} signalement{pagination.total !== 1 ? 's' : ''}
+              {totalPages > 1 && ` • Page ${currentPage}/${totalPages}`}
+            </>
+          ) : (
+            `${reports.length} signalement${reports.length !== 1 ? 's' : ''}`
+          )}
         </div>
       </div>
 
@@ -264,7 +297,7 @@ export default function AdminReportsPage() {
           </select>
 
           <Button
-            onClick={fetchReports}
+            onClick={() => fetchReports(offset)}
             variant="secondary"
             size="md"
             className="gap-2"
@@ -285,6 +318,7 @@ export default function AdminReportsPage() {
           <p className="text-sm text-secondary">Aucun signalement ne correspond aux filtres sélectionnés.</p>
         </div>
       ) : (
+        <>
         <div className="space-y-4">
           {reports.map((report) => (
             <div key={report._id} className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
@@ -402,6 +436,38 @@ export default function AdminReportsPage() {
             </div>
           ))}
         </div>
+
+        {/* Pagination */}
+        {pagination && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 pt-4">
+            <Button
+              onClick={handlePreviousPage}
+              disabled={offset === 0 || loading}
+              variant="secondary"
+              size="sm"
+              className="gap-1.5"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Précédent</span>
+            </Button>
+
+            <span className="text-sm text-secondary">
+              Page {currentPage} sur {totalPages}
+            </span>
+
+            <Button
+              onClick={handleNextPage}
+              disabled={!pagination.hasMore || loading}
+              variant="secondary"
+              size="sm"
+              className="gap-1.5"
+            >
+              <span>Suivant</span>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );
