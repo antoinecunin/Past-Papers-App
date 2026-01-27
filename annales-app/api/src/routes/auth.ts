@@ -24,7 +24,16 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Schémas de validation
+// Schémas de validation réutilisables
+const passwordSchema = Joi.string()
+  .min(8)
+  .pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/)
+  .required()
+  .messages({
+    'string.pattern.base':
+      'Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre',
+  });
+
 const registerSchema = Joi.object({
   email: Joi.string()
     .email()
@@ -38,14 +47,7 @@ const registerSchema = Joi.object({
     .messages({
       'any.invalid': "L'email doit se terminer par @etu.unistra.fr",
     }),
-  password: Joi.string()
-    .min(8)
-    .pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/)
-    .required()
-    .messages({
-      'string.pattern.base':
-        'Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre',
-    }),
+  password: passwordSchema,
   firstName: Joi.string().trim().max(50).required(),
   lastName: Joi.string().trim().max(50).required(),
 });
@@ -61,14 +63,7 @@ const forgotPasswordSchema = Joi.object({
 
 const resetPasswordSchema = Joi.object({
   token: Joi.string().required(),
-  password: Joi.string()
-    .min(8)
-    .pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/)
-    .required()
-    .messages({
-      'string.pattern.base':
-        'Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre',
-    }),
+  password: passwordSchema,
 });
 
 /**
