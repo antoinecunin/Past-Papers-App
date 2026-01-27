@@ -68,6 +68,12 @@ router.post(
   async (req: AuthenticatedRequest, res) => {
     if (!req.file) return res.status(400).json({ error: 'Fichier manquant' });
 
+    // Validation du type MIME
+    const ALLOWED_MIME_TYPES = ['application/pdf'];
+    if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: 'Seuls les fichiers PDF sont acceptés' });
+    }
+
     const { title, year, module } = req.body;
 
     // Validation des champs requis
@@ -85,16 +91,21 @@ router.post(
       });
     }
 
+    // Validation du contenu PDF (rejette les fichiers renommés)
+    let pages: number;
+    try {
+      const pdf = await PDFDocument.load(req.file.buffer);
+      pages = pdf.getPageCount();
+    } catch {
+      return res.status(400).json({ error: 'Le fichier n\'est pas un PDF valide' });
+    }
+
     const key = objectKey(
       'annales',
       `${yearNum}`,
       req.file.originalname.replace(/\s+/g, '_')
     );
     await uploadBuffer(key, req.file.buffer, req.file.mimetype);
-
-    // lire pages via pdf-lib
-    const pdf = await PDFDocument.load(req.file.buffer);
-    const pages = pdf.getPageCount();
 
     const exam = await Exam.create({
       title,
