@@ -5,6 +5,13 @@ import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../mid
 
 export const router = Router();
 
+// Limites de longueur par type de contenu
+const CONTENT_MAX_LENGTH = {
+  text: 50_000,    // 50k caractères pour du texte
+  image: 10_000_000, // ~7.5MB en base64
+  latex: 10_000,   // 10k caractères pour du LaTeX
+} as const;
+
 /**
  * @swagger
  * /answers:
@@ -128,12 +135,20 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     }
 
     // Validation du content
-    const validTypes = ['text', 'image', 'latex'];
-    if (!validTypes.includes(content.type)) {
+    const validTypes = ['text', 'image', 'latex'] as const;
+    if (!validTypes.includes(content.type as typeof validTypes[number])) {
       return res.status(400).json({ error: 'content.type doit être text, image ou latex' });
     }
     if (!content.data.trim()) {
       return res.status(400).json({ error: 'content.data requis' });
+    }
+
+    // Validation de la longueur
+    const maxLength = CONTENT_MAX_LENGTH[content.type as keyof typeof CONTENT_MAX_LENGTH];
+    if (content.data.length > maxLength) {
+      return res.status(400).json({
+        error: `Contenu trop long (max ${maxLength.toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
+      });
     }
 
     const docData = {
@@ -214,12 +229,20 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
     }
 
     // Validation du content
-    const validTypes = ['text', 'image', 'latex'];
-    if (!validTypes.includes(content.type)) {
+    const validTypes = ['text', 'image', 'latex'] as const;
+    if (!validTypes.includes(content.type as typeof validTypes[number])) {
       return res.status(400).json({ error: 'content.type doit être text, image ou latex' });
     }
     if (!content.data.trim()) {
       return res.status(400).json({ error: 'content.data requis' });
+    }
+
+    // Validation de la longueur
+    const maxLength = CONTENT_MAX_LENGTH[content.type as keyof typeof CONTENT_MAX_LENGTH];
+    if (content.data.length > maxLength) {
+      return res.status(400).json({
+        error: `Contenu trop long (max ${maxLength.toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
+      });
     }
 
     // Trouver le commentaire et vérifier la propriété
