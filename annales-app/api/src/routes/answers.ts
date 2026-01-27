@@ -7,9 +7,9 @@ export const router = Router();
 
 // Limites de longueur par type de contenu
 const CONTENT_MAX_LENGTH = {
-  text: 50_000,    // 50k caractères pour du texte
-  image: 10_000_000, // ~7.5MB en base64
-  latex: 10_000,   // 10k caractères pour du LaTeX
+  text: 50_000,   // 50k caractères pour du texte
+  image: 10_000,  // 10k caractères (URLs uniquement, pas de data URIs)
+  latex: 10_000,  // 10k caractères pour du LaTeX
 } as const;
 
 /**

@@ -8,6 +8,7 @@ import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
 import { useAuthStore } from '../stores/authStore';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
+import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor } from '../constants/content';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -421,6 +422,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         });
 
         // Contenu du formulaire
+        const defaultMaxLength = CONTENT_MAX_LENGTH.text;
         indicator.innerHTML = `
           <form class="new-comment-form" style="display: flex; flex-direction: column; gap: 8px;">
             <select class="content-type-select" style="padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
@@ -433,8 +435,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               placeholder="Votre commentaire..."
               style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; resize: none; font-size: 12px;"
               rows="3"
+              maxlength="${defaultMaxLength}"
               required
             ></textarea>
+            <div class="char-counter" style="font-size: 11px; text-align: right; color: #6b7280;">
+              0 / ${defaultMaxLength.toLocaleString('fr-FR')}
+            </div>
             <div class="image-preview" style="display: none; max-width: 150px;">
               <img style="width: 100%; border-radius: 4px;" />
             </div>
@@ -459,11 +465,26 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         const imagePreview = indicator.querySelector('.image-preview') as HTMLDivElement;
         const previewImg = imagePreview.querySelector('img') as HTMLImageElement;
         const latexPreview = indicator.querySelector('.latex-preview') as HTMLDivElement;
+        const charCounter = indicator.querySelector('.char-counter') as HTMLDivElement;
+
+        // Fonction pour mettre à jour le compteur de caractères
+        const updateCharCounter = () => {
+          const currentType = typeSelect.value as ContentType;
+          const maxLength = CONTENT_MAX_LENGTH[currentType];
+          const currentLength = textarea.value.length;
+          charCounter.textContent = formatCharCount(currentLength, maxLength);
+          charCounter.style.color = getCharCountColor(currentLength, maxLength);
+        };
 
         // Gérer le changement de type
         const updatePlaceholder = () => {
           const selectedType = typeSelect.value as ContentType;
           const content = textarea.value.trim();
+          const maxLength = CONTENT_MAX_LENGTH[selectedType];
+
+          // Mettre à jour la limite du textarea
+          textarea.maxLength = maxLength;
+          updateCharCounter();
 
           switch (selectedType) {
             case 'text':
@@ -499,10 +520,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         typeSelect.addEventListener('change', updatePlaceholder);
 
-        // Prévisualisation en temps réel
+        // Prévisualisation en temps réel + compteur de caractères
         textarea.addEventListener('input', () => {
           const currentType = typeSelect.value as ContentType;
           const content = textarea.value.trim();
+
+          // Mettre à jour le compteur
+          updateCharCounter();
 
           if (currentType === 'image') {
             if (content && (content.startsWith('http') || content.startsWith('data:'))) {

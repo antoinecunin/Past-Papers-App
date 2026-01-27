@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 import { TrashIcon, CopyIcon } from './ui/Icon';
+import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor } from '../constants/content';
 
 interface AnswerContentDisplayProps {
   answer: Answer;
@@ -211,7 +212,16 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
             setEditContent(newContent);
           }}
           style={textareaStyle}
+          maxLength={CONTENT_MAX_LENGTH[editContent.type]}
         />
+        <div style={{
+          fontSize: '11px',
+          textAlign: 'right',
+          marginTop: '2px',
+          color: getCharCountColor(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type]),
+        }}>
+          {formatCharCount(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type])}
+        </div>
         {editContent.type === 'latex' && (
           <div style={latexPreviewStyle} key={`latex-preview-${editContent.data.length}`}>
             <div dangerouslySetInnerHTML={{ __html: renderLatex(editContent.data) }} />

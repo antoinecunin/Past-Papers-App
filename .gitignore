@@ -4,5 +4,6 @@
 CLAUDE.md
 M12_controle_final.pdf
 node_modules/
+dist/
 *.zip
 AUDIT_TODO.md
