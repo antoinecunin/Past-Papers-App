@@ -20,8 +20,36 @@ export interface GetReportsOptions {
   offset: number;
 }
 
+export interface TargetDetails {
+  // Pour les examens
+  title?: string;
+  module?: string;
+  year?: number;
+  // Pour les commentaires
+  examId?: string;
+  page?: number;
+  // Indique si le contenu existe encore
+  exists: boolean;
+}
+
+export interface ReportWithTarget {
+  _id: string;
+  type: ReportType;
+  targetId: string;
+  reason: string;
+  description?: string;
+  reportedBy: { _id: string; firstName: string; lastName: string; email: string };
+  status: ReportStatus;
+  reviewedBy?: { _id: string; firstName: string; lastName: string; email: string };
+  reviewedAt?: Date;
+  reviewNote?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  target: TargetDetails;
+}
+
 export interface ReportsResult {
-  reports: unknown[];
+  reports: ReportWithTarget[];
   pagination: {
     total: number;
     limit: number;
@@ -96,8 +124,25 @@ class ReportService {
     // Compter le total pour la pagination
     const total = await ReportModel.countDocuments(filter);
 
+    // Enrichir chaque signalement avec les détails de la cible
+    // Note: populate() transforme les ObjectId en objets avec les détails utilisateur
+    const enrichedReports: ReportWithTarget[] = await Promise.all(
+      reports.map(async (report) => {
+        const targetDetails = await this.getTargetDetails(
+          report.type as ReportType,
+          report.targetId.toString()
+        );
+        return {
+          ...report,
+          _id: report._id.toString(),
+          targetId: report.targetId.toString(),
+          target: targetDetails,
+        } as unknown as ReportWithTarget;
+      })
+    );
+
     return {
-      reports,
+      reports: enrichedReports,
       pagination: {
         total,
         limit,
@@ -105,6 +150,35 @@ class ReportService {
         hasMore: offset + limit < total,
       },
     };
+  }
+
+  /**
+   * Récupère les détails du contenu cible d'un signalement
+   */
+  private async getTargetDetails(type: ReportType, targetId: string): Promise<TargetDetails> {
+    if (type === ReportType.EXAM) {
+      const exam = await Exam.findById(targetId).select('title module year').lean();
+      if (!exam) {
+        return { exists: false };
+      }
+      return {
+        title: exam.title,
+        module: exam.module,
+        year: exam.year,
+        exists: true,
+      };
+    } else if (type === ReportType.COMMENT) {
+      const comment = await AnswerModel.findById(targetId).select('examId page').lean();
+      if (!comment) {
+        return { exists: false };
+      }
+      return {
+        examId: comment.examId.toString(),
+        page: comment.page,
+        exists: true,
+      };
+    }
+    return { exists: false };
   }
 
   /**

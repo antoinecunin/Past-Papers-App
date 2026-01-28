@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import { Shield, AlertCircle, RefreshCw, CheckCircle, XCircle, FileText, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, AlertCircle, RefreshCw, CheckCircle, XCircle, FileText, MessageSquare, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
 import { Button } from '../components/ui/Button';
+import { useRouter } from '../hooks/useRouter';
 
 const REPORTS_PER_PAGE = 20;
 
@@ -14,11 +15,23 @@ interface User {
   email: string;
 }
 
+interface TargetDetails {
+  // Pour les examens
+  title?: string;
+  module?: string;
+  year?: number;
+  // Pour les commentaires
+  examId?: string;
+  page?: number;
+  // Indique si le contenu existe encore
+  exists: boolean;
+}
+
 interface Report {
   _id: string;
   type: 'exam' | 'comment';
   targetId: string;
-  reason: 'inappropriate_content' | 'spam' | 'wrong_subject' | 'copyright_violation' | 'other';
+  reason: 'inappropriate_content' | 'spam' | 'off_topic' | 'wrong_exam' | 'poor_quality' | 'duplicate' | 'other';
   description?: string;
   reportedBy: User;
   status: 'pending' | 'approved' | 'rejected';
@@ -26,6 +39,7 @@ interface Report {
   reviewedAt?: string;
   reviewNote?: string;
   createdAt: string;
+  target: TargetDetails;
 }
 
 interface ReportsResponse {
@@ -40,6 +54,7 @@ interface ReportsResponse {
 
 export default function AdminReportsPage() {
   const { user, token } = useAuthStore();
+  const { navigate } = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +66,7 @@ export default function AdminReportsPage() {
   const [offset, setOffset] = useState(0);
   const [pagination, setPagination] = useState<ReportsResponse['pagination'] | null>(null);
 
-  const fetchReports = useCallback(async (newOffset = offset) => {
+  const fetchReports = useCallback(async (fetchOffset: number) => {
     if (!token) return;
 
     try {
@@ -60,7 +75,7 @@ export default function AdminReportsPage() {
       if (filter.status) params.append('status', filter.status);
       if (filter.type) params.append('type', filter.type);
       params.append('limit', String(REPORTS_PER_PAGE));
-      params.append('offset', String(newOffset));
+      params.append('offset', String(fetchOffset));
 
       const response = await fetch(`/api/reports?${params.toString()}`, {
         headers: {
@@ -83,7 +98,7 @@ export default function AdminReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, filter, offset]);
+  }, [token, filter]);
 
   const handleReviewReport = async (reportId: string, action: 'approve' | 'reject') => {
     if (!token) return;
@@ -130,7 +145,7 @@ export default function AdminReportsPage() {
           icon: 'success',
           confirmButtonColor: '#10b981',
         });
-        await fetchReports();
+        await fetchReports(offset);
       } else {
         const errorData = await response.json();
         await Swal.fire({
@@ -157,7 +172,7 @@ export default function AdminReportsPage() {
   useEffect(() => {
     setOffset(0);
     fetchReports(0);
-  }, [filter, token]);
+  }, [filter, token, fetchReports]);
 
   // Handlers de pagination
   const handlePreviousPage = () => {
@@ -196,11 +211,41 @@ export default function AdminReportsPage() {
     const labels = {
       inappropriate_content: 'Contenu inapproprié',
       spam: 'Spam',
-      wrong_subject: 'Mauvais sujet',
-      copyright_violation: 'Violation de droits d\'auteur',
+      off_topic: 'Hors-sujet',
+      wrong_exam: 'Mauvais examen',
+      poor_quality: 'Qualité insuffisante',
+      duplicate: 'Doublon',
       other: 'Autre',
     };
     return labels[reason];
+  };
+
+  const handleViewTarget = (report: Report) => {
+    if (!report.target.exists) {
+      Swal.fire({
+        title: 'Contenu supprimé',
+        text: 'Ce contenu a été supprimé suite à l\'approbation du signalement.',
+        icon: 'info',
+        confirmButtonColor: '#2563eb',
+      });
+      return;
+    }
+
+    if (report.type === 'exam') {
+      navigate('viewer', { examId: report.targetId });
+    } else if (report.type === 'comment' && report.target.examId) {
+      navigate('viewer', { examId: report.target.examId });
+    }
+  };
+
+  const getTargetLabel = (report: Report): string => {
+    if (!report.target.exists) {
+      return 'Contenu supprimé';
+    }
+    if (report.type === 'exam') {
+      return report.target.title || 'Examen';
+    }
+    return `Commentaire page ${report.target.page || '?'}`;
   };
 
   const getStatusBadge = (status: Report['status']) => {
@@ -325,8 +370,8 @@ export default function AdminReportsPage() {
               <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                 {/* Left: Report details */}
                 <div className="flex-1 space-y-3">
-                  {/* Type and ID */}
-                  <div className="flex items-center gap-2">
+                  {/* Type and target info */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     {report.type === 'exam' ? (
                       <FileText className="w-5 h-5 text-primary" />
                     ) : (
@@ -338,6 +383,18 @@ export default function AdminReportsPage() {
                     <span className="text-xs text-secondary/70">
                       #{report.targetId.slice(-8)}
                     </span>
+                    <button
+                      onClick={() => handleViewTarget(report)}
+                      className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
+                        report.target.exists
+                          ? 'text-primary hover:bg-primary/10 cursor-pointer'
+                          : 'text-secondary/50 cursor-not-allowed'
+                      }`}
+                      title={report.target.exists ? 'Voir le contenu' : 'Contenu supprimé'}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>{getTargetLabel(report)}</span>
+                    </button>
                   </div>
 
                   {/* Reason */}

@@ -376,6 +376,13 @@ describe('GET /api/reports', () => {
     expect(response.body.pagination).toHaveProperty('offset');
     expect(Array.isArray(response.body.reports)).toBe(true);
     expect(response.body.reports.length).toBeGreaterThan(0);
+
+    // Vérifier que les détails de la cible sont inclus
+    const report = response.body.reports[0];
+    expect(report).toHaveProperty('target');
+    expect(report.target).toHaveProperty('exists');
+    expect(report.target.exists).toBe(true);
+    expect(report.target).toHaveProperty('title');
   });
 
   it('should filter reports by status', async () => {
