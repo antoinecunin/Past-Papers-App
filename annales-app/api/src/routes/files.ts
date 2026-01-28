@@ -198,7 +198,7 @@ router.get('/:examId/download', authMiddleware, async (req: AuthenticatedRequest
   } catch (error) {
     console.error('Erreur téléchargement:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ error: 'Erreur interne du serveur' });
     }
   }
 });

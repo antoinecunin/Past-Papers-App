@@ -164,7 +164,7 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
       return res.status(409).json({ error: 'Vous avez déjà signalé ce contenu' });
     }
 
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
 
@@ -264,7 +264,7 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     console.error('Erreur récupération signalements:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
 
@@ -379,6 +379,6 @@ router.put('/:id/review', authMiddleware, async (req: AuthenticatedRequest, res)
     res.json({ message: `Signalement ${actionText} avec succès` });
   } catch (error) {
     console.error('Erreur traitement signalement:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });

@@ -106,7 +106,7 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     return res.json(answers);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Internal error' });
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
 
@@ -167,7 +167,7 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     return res.json({ id: doc._id });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Internal error' });
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
 
@@ -272,7 +272,7 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
     return res.json({ success: true, answer: doc });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Internal error' });
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
 
@@ -331,6 +331,6 @@ router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => 
     return res.json({ success: true, message: 'Commentaire supprimé' });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Internal error' });
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });

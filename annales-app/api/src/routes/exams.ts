@@ -59,7 +59,7 @@ router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
     res.json(exam);
   } catch (error) {
     console.error("Erreur lors de la récupération de l'examen:", error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
 
@@ -136,6 +136,6 @@ router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => 
     res.json({ message: 'Examen supprimé avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
