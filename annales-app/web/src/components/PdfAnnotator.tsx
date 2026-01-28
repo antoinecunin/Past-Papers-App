@@ -44,7 +44,6 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     token,
     () => {
       // Callback de rechargement après ajout de commentaire
-      loadAnswersForPage(visiblePage);
       loadAllAnswers();
     }
   );
@@ -588,28 +587,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     }
   }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment]);
 
-  // Fonction pour charger les commentaires d'une page spécifique
-  const loadAnswersForPage = useCallback(
-    async (page: number) => {
-      if (!examId || !page || !token) return;
-      try {
-        const url = `/api/answers?examId=${encodeURIComponent(examId)}&page=${page}`;
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error('Failed to load answers');
-        const data: Answer[] = await res.json();
-        setAnswers(data.sort((a, b) => a.yTop - b.yTop));
-      } catch (err) {
-        console.error(err);
-      }
-    },
-    [examId, token]
-  );
-
-  // Fonction pour charger tous les commentaires (pour les indicateurs visuels)
+  // Fonction pour charger tous les commentaires
   const loadAllAnswers = useCallback(async () => {
     if (!examId || !token) return;
     try {
@@ -627,15 +605,18 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     }
   }, [examId, token]);
 
-  // Charger les commentaires de la page visible
-  useEffect(() => {
-    loadAnswersForPage(visiblePage);
-  }, [loadAnswersForPage, visiblePage]);
-
   // Charger tous les commentaires au montage et quand examId change
   useEffect(() => {
     loadAllAnswers();
   }, [loadAllAnswers, examId]);
+
+  // Filtrer les commentaires de la page visible (localement, sans appel API)
+  useEffect(() => {
+    const pageAnswers = allAnswers
+      .filter((a) => a.page === visiblePage)
+      .sort((a, b) => a.yTop - b.yTop);
+    setAnswers(pageAnswers);
+  }, [allAnswers, visiblePage]);
 
   // Injecter des styles CSS pour les indicateurs mis en valeur
   useEffect(() => {
@@ -696,13 +677,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         }
 
         // Recharger les commentaires
-        await Promise.all([loadAnswersForPage(visiblePage), loadAllAnswers()]);
+        await loadAllAnswers();
       } catch (error) {
         console.error('Erreur lors de la modification:', error);
         throw error;
       }
     },
-    [loadAnswersForPage, loadAllAnswers, visiblePage, token]
+    [loadAllAnswers, token]
   );
 
   // Fonction pour supprimer un commentaire
@@ -721,13 +702,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         }
 
         // Recharger les commentaires
-        await Promise.all([loadAnswersForPage(visiblePage), loadAllAnswers()]);
+        await loadAllAnswers();
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
         throw error;
       }
     },
-    [loadAnswersForPage, loadAllAnswers, visiblePage, token]
+    [loadAllAnswers, token]
   );
 
   // Fonction pour signaler un commentaire
