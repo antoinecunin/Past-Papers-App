@@ -14,6 +14,7 @@ import { useRouter } from './hooks/useRouter';
 import { useAuthStore } from './stores/authStore';
 import { PermissionUtils } from './utils/permissions';
 import { showReportModal, showReportSuccess, showReportError } from './utils/reportModal';
+import { showError, showSuccess, showConfirm } from './utils/swal';
 import './App.css';
 
 interface Exam {
@@ -98,7 +99,7 @@ function App() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
-      alert('Erreur lors du téléchargement du fichier');
+      await showError('Erreur', 'Impossible de télécharger le fichier');
     }
   };
 
@@ -106,9 +107,12 @@ function App() {
   const handleDeleteExam = async () => {
     if (!selectedExam || !user || !token) return;
 
-    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer "${selectedExam.title}" ?`)) {
-      return;
-    }
+    const confirmed = await showConfirm(
+      'Supprimer cet examen ?',
+      `"${selectedExam.title}" sera définitivement supprimé.`,
+      { confirmText: 'Supprimer', cancelText: 'Annuler' }
+    );
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/exams/${selectedExam._id}`, {
@@ -119,16 +123,16 @@ function App() {
       });
 
       if (response.ok) {
-        alert('Examen supprimé avec succès');
+        await showSuccess('Examen supprimé', 'L\'examen a été supprimé avec succès.');
         navigate('exams');
         setSelectedExam(null);
       } else {
         const errorData = await response.json();
-        alert(`Erreur lors de la suppression: ${errorData.error}`);
+        await showError('Erreur', errorData.error || 'Impossible de supprimer l\'examen');
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
-      alert("Erreur lors de la suppression de l'examen");
+      await showError('Erreur', 'Une erreur est survenue lors de la suppression');
     }
   };
 

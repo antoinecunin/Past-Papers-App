@@ -125,8 +125,8 @@ router.get('/metadata', (req, res) => {
  *                 description: ID de l'examen ou commentaire signalé
  *               reason:
  *                 type: string
- *                 enum: [inappropriate_content, spam, wrong_subject, copyright_violation, other]
- *                 description: Raison du signalement
+ *                 enum: [inappropriate_content, spam, off_topic, wrong_exam, poor_quality, duplicate, other]
+ *                 description: Raison du signalement (commentaires: inappropriate_content, spam, off_topic / examens: wrong_exam, poor_quality, duplicate)
  *               description:
  *                 type: string
  *                 maxLength: 500

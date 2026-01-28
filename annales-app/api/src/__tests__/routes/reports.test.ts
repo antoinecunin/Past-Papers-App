@@ -71,10 +71,15 @@ describe('GET /api/reports/metadata', () => {
     const response = await request(app).get('/api/reports/metadata');
 
     const reasons = response.body.reasons.map((r: { value: string }) => r.value);
+    // Raisons pour commentaires
     expect(reasons).toContain('inappropriate_content');
     expect(reasons).toContain('spam');
-    expect(reasons).toContain('wrong_subject');
-    expect(reasons).toContain('copyright_violation');
+    expect(reasons).toContain('off_topic');
+    // Raisons pour examens
+    expect(reasons).toContain('wrong_exam');
+    expect(reasons).toContain('poor_quality');
+    expect(reasons).toContain('duplicate');
+    // Raison commune
     expect(reasons).toContain('other');
   });
 });

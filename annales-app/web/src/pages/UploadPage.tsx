@@ -5,6 +5,7 @@ import FileDrop from '../components/FileDrop';
 import { useAuthStore } from '../stores/authStore';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { showValidationError, showError } from '../utils/swal';
 
 export default function UploadPage() {
   const { token } = useAuthStore();
@@ -26,27 +27,27 @@ export default function UploadPage() {
     e.preventDefault();
 
     if (!token) {
-      alert('Vous devez être connecté pour uploader un fichier');
+      await showValidationError('Vous devez être connecté pour uploader un fichier');
       return;
     }
 
     if (!selectedFile) {
-      alert('Veuillez sélectionner un fichier PDF');
+      await showValidationError('Veuillez sélectionner un fichier PDF');
       return;
     }
 
     if (!title.trim()) {
-      alert('Veuillez renseigner un titre');
+      await showValidationError('Veuillez renseigner un titre');
       return;
     }
 
     if (!year) {
-      alert('Veuillez renseigner une année');
+      await showValidationError('Veuillez renseigner une année');
       return;
     }
 
     if (!module.trim()) {
-      alert('Veuillez renseigner un module');
+      await showValidationError('Veuillez renseigner un module');
       return;
     }
 
@@ -74,9 +75,9 @@ export default function UploadPage() {
     } catch (error) {
       console.error('Erreur upload:', error);
       if (axios.isAxiosError(error)) {
-        alert(`Erreur d'upload: ${error.response?.data?.error || error.message}`);
+        await showError('Erreur d\'upload', error.response?.data?.error || error.message);
       } else {
-        alert('Erreur inattendue lors de l&apos;upload');
+        await showError('Erreur', 'Une erreur inattendue est survenue lors de l\'upload');
       }
     } finally {
       setIsUploading(false);

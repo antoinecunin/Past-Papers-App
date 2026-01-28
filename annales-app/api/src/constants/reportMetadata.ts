@@ -20,30 +20,50 @@ export const REPORT_TYPE_METADATA = {
  * Métadonnées pour les raisons de signalement
  */
 export const REPORT_REASON_METADATA = {
+  // Raisons pour commentaires
   [ReportReason.INAPPROPRIATE_CONTENT]: {
     value: ReportReason.INAPPROPRIATE_CONTENT,
     label: 'Contenu inapproprié',
     description: 'Contenu offensant, vulgaire ou discriminatoire',
+    forTypes: ['comment'],
   },
   [ReportReason.SPAM]: {
     value: ReportReason.SPAM,
     label: 'Spam ou publicité',
     description: 'Contenu publicitaire ou répétitif non sollicité',
+    forTypes: ['comment'],
   },
-  [ReportReason.WRONG_SUBJECT]: {
-    value: ReportReason.WRONG_SUBJECT,
-    label: 'Hors sujet',
-    description: "Contenu qui n'a pas sa place dans cette section",
+  [ReportReason.OFF_TOPIC]: {
+    value: ReportReason.OFF_TOPIC,
+    label: 'Hors-sujet',
+    description: "Contenu qui n'a pas sa place ici",
+    forTypes: ['comment'],
   },
-  [ReportReason.COPYRIGHT_VIOLATION]: {
-    value: ReportReason.COPYRIGHT_VIOLATION,
-    label: "Violation de droits d'auteur",
-    description: "Contenu protégé par des droits d'auteur partagé sans autorisation",
+  // Raisons pour examens
+  [ReportReason.WRONG_EXAM]: {
+    value: ReportReason.WRONG_EXAM,
+    label: 'Mauvais examen',
+    description: 'Année ou module incorrect',
+    forTypes: ['exam'],
   },
+  [ReportReason.POOR_QUALITY]: {
+    value: ReportReason.POOR_QUALITY,
+    label: 'Qualité insuffisante',
+    description: 'Document illisible ou incomplet',
+    forTypes: ['exam'],
+  },
+  [ReportReason.DUPLICATE]: {
+    value: ReportReason.DUPLICATE,
+    label: 'Doublon',
+    description: 'Cet examen existe déjà',
+    forTypes: ['exam'],
+  },
+  // Raison commune
   [ReportReason.OTHER]: {
     value: ReportReason.OTHER,
     label: 'Autre',
     description: 'Autre raison (précisez dans la description)',
+    forTypes: ['exam', 'comment'],
   },
 } as const;
 

@@ -1,5 +1,6 @@
 import { BookOpen, FileText, Download, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import { showError } from '../utils/swal';
 
 interface Exam {
   _id: string;
@@ -65,7 +66,7 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
-      alert('Erreur lors du téléchargement du fichier');
+      await showError('Erreur', 'Impossible de télécharger le fichier');
     }
   };
 

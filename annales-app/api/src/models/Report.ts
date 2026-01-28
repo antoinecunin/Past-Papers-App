@@ -12,10 +12,15 @@ export enum ReportStatus {
 }
 
 export enum ReportReason {
+  // Raisons pour commentaires
   INAPPROPRIATE_CONTENT = 'inappropriate_content',
   SPAM = 'spam',
-  WRONG_SUBJECT = 'wrong_subject',
-  COPYRIGHT_VIOLATION = 'copyright_violation',
+  OFF_TOPIC = 'off_topic',
+  // Raisons pour examens
+  WRONG_EXAM = 'wrong_exam',
+  POOR_QUALITY = 'poor_quality',
+  DUPLICATE = 'duplicate',
+  // Raisons communes
   OTHER = 'other',
 }
 
