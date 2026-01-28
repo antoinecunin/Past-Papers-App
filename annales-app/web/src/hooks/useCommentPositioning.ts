@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
+import Swal from 'sweetalert2';
 import { renderLatex } from '../utils/latex';
+import { isAllowedImageUrl } from '../constants/content';
 import type { AnswerContent } from '../types/answer';
 
 interface ClickPosition {
@@ -52,6 +54,17 @@ export function useCommentPositioning(
       try {
         const answerContent = { ...content };
 
+        // Valider l'URL d'image avant envoi
+        if (answerContent.type === 'image' && !isAllowedImageUrl(answerContent.data)) {
+          await Swal.fire({
+            title: 'Hébergeur non autorisé',
+            text: 'Utilisez imgur.com, ibb.co ou postimg.cc pour héberger vos images.',
+            icon: 'warning',
+            confirmButtonColor: '#2563eb',
+          });
+          return;
+        }
+
         // Pré-rendre le LaTeX si nécessaire
         if (answerContent.type === 'latex' && !answerContent.rendered) {
           answerContent.rendered = renderLatex(answerContent.data);
@@ -74,14 +87,21 @@ export function useCommentPositioning(
         });
 
         if (!response.ok) {
-          throw new Error('Erreur lors de la création du commentaire');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Erreur lors de la création du commentaire');
         }
 
         setPendingPosition(null);
         onCommentAdded();
       } catch (error) {
         console.error('Erreur lors de la création du commentaire:', error);
-        alert('Erreur lors de la création du commentaire. Veuillez réessayer.');
+        const message = error instanceof Error ? error.message : 'Erreur lors de la création du commentaire';
+        await Swal.fire({
+          title: 'Erreur',
+          text: message,
+          icon: 'error',
+          confirmButtonColor: '#ef4444',
+        });
       }
     },
     [examId, token, pendingPosition, onCommentAdded]

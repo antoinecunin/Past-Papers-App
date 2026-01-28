@@ -8,7 +8,7 @@ import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
 import { useAuthStore } from '../stores/authStore';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
-import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor } from '../constants/content';
+import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor, isAllowedImageUrl } from '../constants/content';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -403,16 +403,33 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         indicator.className = 'new-comment-indicator';
         indicator.style.position = 'absolute';
         indicator.style.right = '8px';
-        indicator.style.top = `${pendingPosition.yPosition * 100}%`;
-        indicator.style.transform = 'translateY(-50%)';
+
+        // Ajuster le positionnement selon la position Y
+        // Si on clique en haut (< 15%), positionner en dessous du clic
+        // Si on clique en bas (> 85%), positionner au-dessus du clic
+        // Sinon, centrer sur le clic
+        const yPos = pendingPosition.yPosition;
+        if (yPos < 0.15) {
+          indicator.style.top = `${yPos * 100}%`;
+          indicator.style.transform = 'translateY(0)';
+        } else if (yPos > 0.85) {
+          indicator.style.top = `${yPos * 100}%`;
+          indicator.style.transform = 'translateY(-100%)';
+        } else {
+          indicator.style.top = `${yPos * 100}%`;
+          indicator.style.transform = 'translateY(-50%)';
+        }
+
         indicator.style.backgroundColor = 'white';
         indicator.style.border = '2px solid #2563eb';
         indicator.style.borderRadius = '8px';
         indicator.style.padding = '8px';
         indicator.style.zIndex = '20';
         indicator.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        indicator.style.minWidth = '200px';
-        indicator.style.maxWidth = '280px';
+        indicator.style.minWidth = '12rem';
+        indicator.style.maxWidth = '18rem';
+        indicator.style.maxHeight = '50vh';
+        indicator.style.overflow = 'auto';
         indicator.style.pointerEvents = 'auto';
 
         // Empêcher la propagation sur tout l'indicateur
@@ -440,8 +457,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             <div class="char-counter" style="font-size: 11px; text-align: right; color: #6b7280;">
               0 / ${defaultMaxLength.toLocaleString('fr-FR')}
             </div>
-            <div class="image-preview" style="display: none; max-width: 150px;">
-              <img style="width: 100%; border-radius: 4px;" />
+            <div class="image-host-warning" style="display: none; font-size: 11px; color: #dc2626; padding: 4px 8px; background: #fef2f2; border-radius: 4px; border: 1px solid #fecaca;">
+              ⚠️ Hébergeur non autorisé. Utilisez imgur.com, ibb.co ou postimg.cc
+            </div>
+            <div class="image-preview" style="display: none; max-width: 50%; max-height: 5rem; overflow: hidden;">
+              <img style="width: 100%; height: auto; border-radius: 4px; object-fit: cover;" />
             </div>
             <div class="latex-preview" style="display: none; padding: 8px; background: #f9fafb; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 14px; max-width: 100%; overflow-x: auto; overflow-y: hidden; word-wrap: break-word; overflow-wrap: break-word;">
             </div>
@@ -465,6 +485,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         const previewImg = imagePreview.querySelector('img') as HTMLImageElement;
         const latexPreview = indicator.querySelector('.latex-preview') as HTMLDivElement;
         const charCounter = indicator.querySelector('.char-counter') as HTMLDivElement;
+        const imageHostWarning = indicator.querySelector('.image-host-warning') as HTMLDivElement;
+        const submitBtn = indicator.querySelector('button[type="submit"]') as HTMLButtonElement;
 
         // Fonction pour mettre à jour le compteur de caractères
         const updateCharCounter = () => {
@@ -485,6 +507,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           textarea.maxLength = maxLength;
           updateCharCounter();
 
+          // Reset l'état du bouton et du warning
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          submitBtn.style.cursor = 'pointer';
+          imageHostWarning.style.display = 'none';
+
           switch (selectedType) {
             case 'text':
               textarea.placeholder = 'Votre commentaire...';
@@ -492,13 +520,22 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               latexPreview.style.display = 'none';
               break;
             case 'image':
-              textarea.placeholder = "URL de l'image (ex: https://example.com/image.jpg)";
+              textarea.placeholder = "URL de l'image (imgur.com, ibb.co, postimg.cc)";
               latexPreview.style.display = 'none';
               // Mettre à jour l'aperçu d'image avec le contenu existant
-              if (content && (content.startsWith('http') || content.startsWith('data:'))) {
-                previewImg.src = content;
-                imagePreview.style.display = 'block';
-                previewImg.onerror = () => (imagePreview.style.display = 'none');
+              if (content && content.startsWith('http')) {
+                const isAllowed = isAllowedImageUrl(content);
+                imageHostWarning.style.display = isAllowed ? 'none' : 'block';
+                submitBtn.disabled = !isAllowed;
+                submitBtn.style.opacity = isAllowed ? '1' : '0.5';
+                submitBtn.style.cursor = isAllowed ? 'pointer' : 'not-allowed';
+                if (isAllowed) {
+                  previewImg.src = content;
+                  imagePreview.style.display = 'block';
+                  previewImg.onerror = () => (imagePreview.style.display = 'none');
+                } else {
+                  imagePreview.style.display = 'none';
+                }
               } else {
                 imagePreview.style.display = 'none';
               }
@@ -528,12 +565,28 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           updateCharCounter();
 
           if (currentType === 'image') {
-            if (content && (content.startsWith('http') || content.startsWith('data:'))) {
-              previewImg.src = content;
-              imagePreview.style.display = 'block';
-              previewImg.onerror = () => (imagePreview.style.display = 'none');
+            if (content && content.startsWith('http')) {
+              // Vérifier si l'hébergeur est autorisé
+              const isAllowed = isAllowedImageUrl(content);
+              imageHostWarning.style.display = isAllowed ? 'none' : 'block';
+              submitBtn.disabled = !isAllowed;
+              submitBtn.style.opacity = isAllowed ? '1' : '0.5';
+              submitBtn.style.cursor = isAllowed ? 'pointer' : 'not-allowed';
+
+              // Afficher l'aperçu seulement si autorisé
+              if (isAllowed) {
+                previewImg.src = content;
+                imagePreview.style.display = 'block';
+                previewImg.onerror = () => (imagePreview.style.display = 'none');
+              } else {
+                imagePreview.style.display = 'none';
+              }
             } else {
+              imageHostWarning.style.display = 'none';
               imagePreview.style.display = 'none';
+              submitBtn.disabled = false;
+              submitBtn.style.opacity = '1';
+              submitBtn.style.cursor = 'pointer';
             }
           } else if (currentType === 'latex') {
             if (content) {

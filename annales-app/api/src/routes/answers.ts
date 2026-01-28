@@ -14,6 +14,30 @@ const CONTENT_MAX_LENGTH = {
   latex: 10_000,  // 10k caractères pour du LaTeX
 } as const;
 
+// Domaines autorisés pour les images (évite les liens vers des sites douteux)
+const ALLOWED_IMAGE_HOSTS = [
+  'i.imgur.com',
+  'imgur.com',
+  'i.ibb.co',
+  'ibb.co',
+  'i.postimg.cc',
+  'postimg.cc',
+] as const;
+
+/**
+ * Vérifie si une URL d'image provient d'un domaine autorisé
+ */
+function isAllowedImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ALLOWED_IMAGE_HOSTS.some(host =>
+      parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
 // Schémas Zod
 const contentTypeSchema = z.enum(['text', 'image', 'latex'], {
   errorMap: () => ({ message: 'content.type doit être text, image ou latex' }),
@@ -33,6 +57,10 @@ const contentSchema = z.object({
     (content) => ({
       message: `Contenu trop long (max ${CONTENT_MAX_LENGTH[content.type].toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
     })
+  )
+  .refine(
+    (content) => content.type !== 'image' || isAllowedImageUrl(content.data),
+    { message: 'Hébergeur d\'image non autorisé. Utilisez imgur.com, ibb.co ou postimg.cc' }
   );
 
 const objectIdSchema = (field: string) => z.string({
@@ -164,7 +192,7 @@ const updateAnswerSchema = z.object({
  *                     description: Type de contenu
  *                   data:
  *                     type: string
- *                     description: Contenu (texte, URL image, ou LaTeX)
+ *                     description: Contenu (texte, URL image depuis imgur/ibb/postimg, ou LaTeX)
  *                   rendered:
  *                     type: string
  *                     description: HTML rendu (pour LaTeX)
