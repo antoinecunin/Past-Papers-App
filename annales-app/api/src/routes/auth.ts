@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import Joi from 'joi';
+import { z } from 'zod';
 import { UserModel } from '../models/User.js';
 import { AuthUtils } from '../utils/auth.js';
 import { emailService } from '../services/email.js';
@@ -24,45 +24,38 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Schémas de validation réutilisables
-const passwordSchema = Joi.string()
-  .min(8)
-  .pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/)
-  .required()
-  .messages({
-    'string.pattern.base':
-      'Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre',
-  });
+// Schémas de validation Zod
+const passwordSchema = z
+  .string()
+  .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+  .regex(
+    /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
+    'Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre'
+  );
 
-const registerSchema = Joi.object({
-  email: Joi.string()
-    .email()
-    .required()
-    .custom((value, helpers) => {
-      if (!value.endsWith('@etu.unistra.fr')) {
-        return helpers.error('any.invalid');
-      }
-      return value;
-    }, 'email universitaire')
-    .messages({
-      'any.invalid': "L'email doit se terminer par @etu.unistra.fr",
+const registerSchema = z.object({
+  email: z
+    .string()
+    .email('Email invalide')
+    .refine((val) => val.endsWith('@etu.unistra.fr'), {
+      message: "L'email doit se terminer par @etu.unistra.fr",
     }),
   password: passwordSchema,
-  firstName: Joi.string().trim().max(50).required(),
-  lastName: Joi.string().trim().max(50).required(),
+  firstName: z.string().trim().min(1, 'Prénom requis').max(50, 'Prénom trop long'),
+  lastName: z.string().trim().min(1, 'Nom requis').max(50, 'Nom trop long'),
 });
 
-const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
+const loginSchema = z.object({
+  email: z.string().email('Email invalide'),
+  password: z.string().min(1, 'Mot de passe requis'),
 });
 
-const forgotPasswordSchema = Joi.object({
-  email: Joi.string().email().required(),
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Email invalide'),
 });
 
-const resetPasswordSchema = Joi.object({
-  token: Joi.string().required(),
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token requis'),
   password: passwordSchema,
 });
 
@@ -108,12 +101,12 @@ const resetPasswordSchema = Joi.object({
  */
 router.post('/register', registerLimiter, async (req, res) => {
   try {
-    const { error, value } = registerSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+    const result = registerSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { email, password, firstName, lastName } = value;
+    const { email, password, firstName, lastName } = result.data;
 
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await UserModel.findOne({ email });
@@ -193,12 +186,12 @@ router.post('/register', registerLimiter, async (req, res) => {
  */
 router.post('/login', authLimiter, async (req, res) => {
   try {
-    const { error, value } = loginSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+    const result = loginSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { email, password } = value;
+    const { email, password } = result.data;
 
     // Trouver l'utilisateur
     const user = await UserModel.findOne({ email });
@@ -321,12 +314,12 @@ router.post('/verify-email', async (req, res) => {
  */
 router.post('/forgot-password', authLimiter, async (req, res) => {
   try {
-    const { error, value } = forgotPasswordSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+    const result = forgotPasswordSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { email } = value;
+    const { email } = result.data;
 
     const user = await UserModel.findOne({ email });
     if (!user) {
@@ -379,12 +372,12 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
  */
 router.post('/reset-password', async (req, res) => {
   try {
-    const { error, value } = resetPasswordSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+    const result = resetPasswordSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { token, password } = value;
+    const { token, password } = result.data;
 
     const user = await UserModel.findOne({
       resetPasswordToken: token,

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { AnswerModel } from '../models/Answer.js';
 import { Types } from 'mongoose';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
@@ -11,6 +12,50 @@ const CONTENT_MAX_LENGTH = {
   image: 10_000,  // 10k caractères (URLs uniquement, pas de data URIs)
   latex: 10_000,  // 10k caractères pour du LaTeX
 } as const;
+
+// Schémas Zod
+const contentTypeSchema = z.enum(['text', 'image', 'latex'], {
+  errorMap: () => ({ message: 'content.type doit être text, image ou latex' }),
+});
+
+const contentSchema = z.object({
+  type: contentTypeSchema,
+  data: z.string({ required_error: 'content.data requis' }),
+  rendered: z.string().optional(),
+}, { required_error: 'content requis' })
+  .refine(
+    (content) => content.data.trim().length > 0,
+    { message: 'content.data requis' }
+  )
+  .refine(
+    (content) => content.data.length <= CONTENT_MAX_LENGTH[content.type],
+    (content) => ({
+      message: `Contenu trop long (max ${CONTENT_MAX_LENGTH[content.type].toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
+    })
+  );
+
+const objectIdSchema = (field: string) => z.string({
+  required_error: `${field} (ObjectId) requis`,
+}).refine(
+  (val) => Types.ObjectId.isValid(val),
+  { message: `${field} (ObjectId) invalide` }
+);
+
+const getAnswersQuerySchema = z.object({
+  examId: objectIdSchema('examId'),
+  page: z.string().transform(Number).pipe(z.number().int().min(1, 'page doit être un entier >= 1')).optional(),
+});
+
+const createAnswerSchema = z.object({
+  examId: objectIdSchema('examId'),
+  page: z.number({ required_error: 'page requis' }).int().min(1, 'page doit être un entier >= 1'),
+  yTop: z.number({ required_error: 'yTop requis' }).min(0, 'yTop doit être >= 0').max(1, 'yTop doit être <= 1'),
+  content: contentSchema,
+});
+
+const updateAnswerSchema = z.object({
+  content: contentSchema,
+});
 
 /**
  * @swagger
@@ -90,17 +135,15 @@ const CONTENT_MAX_LENGTH = {
 
 router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
-    const { examId, page } = req.query as { examId?: string; page?: string };
-    if (!examId || !Types.ObjectId.isValid(examId)) {
-      return res.status(400).json({ error: 'examId (ObjectId) requis' });
+    const result = getAnswersQuerySchema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
+
+    const { examId, page } = result.data;
     const filter: { examId: string; page?: number } = { examId };
     if (page) {
-      const p = Number(page);
-      if (!Number.isInteger(p) || p < 1) {
-        return res.status(400).json({ error: 'page doit être un entier >= 1' });
-      }
-      filter.page = p;
+      filter.page = page;
     }
     const answers = await AnswerModel.find(filter).sort({ page: 1, yTop: 1, createdAt: 1 }).lean();
     return res.json(answers);
@@ -112,49 +155,17 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
 
 router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
-    const { examId, page, yTop, content } = req.body as {
-      examId?: string;
-      page?: number;
-      yTop?: number;
-      content?: { type: string; data: string; rendered?: string };
-    };
-
-    if (!examId || !Types.ObjectId.isValid(examId)) {
-      return res.status(400).json({ error: 'examId (ObjectId) requis' });
-    }
-    if (!Number.isInteger(page) || (page as number) < 1) {
-      return res.status(400).json({ error: 'page doit être un entier >= 1' });
-    }
-    if (typeof yTop !== 'number' || yTop < 0 || yTop > 1) {
-      return res.status(400).json({ error: 'yTop doit être un nombre dans [0,1]' });
+    const result = createAnswerSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    // Vérifier qu'on a content
-    if (!content || !content.type || !content.data) {
-      return res.status(400).json({ error: 'content requis' });
-    }
-
-    // Validation du content
-    const validTypes = ['text', 'image', 'latex'] as const;
-    if (!validTypes.includes(content.type as typeof validTypes[number])) {
-      return res.status(400).json({ error: 'content.type doit être text, image ou latex' });
-    }
-    if (!content.data.trim()) {
-      return res.status(400).json({ error: 'content.data requis' });
-    }
-
-    // Validation de la longueur
-    const maxLength = CONTENT_MAX_LENGTH[content.type as keyof typeof CONTENT_MAX_LENGTH];
-    if (content.data.length > maxLength) {
-      return res.status(400).json({
-        error: `Contenu trop long (max ${maxLength.toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
-      });
-    }
+    const { examId, page, yTop, content } = result.data;
 
     const docData = {
       examId,
-      page: page!,
-      yTop: yTop!,
+      page,
+      yTop,
       authorId: req.user!.id,
       content: {
         type: content.type,
@@ -215,35 +226,17 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
 router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
-    const { content } = req.body as {
-      content?: { type: string; data: string; rendered?: string };
-    };
 
     if (!Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'ID invalide' });
     }
 
-    // Vérifier qu'on a content
-    if (!content || !content.type || !content.data) {
-      return res.status(400).json({ error: 'content requis' });
+    const result = updateAnswerSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    // Validation du content
-    const validTypes = ['text', 'image', 'latex'] as const;
-    if (!validTypes.includes(content.type as typeof validTypes[number])) {
-      return res.status(400).json({ error: 'content.type doit être text, image ou latex' });
-    }
-    if (!content.data.trim()) {
-      return res.status(400).json({ error: 'content.data requis' });
-    }
-
-    // Validation de la longueur
-    const maxLength = CONTENT_MAX_LENGTH[content.type as keyof typeof CONTENT_MAX_LENGTH];
-    if (content.data.length > maxLength) {
-      return res.status(400).json({
-        error: `Contenu trop long (max ${maxLength.toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
-      });
-    }
+    const { content } = result.data;
 
     // Trouver le commentaire et vérifier la propriété
     const existingAnswer = await AnswerModel.findById(id);

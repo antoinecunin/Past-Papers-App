@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { ReportModel, ReportType, ReportReason, ReportStatus } from '../models/Report.js';
 import { Exam } from '../models/Exam.js';
 import { AnswerModel } from '../models/Answer.js';
@@ -8,6 +9,41 @@ import { deleteFile } from '../services/s3.js';
 import { REPORT_TYPES, REPORT_REASONS, REPORT_STATUSES } from '../constants/reportMetadata.js';
 
 export const router = Router();
+
+// Schémas Zod
+const reportTypeSchema = z.nativeEnum(ReportType, {
+  errorMap: () => ({ message: 'Type de signalement invalide' }),
+});
+
+const reportReasonSchema = z.nativeEnum(ReportReason, {
+  errorMap: () => ({ message: 'Raison de signalement invalide' }),
+});
+
+const objectIdSchema = z.string().refine(
+  (val) => Types.ObjectId.isValid(val),
+  { message: 'ID cible invalide' }
+);
+
+const createReportSchema = z.object({
+  type: reportTypeSchema,
+  targetId: objectIdSchema,
+  reason: reportReasonSchema,
+  description: z.string().max(500, 'Description trop longue').optional(),
+});
+
+const getReportsQuerySchema = z.object({
+  status: z.nativeEnum(ReportStatus).optional(),
+  type: z.nativeEnum(ReportType).optional(),
+  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).optional().default('20'),
+  offset: z.string().transform(Number).pipe(z.number().int().min(0)).optional().default('0'),
+});
+
+const reviewReportSchema = z.object({
+  action: z.enum(['approve', 'reject'], {
+    errorMap: () => ({ message: 'Action invalide (approve ou reject)' }),
+  }),
+  note: z.string().max(200, 'Note trop longue').optional(),
+});
 
 /**
  * @swagger
@@ -110,25 +146,12 @@ router.get('/metadata', (req, res) => {
  */
 router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
-    const { type, targetId, reason, description } = req.body as {
-      type?: string;
-      targetId?: string;
-      reason?: string;
-      description?: string;
-    };
-
-    // Validation des données
-    if (!type || !Object.values(ReportType).includes(type as ReportType)) {
-      return res.status(400).json({ error: 'Type de signalement invalide' });
+    const result = createReportSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    if (!targetId || !Types.ObjectId.isValid(targetId)) {
-      return res.status(400).json({ error: 'ID cible invalide' });
-    }
-
-    if (!reason || !Object.values(ReportReason).includes(reason as ReportReason)) {
-      return res.status(400).json({ error: 'Raison de signalement invalide' });
-    }
+    const { type, targetId, reason, description } = result.data;
 
     // Vérifier que la cible existe
     if (type === ReportType.EXAM) {
@@ -145,9 +168,9 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
 
     // Créer le signalement
     const report = await ReportModel.create({
-      type: type as ReportType,
+      type,
       targetId: new Types.ObjectId(targetId),
-      reason: reason as ReportReason,
+      reason,
       description: description?.trim() || undefined,
       reportedBy: new Types.ObjectId(req.user!.id),
     });
@@ -221,33 +244,29 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
       return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
     }
 
-    const { status, type, limit = 20, offset = 0 } = req.query as {
-      status?: string;
-      type?: string;
-      limit?: string;
-      offset?: string;
-    };
+    const result = getReportsQuerySchema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const { status, type, limit, offset } = result.data;
 
     // Construire le filtre
     const filter: Record<string, unknown> = {};
-    if (status && Object.values(ReportStatus).includes(status as ReportStatus)) {
+    if (status) {
       filter.status = status;
     }
-    if (type && Object.values(ReportType).includes(type as ReportType)) {
+    if (type) {
       filter.type = type;
     }
-
-    // Valider la pagination
-    const limitNum = Math.min(Math.max(parseInt(String(limit || 20)) || 20, 1), 100);
-    const offsetNum = Math.max(parseInt(String(offset || 0)) || 0, 0);
 
     // Récupérer les signalements avec les détails des utilisateurs
     const reports = await ReportModel.find(filter)
       .populate('reportedBy', 'firstName lastName email')
       .populate('reviewedBy', 'firstName lastName email')
       .sort({ createdAt: -1 })
-      .limit(limitNum)
-      .skip(offsetNum)
+      .limit(limit)
+      .skip(offset)
       .lean();
 
     // Compter le total pour la pagination
@@ -257,9 +276,9 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
       reports,
       pagination: {
         total,
-        limit: limitNum,
-        offset: offsetNum,
-        hasMore: offsetNum + limitNum < total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
       },
     });
   } catch (error) {
@@ -321,18 +340,17 @@ router.put('/:id/review', authMiddleware, async (req: AuthenticatedRequest, res)
     }
 
     const { id } = req.params;
-    const { action, note } = req.body as {
-      action?: string;
-      note?: string;
-    };
 
     if (!Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'ID invalide' });
     }
 
-    if (!action || !['approve', 'reject'].includes(action)) {
-      return res.status(400).json({ error: 'Action invalide (approve ou reject)' });
+    const result = reviewReportSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
+
+    const { action, note } = result.data;
 
     // Récupérer le signalement
     const report = await ReportModel.findById(id);

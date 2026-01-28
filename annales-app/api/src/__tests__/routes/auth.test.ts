@@ -58,7 +58,7 @@ describe('POST /api/auth/register', () => {
         });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toContain('8 characters');
+      expect(response.body.error).toContain('8 caractères');
     });
 
     it('should reject missing fields', async () => {

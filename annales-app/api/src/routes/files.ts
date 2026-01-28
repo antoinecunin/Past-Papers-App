@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import multer from 'multer';
 import { uploadBuffer, objectKey, downloadFile } from '../services/s3.js';
 import { Exam } from '../models/Exam.js';
@@ -8,6 +9,24 @@ import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 
 export const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+// Schémas Zod
+const currentYear = new Date().getFullYear();
+
+const uploadSchema = z.object({
+  title: z.string({ required_error: 'Le titre est obligatoire' }).min(1, 'Le titre est obligatoire'),
+  year: z.string()
+    .transform(Number)
+    .pipe(z.number().int().min(1900, 'Année invalide').max(currentYear + 1, 'Année invalide')),
+  module: z.string({ required_error: 'Le module est obligatoire' }).min(1, 'Le module est obligatoire'),
+});
+
+const examIdParamSchema = z.object({
+  examId: z.string().refine(
+    (val) => Types.ObjectId.isValid(val),
+    { message: 'examId invalide' }
+  ),
+});
 
 /**
  * @openapi
@@ -74,22 +93,13 @@ router.post(
       return res.status(400).json({ error: 'Seuls les fichiers PDF sont acceptés' });
     }
 
-    const { title, year, module } = req.body;
-
-    // Validation des champs requis
-    if (!title || !year || !module) {
-      return res.status(400).json({
-        error: 'Les champs titre, année et module sont obligatoires'
-      });
+    // Validation des champs avec Zod
+    const result = uploadSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    // Validation du type d'année
-    const yearNum = parseInt(year, 10);
-    if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 1) {
-      return res.status(400).json({
-        error: 'Année invalide'
-      });
-    }
+    const { title, year, module } = result.data;
 
     // Validation du contenu PDF (rejette les fichiers renommés)
     let pages: number;
@@ -102,14 +112,14 @@ router.post(
 
     const key = objectKey(
       'annales',
-      `${yearNum}`,
+      `${year}`,
       req.file.originalname.replace(/\s+/g, '_')
     );
     await uploadBuffer(key, req.file.buffer, req.file.mimetype);
 
     const exam = await Exam.create({
       title,
-      year: yearNum,
+      year,
       module,
       fileKey: key,
       pages,
@@ -162,12 +172,12 @@ router.post(
  */
 router.get('/:examId/download', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
-    const { examId } = req.params;
-
-    // Validation de l'ObjectId
-    if (!Types.ObjectId.isValid(examId)) {
-      return res.status(400).json({ error: 'examId invalide' });
+    const result = examIdParamSchema.safeParse(req.params);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
     }
+
+    const { examId } = result.data;
 
     // Recherche de l'examen
     const exam = await Exam.findById(examId);
