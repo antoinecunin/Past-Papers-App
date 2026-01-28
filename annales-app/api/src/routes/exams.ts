@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { Exam } from '../models/Exam.js';
-import { AnswerModel } from '../models/Answer.js';
-import { Types } from 'mongoose';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
-import { deleteFile } from '../services/s3.js';
+import { examService } from '../services/exam.service.js';
+import { ServiceError } from '../services/ServiceError.js';
+
 export const router = Router();
 
 /**
@@ -18,8 +17,13 @@ export const router = Router();
  *         description: OK
  */
 router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
-  const items = await Exam.find().sort({ createdAt: -1 }).lean();
-  res.json(items);
+  try {
+    const items = await examService.findAll();
+    res.json(items);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des examens:', error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
 });
 
 /**
@@ -44,20 +48,12 @@ router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
 router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
-
-    // Vérifier que l'ID est un ObjectId valide
-    if (!Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'ID invalide' });
-    }
-
-    const exam = await Exam.findById(id).lean();
-
-    if (!exam) {
-      return res.status(404).json({ error: 'Examen non trouvé' });
-    }
-
+    const exam = await examService.findById(id);
     res.json(exam);
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error("Erreur lors de la récupération de l'examen:", error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
@@ -95,46 +91,15 @@ router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
 router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
+    const isAdmin = AuthorizationUtils.isAdmin(req.user);
 
-    // Vérifier que l'ID est un ObjectId valide
-    if (!Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'ID invalide' });
-    }
-
-    // Rechercher l'examen
-    const exam = await Exam.findById(id);
-
-    if (!exam) {
-      return res.status(404).json({ error: 'Examen non trouvé' });
-    }
-
-    // Vérifier que l'utilisateur peut supprimer (propriétaire ou admin)
-    if (!AuthorizationUtils.canDelete(req.user, exam.uploadedBy.toString())) {
-      return res.status(403).json({ error: 'Vous ne pouvez supprimer que vos propres examens' });
-    }
-
-    // Supprimer le fichier de S3
-    try {
-      await deleteFile(exam.fileKey);
-    } catch (s3Error) {
-      console.error('Erreur suppression S3:', s3Error);
-      // On continue même si la suppression S3 échoue
-    }
-
-    // Supprimer tous les commentaires associés à cet examen
-    try {
-      const deletedAnswers = await AnswerModel.deleteMany({ examId: new Types.ObjectId(id) });
-      console.log(`Suppression de ${deletedAnswers.deletedCount} commentaires pour l'examen ${id}`);
-    } catch (answerError) {
-      console.error('Erreur suppression commentaires:', answerError);
-      // On continue même si la suppression des commentaires échoue
-    }
-
-    // Supprimer l'examen de la base de données
-    await Exam.findByIdAndDelete(id);
+    await examService.delete(id, req.user!.id, isAdmin);
 
     res.json({ message: 'Examen supprimé avec succès' });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error('Erreur lors de la suppression:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }

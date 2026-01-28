@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { UserModel } from '../models/User.js';
-import { AuthUtils } from '../utils/auth.js';
-import { emailService } from '../services/email.js';
+import { authService } from '../services/auth.service.js';
+import { ServiceError } from '../services/ServiceError.js';
 
 const router = Router();
 
@@ -106,41 +105,16 @@ router.post('/register', registerLimiter, async (req, res) => {
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { email, password, firstName, lastName } = result.data;
-
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await UserModel.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ error: 'Cet email est déjà utilisé' });
-    }
-
-    // Hacher le mot de passe
-    const hashedPassword = await AuthUtils.hashPassword(password);
-
-    // Générer un token de vérification
-    const verificationToken = AuthUtils.generateVerificationToken();
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
-
-    // Créer l'utilisateur
-    const user = new UserModel({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      verificationToken,
-      verificationExpires,
-    });
-
-    await user.save();
-
-    // Envoyer l'email de vérification
-    await emailService.sendVerificationEmail(email, verificationToken);
+    const { userId } = await authService.register(result.data);
 
     res.status(201).json({
       message: 'Inscription réussie. Vérifiez votre email pour activer votre compte.',
-      userId: user._id,
+      userId,
     });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message, ...error.details });
+    }
     console.error("Erreur lors de l'inscription:", error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
@@ -192,45 +166,13 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     const { email, password } = result.data;
+    const loginResult = await authService.login(email, password);
 
-    // Trouver l'utilisateur
-    const user = await UserModel.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
-    }
-
-    // Vérifier le mot de passe
-    const isValidPassword = await AuthUtils.comparePassword(password, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
-    }
-
-    // Vérifier que l'email est vérifié
-    if (!user.isVerified) {
-      return res.status(401).json({
-        error: 'Email non vérifié. Vérifiez votre boîte mail.',
-        requiresVerification: true,
-      });
-    }
-
-    // Générer le token JWT
-    const token = AuthUtils.generateToken({
-      userId: user._id.toString(),
-      email: user.email,
-    });
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        isVerified: user.isVerified,
-      },
-    });
+    res.json(loginResult);
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message, ...error.details });
+    }
     console.error('Erreur lors de la connexion:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
@@ -267,22 +209,13 @@ router.post('/verify-email', async (req, res) => {
       return res.status(400).json({ error: 'Token manquant' });
     }
 
-    const user = await UserModel.findOne({
-      verificationToken: token,
-      verificationExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      return res.status(400).json({ error: 'Token invalide ou expiré' });
-    }
-
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationExpires = undefined;
-    await user.save();
+    await authService.verifyEmail(token);
 
     res.json({ message: 'Email vérifié avec succès' });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error('Erreur lors de la vérification:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
@@ -320,22 +253,9 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
     }
 
     const { email } = result.data;
+    await authService.forgotPassword(email);
 
-    const user = await UserModel.findOne({ email });
-    if (!user) {
-      // Pour des raisons de sécurité, on ne révèle pas si l'email existe
-      return res.json({ message: 'Si cet email existe, un lien de réinitialisation a été envoyé' });
-    }
-
-    const resetToken = AuthUtils.generateResetToken();
-    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1h
-
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetExpires;
-    await user.save();
-
-    await emailService.sendPasswordResetEmail(email, resetToken);
-
+    // Toujours retourner le même message (sécurité)
     res.json({ message: 'Si cet email existe, un lien de réinitialisation a été envoyé' });
   } catch (error) {
     console.error('Erreur lors de la demande de réinitialisation:', error);
@@ -378,25 +298,13 @@ router.post('/reset-password', async (req, res) => {
     }
 
     const { token, password } = result.data;
-
-    const user = await UserModel.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      return res.status(400).json({ error: 'Token invalide ou expiré' });
-    }
-
-    const hashedPassword = await AuthUtils.hashPassword(password);
-
-    user.password = hashedPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
+    await authService.resetPassword(token, password);
 
     res.json({ message: 'Mot de passe réinitialisé avec succès' });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error('Erreur lors de la réinitialisation:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
@@ -434,26 +342,13 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Email manquant' });
     }
 
-    const user = await UserModel.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ error: 'Email déjà vérifié' });
-    }
-
-    const verificationToken = AuthUtils.generateVerificationToken();
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
-
-    user.verificationToken = verificationToken;
-    user.verificationExpires = verificationExpires;
-    await user.save();
-
-    await emailService.sendVerificationEmail(email, verificationToken);
+    await authService.resendVerification(email);
 
     res.json({ message: 'Email de vérification renvoyé' });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error('Erreur lors du renvoi de vérification:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
@@ -501,19 +396,13 @@ router.post('/dev/verify-user', async (req, res) => {
       return res.status(400).json({ error: 'Email requis' });
     }
 
-    const user = await UserModel.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
-    }
-
-    // Marquer comme vérifié
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationExpires = undefined;
-    await user.save();
+    await authService.devVerifyUser(email);
 
     res.json({ message: 'Utilisateur marqué comme vérifié', email });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error('Erreur lors de la vérification dev:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }

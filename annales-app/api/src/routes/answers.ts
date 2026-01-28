@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { AnswerModel } from '../models/Answer.js';
 import { Types } from 'mongoose';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
+import { answerService } from '../services/answer.service.js';
+import { ServiceError } from '../services/ServiceError.js';
 
 export const router = Router();
 
@@ -141,11 +142,8 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     }
 
     const { examId, page } = result.data;
-    const filter: { examId: string; page?: number } = { examId };
-    if (page) {
-      filter.page = page;
-    }
-    const answers = await AnswerModel.find(filter).sort({ page: 1, yTop: 1, createdAt: 1 }).lean();
+    const answers = await answerService.findByExam(examId, page);
+
     return res.json(answers);
   } catch (err) {
     console.error(err);
@@ -161,21 +159,15 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     }
 
     const { examId, page, yTop, content } = result.data;
-
-    const docData = {
+    const { id } = await answerService.create({
       examId,
       page,
       yTop,
+      content: content as { type: 'text' | 'image' | 'latex'; data: string; rendered?: string },
       authorId: req.user!.id,
-      content: {
-        type: content.type,
-        data: content.data.trim(),
-        ...(content.rendered && { rendered: content.rendered }),
-      },
-    };
+    });
 
-    const doc = await AnswerModel.create(docData);
-    return res.json({ id: doc._id });
+    return res.json({ id });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Erreur interne du serveur' });
@@ -227,44 +219,24 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
 
-    if (!Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'ID invalide' });
-    }
-
     const result = updateAnswerSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
     const { content } = result.data;
-
-    // Trouver le commentaire et vérifier la propriété
-    const existingAnswer = await AnswerModel.findById(id);
-
-    if (!existingAnswer) {
-      return res.status(404).json({ error: 'Commentaire non trouvé' });
-    }
-
-    // Vérifier que l'utilisateur peut modifier (propriétaire uniquement)
-    if (!AuthorizationUtils.canEdit(req.user, existingAnswer.authorId?.toString() || '')) {
-      return res
-        .status(403)
-        .json({ error: 'Vous ne pouvez modifier que vos propres commentaires' });
-    }
-
-    const updateData = {
-      content: {
-        type: content.type,
-        data: content.data.trim(),
-        ...(content.rendered && { rendered: content.rendered }),
-      },
-    };
-
-    const doc = await AnswerModel.findByIdAndUpdate(id, updateData, { new: true });
+    const doc = await answerService.update(
+      id,
+      { content: content as { type: 'text' | 'image' | 'latex'; data: string; rendered?: string } },
+      req.user!.id
+    );
 
     return res.json({ success: true, answer: doc });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
     return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
@@ -300,30 +272,16 @@ router.put('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
 router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
+    const isAdmin = AuthorizationUtils.isAdmin(req.user);
 
-    if (!Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'ID invalide' });
-    }
-
-    // Trouver le commentaire et vérifier la propriété
-    const existingAnswer = await AnswerModel.findById(id);
-
-    if (!existingAnswer) {
-      return res.status(404).json({ error: 'Commentaire non trouvé' });
-    }
-
-    // Vérifier que l'utilisateur peut supprimer (propriétaire ou admin)
-    if (!AuthorizationUtils.canDelete(req.user, existingAnswer.authorId?.toString() || '')) {
-      return res
-        .status(403)
-        .json({ error: 'Vous ne pouvez supprimer que vos propres commentaires' });
-    }
-
-    await AnswerModel.findByIdAndDelete(id);
+    await answerService.delete(id, req.user!.id, isAdmin);
 
     return res.json({ success: true, message: 'Commentaire supprimé' });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
     return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });

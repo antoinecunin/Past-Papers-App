@@ -1,12 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ReportModel, ReportType, ReportReason, ReportStatus } from '../models/Report.js';
-import { Exam } from '../models/Exam.js';
-import { AnswerModel } from '../models/Answer.js';
+import { ReportType, ReportReason, ReportStatus } from '../models/Report.js';
 import { Types } from 'mongoose';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
-import { deleteFile } from '../services/s3.js';
 import { REPORT_TYPES, REPORT_REASONS, REPORT_STATUSES } from '../constants/reportMetadata.js';
+import { reportService } from '../services/report.service.js';
+import { ServiceError } from '../services/ServiceError.js';
 
 export const router = Router();
 
@@ -152,41 +151,23 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     }
 
     const { type, targetId, reason, description } = result.data;
-
-    // Vérifier que la cible existe
-    if (type === ReportType.EXAM) {
-      const exam = await Exam.findById(targetId);
-      if (!exam) {
-        return res.status(404).json({ error: 'Examen non trouvé' });
-      }
-    } else if (type === ReportType.COMMENT) {
-      const comment = await AnswerModel.findById(targetId);
-      if (!comment) {
-        return res.status(404).json({ error: 'Commentaire non trouvé' });
-      }
-    }
-
-    // Créer le signalement
-    const report = await ReportModel.create({
+    const { reportId } = await reportService.create({
       type,
-      targetId: new Types.ObjectId(targetId),
+      targetId,
       reason,
-      description: description?.trim() || undefined,
-      reportedBy: new Types.ObjectId(req.user!.id),
+      description,
+      reportedBy: req.user!.id,
     });
 
     res.status(201).json({
       message: 'Signalement créé avec succès',
-      reportId: report._id,
+      reportId,
     });
   } catch (error) {
-    console.error('Erreur création signalement:', error);
-
-    // Gestion de l'erreur de doublon
-    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
-      return res.status(409).json({ error: 'Vous avez déjà signalé ce contenu' });
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
     }
-
+    console.error('Erreur création signalement:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });
@@ -250,37 +231,9 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     }
 
     const { status, type, limit, offset } = result.data;
+    const reportsResult = await reportService.findAll({ status, type, limit, offset });
 
-    // Construire le filtre
-    const filter: Record<string, unknown> = {};
-    if (status) {
-      filter.status = status;
-    }
-    if (type) {
-      filter.type = type;
-    }
-
-    // Récupérer les signalements avec les détails des utilisateurs
-    const reports = await ReportModel.find(filter)
-      .populate('reportedBy', 'firstName lastName email')
-      .populate('reviewedBy', 'firstName lastName email')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .skip(offset)
-      .lean();
-
-    // Compter le total pour la pagination
-    const total = await ReportModel.countDocuments(filter);
-
-    res.json({
-      reports,
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + limit < total,
-      },
-    });
+    res.json(reportsResult);
   } catch (error) {
     console.error('Erreur récupération signalements:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
@@ -341,61 +294,20 @@ router.put('/:id/review', authMiddleware, async (req: AuthenticatedRequest, res)
 
     const { id } = req.params;
 
-    if (!Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'ID invalide' });
-    }
-
     const result = reviewReportSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
     const { action, note } = result.data;
-
-    // Récupérer le signalement
-    const report = await ReportModel.findById(id);
-    if (!report) {
-      return res.status(404).json({ error: 'Signalement non trouvé' });
-    }
-
-    if (report.status !== ReportStatus.PENDING) {
-      return res.status(400).json({ error: 'Ce signalement a déjà été traité' });
-    }
-
-    // Si approuvé, supprimer le contenu signalé
-    if (action === 'approve') {
-      if (report.type === ReportType.EXAM) {
-        const exam = await Exam.findById(report.targetId);
-        if (exam) {
-          // Supprimer le fichier S3
-          try {
-            await deleteFile(exam.fileKey);
-          } catch (s3Error) {
-            console.error('Erreur suppression S3:', s3Error);
-          }
-
-          // Supprimer les commentaires associés
-          await AnswerModel.deleteMany({ examId: exam._id });
-
-          // Supprimer l'examen
-          await Exam.findByIdAndDelete(exam._id);
-        }
-      } else if (report.type === ReportType.COMMENT) {
-        await AnswerModel.findByIdAndDelete(report.targetId);
-      }
-    }
-
-    // Mettre à jour le signalement
-    await ReportModel.findByIdAndUpdate(id, {
-      status: action === 'approve' ? ReportStatus.APPROVED : ReportStatus.REJECTED,
-      reviewedBy: new Types.ObjectId(req.user!.id),
-      reviewedAt: new Date(),
-      reviewNote: note?.trim() || undefined,
-    });
+    await reportService.review(id, action, req.user!.id, note);
 
     const actionText = action === 'approve' ? 'approuvé et contenu supprimé' : 'rejeté';
     res.json({ message: `Signalement ${actionText} avec succès` });
   } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error('Erreur traitement signalement:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
