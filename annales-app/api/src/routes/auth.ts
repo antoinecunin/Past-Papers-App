@@ -60,7 +60,7 @@ const resetPasswordSchema = z.object({
 
 /**
  * @swagger
- * /api/auth/register:
+ * /auth/register:
  *   post:
  *     summary: Inscription d'un nouvel utilisateur
  *     tags: [Authentication]
@@ -122,7 +122,7 @@ router.post('/register', registerLimiter, async (req, res) => {
 
 /**
  * @swagger
- * /api/auth/login:
+ * /auth/login:
  *   post:
  *     summary: Connexion d'un utilisateur
  *     tags: [Authentication]
@@ -151,8 +151,23 @@ router.post('/register', registerLimiter, async (req, res) => {
  *               properties:
  *                 token:
  *                   type: string
+ *                   description: JWT valide pour l'authentification
  *                 user:
  *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     firstName:
+ *                       type: string
+ *                     lastName:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [user, admin]
+ *                     isVerified:
+ *                       type: boolean
  *       400:
  *         description: Données invalides
  *       401:
@@ -180,7 +195,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
 /**
  * @swagger
- * /api/auth/verify-email:
+ * /auth/verify-email:
  *   post:
  *     summary: Vérification de l'adresse email
  *     tags: [Authentication]
@@ -223,7 +238,7 @@ router.post('/verify-email', async (req, res) => {
 
 /**
  * @swagger
- * /api/auth/forgot-password:
+ * /auth/forgot-password:
  *   post:
  *     summary: Demande de réinitialisation de mot de passe
  *     tags: [Authentication]
@@ -265,7 +280,7 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 
 /**
  * @swagger
- * /api/auth/reset-password:
+ * /auth/reset-password:
  *   post:
  *     summary: Réinitialisation du mot de passe
  *     tags: [Authentication]
@@ -312,7 +327,7 @@ router.post('/reset-password', async (req, res) => {
 
 /**
  * @swagger
- * /api/auth/resend-verification:
+ * /auth/resend-verification:
  *   post:
  *     summary: Renvoyer l'email de vérification
  *     tags: [Authentication]
@@ -356,7 +371,7 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
 
 /**
  * @swagger
- * /api/auth/dev/verify-user:
+ * /auth/dev/verify-user:
  *   post:
  *     summary: Marquer un utilisateur comme vérifié (développement uniquement)
  *     tags: [Authentication]

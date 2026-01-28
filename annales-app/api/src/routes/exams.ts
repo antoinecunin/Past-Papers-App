@@ -6,15 +6,49 @@ import { ServiceError } from '../services/ServiceError.js';
 export const router = Router();
 
 /**
- * @openapi
+ * @swagger
  * /exams:
  *   get:
- *     summary: Liste examens
+ *     summary: Lister tous les examens disponibles
+ *     tags: [Exams]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: OK
+ *         description: Liste des examens triés par date de création (plus récent en premier)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ *                   year:
+ *                     type: integer
+ *                   module:
+ *                     type: string
+ *                   fileKey:
+ *                     type: string
+ *                     description: Chemin S3 du fichier PDF
+ *                   pages:
+ *                     type: integer
+ *                   uploadedBy:
+ *                     type: string
+ *                     description: ID de l'utilisateur qui a uploadé
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: Non authentifié
+ *       500:
+ *         description: Erreur serveur
  */
 router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
   try {
@@ -27,10 +61,11 @@ router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
 });
 
 /**
- * @openapi
+ * @swagger
  * /exams/{id}:
  *   get:
- *     summary: Récupère un examen par son ID
+ *     summary: Récupérer un examen par son ID
+ *     tags: [Exams]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -39,11 +74,45 @@ router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *         description: ID de l'examen (ObjectId MongoDB)
  *     responses:
  *       200:
  *         description: Examen trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 title:
+ *                   type: string
+ *                 year:
+ *                   type: integer
+ *                 module:
+ *                   type: string
+ *                 fileKey:
+ *                   type: string
+ *                   description: Chemin S3 du fichier PDF
+ *                 pages:
+ *                   type: integer
+ *                 uploadedBy:
+ *                   type: string
+ *                   description: ID de l'utilisateur qui a uploadé
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: ID invalide
+ *       401:
+ *         description: Non authentifié
  *       404:
  *         description: Examen non trouvé
+ *       500:
+ *         description: Erreur serveur
  */
 router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
@@ -60,10 +129,10 @@ router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
 });
 
 /**
- * @openapi
+ * @swagger
  * /exams/{id}:
  *   delete:
- *     summary: Supprime un examen (propriétaire uniquement)
+ *     summary: Supprimer un examen (propriétaire ou admin)
  *     tags: [Exams]
  *     security:
  *       - bearerAuth: []

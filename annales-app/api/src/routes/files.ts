@@ -29,10 +29,10 @@ const examIdParamSchema = z.object({
 });
 
 /**
- * @openapi
+ * @swagger
  * /files/upload:
  *   post:
- *     summary: Upload d'un PDF d'annales
+ *     summary: Uploader un PDF d'annales
  *     tags: [Files]
  *     security:
  *       - bearerAuth: []
@@ -130,7 +130,7 @@ router.post(
 );
 
 /**
- * @openapi
+ * @swagger
  * /files/{examId}/download:
  *   get:
  *     summary: Télécharger le PDF d'un examen

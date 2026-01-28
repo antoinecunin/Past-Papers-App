@@ -62,7 +62,7 @@ const updateAnswerSchema = z.object({
  * @swagger
  * /answers:
  *   get:
- *     summary: Lister les réponses d'un examen (optionnellement filtrées par page)
+ *     summary: Lister les commentaires d'un examen
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -70,22 +70,67 @@ const updateAnswerSchema = z.object({
  *       - in: query
  *         name: examId
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
  *         description: ID de l'examen
  *       - in: query
  *         name: page
  *         required: false
- *         schema: { type: integer, minimum: 1 }
- *         description: Numéro de page (optionnel)
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Numéro de page (optionnel, filtre les résultats)
  *     responses:
  *       200:
- *         description: Liste des commentaires
+ *         description: Liste des commentaires triés par page, position Y et date de création
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   examId:
+ *                     type: string
+ *                   page:
+ *                     type: integer
+ *                   yTop:
+ *                     type: number
+ *                     description: Position Y relative (0 = haut, 1 = bas)
+ *                   content:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [text, image, latex]
+ *                       data:
+ *                         type: string
+ *                       rendered:
+ *                         type: string
+ *                   authorId:
+ *                     type: string
+ *                     description: ID de l'auteur du commentaire
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
  *       400:
  *         description: Paramètres invalides
+ *       401:
+ *         description: Non authentifié
  *       500:
  *         description: Erreur serveur
+ */
+
+/**
+ * @swagger
+ * /answers:
  *   post:
- *     summary: Créer un commentaire ancré sur (page, yTop)
+ *     summary: Créer un commentaire sur un examen
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -108,7 +153,7 @@ const updateAnswerSchema = z.object({
  *                 type: number
  *                 minimum: 0
  *                 maximum: 1
- *                 description: Position Y relative (0-1)
+ *                 description: Position Y relative (0 = haut, 1 = bas)
  *               content:
  *                 type: object
  *                 required: [type, data]
@@ -119,13 +164,21 @@ const updateAnswerSchema = z.object({
  *                     description: Type de contenu
  *                   data:
  *                     type: string
- *                     description: Contenu du commentaire
+ *                     description: Contenu (texte, URL image, ou LaTeX)
  *                   rendered:
  *                     type: string
- *                     description: Version rendue (optionnel)
+ *                     description: HTML rendu (pour LaTeX)
  *     responses:
  *       200:
- *         description: Commentaire créé avec succès
+ *         description: Commentaire créé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: ID du commentaire créé
  *       400:
  *         description: Paramètres invalides
  *       401:

@@ -1,10 +1,10 @@
 import { Router } from 'express';
 export const router = Router();
 /**
- * @openapi
+ * @swagger
  * /health:
  *   get:
- *     summary: Health check
+ *     summary: Vérifier l'état de l'API
  *     tags: [Health]
  *     responses:
  *       200:
