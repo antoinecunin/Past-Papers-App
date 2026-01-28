@@ -3,18 +3,7 @@ import mongoose from 'mongoose';
 
 let mongoServer: MongoMemoryServer;
 
-// Configuration des variables d'environnement pour les tests
-process.env.JWT_SECRET = 'test-secret-key';
-process.env.JWT_EXPIRES_IN = '7d';
-process.env.SMTP_HOST = 'test-smtp.example.com';
-process.env.SMTP_PORT = '587';
-process.env.SMTP_SECURE = 'false';
-process.env.SMTP_USER = 'test@example.com';
-process.env.SMTP_PASS = 'test-password';
-process.env.EMAIL_FROM_NAME = 'Test Annales';
-process.env.EMAIL_FROM_ADDRESS = 'test@example.com';
-process.env.FRONTEND_URL = 'http://localhost:3080';
-process.env.NODE_ENV = 'test'; // Désactive rate limiting
+// Les variables d'environnement sont configurées dans setup-mocks.ts
 
 // Setup avant tous les tests
 beforeAll(async () => {

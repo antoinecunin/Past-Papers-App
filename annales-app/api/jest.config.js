@@ -3,9 +3,12 @@ export default {
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
-    '^.*/services/email$': '<rootDir>/src/services/__mocks__/email.ts',
-    '^.*/services/s3$': '<rootDir>/src/services/__mocks__/s3.ts',
+    // Mocks pour les services (AVANT le stripping .js)
+    '^(.*)/services/email\\.js$': '<rootDir>/src/services/__mocks__/email.ts',
+    '^(.*)/services/s3\\.js$': '<rootDir>/src/services/__mocks__/s3.ts',
+    // Mock pdf-lib
     '^pdf-lib$': '<rootDir>/src/__tests__/__mocks__/pdf-lib.ts',
+    // Strip .js pour les autres imports
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {

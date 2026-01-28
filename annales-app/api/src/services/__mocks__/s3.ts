@@ -14,9 +14,24 @@ export const downloadFile = async (
   key: string
 ): Promise<{ stream: Readable; contentType: string; contentLength: number }> => {
   console.log(`[MOCK S3] Download: ${key}`);
+
+  // Créer un stream qui se termine correctement pour supertest
+  const content = Buffer.from('%PDF-1.4 mock pdf content');
+  const stream = new Readable({
+    read() {
+      this.push(content);
+      this.push(null); // Signal de fin de stream
+    },
+  });
+
   return {
-    stream: Readable.from(['mock pdf content']),
+    stream,
     contentType: 'application/pdf',
-    contentLength: 1024,
+    contentLength: content.length,
   };
+};
+
+export const deleteFile = async (key: string): Promise<void> => {
+  console.log(`[MOCK S3] Delete: ${key}`);
+  return Promise.resolve();
 };

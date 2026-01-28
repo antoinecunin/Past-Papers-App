@@ -74,9 +74,7 @@ describe('POST /api/auth/register', () => {
   });
 
   describe('Inscription réussie', () => {
-    // Tests d'inscription désactivés car le service email échoue en test
-    // TODO: Corriger le mock du service email pour ESM
-    it.skip('should create user with valid data', async () => {
+    it('should create user with valid data', async () => {
       const userData = {
         email: 'newuser@etu.unistra.fr',
         password: 'password123',
@@ -99,7 +97,7 @@ describe('POST /api/auth/register', () => {
       expect(user?.verificationToken).toBeTruthy();
     });
 
-    it.skip('should hash password', async () => {
+    it('should hash password', async () => {
       const password = 'password123';
       await request(app)
         .post('/api/auth/register')
@@ -321,8 +319,7 @@ describe('POST /api/auth/forgot-password', () => {
     expect(response.status).toBe(400);
   });
 
-  it.skip('should send reset email for existing user', async () => {
-    // Skip: email mock non fonctionnel
+  it('should send reset email for existing user', async () => {
     const hashedPassword = await bcrypt.hash('password123', 10);
     await UserModel.create({
       email: 'resetme@etu.unistra.fr',
