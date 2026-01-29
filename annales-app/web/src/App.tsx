@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import UploadPage from './pages/UploadPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -213,6 +214,8 @@ function App() {
         return <UploadPage />;
       case 'admin-reports':
         return <AdminReportsPage />;
+      case 'profile':
+        return <ProfilePage />;
       case 'exams':
         return <ExamList onExamSelect={handleExamSelect} />;
       case 'viewer':
@@ -371,7 +374,11 @@ function App() {
 
               {user && (
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+                  <button
+                    onClick={() => navigate('profile')}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                    title="Mon profil"
+                  >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-sm font-medium text-gray-900">
                       {user.firstName} {user.lastName}
@@ -381,7 +388,7 @@ function App() {
                         Admin
                       </span>
                     )}
-                  </div>
+                  </button>
                   <button
                     onClick={() => {
                       logout();

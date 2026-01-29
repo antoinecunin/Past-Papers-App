@@ -32,6 +32,9 @@ interface AuthActions {
   resetPassword: (token: string, password: string) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
+  updateProfile: (data: { firstName?: string; lastName?: string }) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -42,7 +45,7 @@ const API_BASE = '/api/auth';
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, _get) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isLoading: false,
@@ -218,6 +221,95 @@ export const useAuthStore = create<AuthStore>()(
           set({
             isLoading: false,
             error: error instanceof Error ? error.message : 'Erreur lors du renvoi',
+          });
+          throw error;
+        }
+      },
+
+      updateProfile: async (data: { firstName?: string; lastName?: string }) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { token } = get();
+          const response = await fetch(`${API_BASE}/profile`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Erreur lors de la mise à jour');
+          }
+
+          // Mettre à jour l'utilisateur dans le store
+          set({ user: result.user, isLoading: false, error: null });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
+          });
+          throw error;
+        }
+      },
+
+      changePassword: async (currentPassword: string, newPassword: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { token } = get();
+          const response = await fetch(`${API_BASE}/change-password`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ currentPassword, newPassword }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Erreur lors du changement de mot de passe');
+          }
+
+          set({ isLoading: false, error: null });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Erreur lors du changement',
+          });
+          throw error;
+        }
+      },
+
+      deleteAccount: async (password: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { token } = get();
+          const response = await fetch(`${API_BASE}/account`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ password }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Erreur lors de la suppression');
+          }
+
+          // Déconnexion après suppression
+          set({ user: null, token: null, isLoading: false, error: null });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
           });
           throw error;
         }

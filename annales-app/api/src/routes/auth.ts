@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
 import { ServiceError } from '../services/ServiceError.js';
+import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -56,6 +57,24 @@ const forgotPasswordSchema = z.object({
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Token requis'),
   password: passwordSchema,
+});
+
+const updateProfileSchema = z
+  .object({
+    firstName: z.string().trim().min(1, 'Prénom requis').max(50, 'Prénom trop long').optional(),
+    lastName: z.string().trim().min(1, 'Nom requis').max(50, 'Nom trop long').optional(),
+  })
+  .refine((data) => data.firstName || data.lastName, {
+    message: 'Au moins un champ doit être fourni',
+  });
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
+  newPassword: passwordSchema,
+});
+
+const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Mot de passe requis'),
 });
 
 /**
@@ -419,6 +438,203 @@ router.post('/dev/verify-user', async (req, res) => {
       return res.status(error.statusCode).json({ error: error.message });
     }
     console.error('Erreur lors de la vérification dev:', error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/profile:
+ *   get:
+ *     summary: Récupérer le profil de l'utilisateur connecté
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profil utilisateur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 firstName:
+ *                   type: string
+ *                 lastName:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *                 isVerified:
+ *                   type: boolean
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *       401:
+ *         description: Non authentifié
+ */
+router.get('/profile', authMiddleware, async (req: AuthenticatedRequest, res) => {
+  try {
+    const profile = await authService.getProfile(req.user!.id);
+    res.json(profile);
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error('Erreur lors de la récupération du profil:', error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/profile:
+ *   patch:
+ *     summary: Mettre à jour le profil utilisateur
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 maxLength: 50
+ *               lastName:
+ *                 type: string
+ *                 maxLength: 50
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour
+ *       400:
+ *         description: Données invalides
+ *       401:
+ *         description: Non authentifié
+ */
+router.patch('/profile', authMiddleware, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = updateProfileSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const user = await authService.updateProfile(req.user!.id, result.data);
+    res.json({ message: 'Profil mis à jour', user });
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error('Erreur lors de la mise à jour du profil:', error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     summary: Changer le mot de passe (utilisateur authentifié)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: Mot de passe actuel
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: Nouveau mot de passe (8+ caractères, lettre + chiffre)
+ *     responses:
+ *       200:
+ *         description: Mot de passe modifié
+ *       400:
+ *         description: Données invalides
+ *       401:
+ *         description: Mot de passe actuel incorrect
+ */
+router.post('/change-password', authMiddleware, authLimiter, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = changePasswordSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const { currentPassword, newPassword } = result.data;
+    await authService.changePassword(req.user!.id, currentPassword, newPassword);
+
+    res.json({ message: 'Mot de passe modifié avec succès' });
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error('Erreur lors du changement de mot de passe:', error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/account:
+ *   delete:
+ *     summary: Supprimer le compte utilisateur (RGPD)
+ *     description: >
+ *       Supprime les données personnelles de l'utilisateur.
+ *       Les examens et réponses sont conservés mais anonymisés (auteur mis à null).
+ *       Les signalements sont supprimés.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: Mot de passe pour confirmer la suppression
+ *     responses:
+ *       200:
+ *         description: Compte supprimé, contenu anonymisé
+ *       400:
+ *         description: Mot de passe manquant
+ *       401:
+ *         description: Mot de passe incorrect
+ */
+router.delete('/account', authMiddleware, authLimiter, async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = deleteAccountSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    await authService.deleteAccount(req.user!.id, result.data.password);
+
+    res.json({ message: 'Compte supprimé avec succès' });
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error('Erreur lors de la suppression du compte:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 });

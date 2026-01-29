@@ -1,4 +1,7 @@
 import { UserModel } from '../models/User.js';
+import { Exam } from '../models/Exam.js';
+import { AnswerModel } from '../models/Answer.js';
+import { ReportModel } from '../models/Report.js';
 import { AuthUtils } from '../utils/auth.js';
 import { emailService } from './email.js';
 import { ServiceError } from './ServiceError.js';
@@ -20,6 +23,21 @@ export interface LoginResult {
     role: string;
     isVerified: boolean;
   };
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  isVerified: boolean;
+  createdAt: Date;
+}
+
+export interface UpdateProfileData {
+  firstName?: string;
+  lastName?: string;
 }
 
 class AuthService {
@@ -199,6 +217,106 @@ class AuthService {
     user.verificationToken = undefined;
     user.verificationExpires = undefined;
     await user.save();
+  }
+
+  /**
+   * Récupérer le profil de l'utilisateur
+   */
+  async getProfile(userId: string): Promise<UserProfile> {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw ServiceError.notFound('Utilisateur non trouvé');
+    }
+
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      isVerified: user.isVerified,
+      createdAt: user.createdAt,
+    };
+  }
+
+  /**
+   * Mettre à jour le profil (prénom/nom)
+   */
+  async updateProfile(
+    userId: string,
+    data: UpdateProfileData
+  ): Promise<Omit<UserProfile, 'createdAt'>> {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw ServiceError.notFound('Utilisateur non trouvé');
+    }
+
+    if (data.firstName) user.firstName = data.firstName;
+    if (data.lastName) user.lastName = data.lastName;
+
+    await user.save();
+
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      isVerified: user.isVerified,
+    };
+  }
+
+  /**
+   * Changer le mot de passe (utilisateur authentifié)
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw ServiceError.notFound('Utilisateur non trouvé');
+    }
+
+    // Vérifier le mot de passe actuel
+    const isValid = await AuthUtils.comparePassword(currentPassword, user.password);
+    if (!isValid) {
+      throw ServiceError.unauthorized('Mot de passe actuel incorrect');
+    }
+
+    // Hasher et sauvegarder le nouveau mot de passe
+    user.password = await AuthUtils.hashPassword(newPassword);
+    await user.save();
+  }
+
+  /**
+   * Supprimer le compte utilisateur (RGPD - droit à l'effacement)
+   * Anonymise le contenu (examens, réponses) et supprime les données personnelles
+   */
+  async deleteAccount(userId: string, password: string): Promise<void> {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw ServiceError.notFound('Utilisateur non trouvé');
+    }
+
+    // Vérifier le mot de passe
+    const isValid = await AuthUtils.comparePassword(password, user.password);
+    if (!isValid) {
+      throw ServiceError.unauthorized('Mot de passe incorrect');
+    }
+
+    // 1. Anonymiser les examens (on garde le contenu)
+    await Exam.updateMany({ uploadedBy: userId }, { $set: { uploadedBy: null } });
+
+    // 2. Anonymiser les réponses (on garde le contenu)
+    await AnswerModel.updateMany({ authorId: userId }, { $set: { authorId: null } });
+
+    // 3. Supprimer les signalements créés par l'utilisateur
+    await ReportModel.deleteMany({ reportedBy: userId });
+
+    // 4. Supprimer le compte utilisateur
+    await UserModel.findByIdAndDelete(userId);
   }
 }
 

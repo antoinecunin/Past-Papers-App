@@ -16,7 +16,8 @@ export interface Route {
     | 'register'
     | 'forgot-password'
     | 'reset-password'
-    | 'verify-email';
+    | 'verify-email'
+    | 'profile';
   params: RouteParams;
 }
 
@@ -37,6 +38,8 @@ export function useRouter() {
     switch (page) {
       case 'upload':
         return '/upload';
+      case 'profile':
+        return '/profile';
       case 'admin-reports':
         return '/admin/reports';
       case 'login':
@@ -83,6 +86,10 @@ export function useRouter() {
 
     if (path === '/admin/reports') {
       return { path, page: 'admin-reports', params: {} };
+    }
+
+    if (path === '/profile') {
+      return { path, page: 'profile', params: {} };
     }
 
     if (path === '/login') {
@@ -159,6 +166,9 @@ export function useRouter() {
         break;
       case 'admin-reports':
         title = "Signalements - Plateforme d'Annales";
+        break;
+      case 'profile':
+        title = "Mon Profil - Plateforme d'Annales";
         break;
       case 'viewer':
         title = "Examen - Plateforme d'Annales";
