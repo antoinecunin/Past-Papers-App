@@ -4,7 +4,9 @@ import { IExam } from '../../models/Exam.js';
 /**
  * Crée un objet Exam pour les tests
  */
-export function createExamData(overrides: Partial<IExam> = {}): Omit<IExam, '_id' | 'createdAt' | 'updatedAt'> {
+export function createExamData(
+  overrides: Partial<IExam> = {}
+): Omit<IExam, '_id' | 'createdAt' | 'updatedAt'> {
   return {
     title: 'Test Exam',
     year: 2024,

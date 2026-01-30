@@ -1,6 +1,11 @@
 // Mock complet du service email pour les tests
 class MockEmailService {
-  async sendEmail(options: { to: string; subject: string; html: string; text?: string }): Promise<void> {
+  async sendEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    text?: string;
+  }): Promise<void> {
     // Mock - ne fait rien, simule un envoi réussi
     console.log(`[MOCK] Email sent to ${options.to}`);
     return Promise.resolve();

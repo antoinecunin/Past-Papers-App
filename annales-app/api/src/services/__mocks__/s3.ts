@@ -1,7 +1,11 @@
 import { Readable } from 'stream';
 
 // Mock du service S3 pour les tests
-export const uploadBuffer = async (key: string, _buffer: Buffer, contentType: string): Promise<void> => {
+export const uploadBuffer = async (
+  key: string,
+  _buffer: Buffer,
+  contentType: string
+): Promise<void> => {
   console.log(`[MOCK S3] Upload: ${key}, type: ${contentType}`);
   return Promise.resolve();
 };

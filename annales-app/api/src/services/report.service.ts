@@ -127,7 +127,7 @@ class ReportService {
     // Enrichir chaque signalement avec les détails de la cible
     // Note: populate() transforme les ObjectId en objets avec les détails utilisateur
     const enrichedReports: ReportWithTarget[] = await Promise.all(
-      reports.map(async (report) => {
+      reports.map(async report => {
         const targetDetails = await this.getTargetDetails(
           report.type as ReportType,
           report.targetId.toString()

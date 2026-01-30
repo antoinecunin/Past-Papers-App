@@ -4,7 +4,9 @@ import { Answer } from '../../models/Answer.js';
 /**
  * Crée un objet Answer pour les tests
  */
-export function createAnswerData(overrides: Partial<Answer> = {}): Omit<Answer, '_id' | 'createdAt' | 'updatedAt'> {
+export function createAnswerData(
+  overrides: Partial<Answer> = {}
+): Omit<Answer, '_id' | 'createdAt' | 'updatedAt'> {
   return {
     examId: new Types.ObjectId(),
     page: 1,

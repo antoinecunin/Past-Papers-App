@@ -7,11 +7,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
 /**
  * Crée un utilisateur de test et retourne son token JWT
  */
-export async function createAuthenticatedUser(overrides: {
-  email?: string;
-  role?: 'user' | 'admin';
-  isVerified?: boolean;
-} = {}) {
+export async function createAuthenticatedUser(
+  overrides: {
+    email?: string;
+    role?: 'user' | 'admin';
+    isVerified?: boolean;
+  } = {}
+) {
   const user = await UserModel.create({
     email: overrides.email || 'test@etu.unistra.fr',
     password: 'hashedpassword123',

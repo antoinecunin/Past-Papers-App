@@ -46,7 +46,9 @@ jest.unstable_mockModule('@aws-sdk/client-s3', () => ({
 jest.unstable_mockModule('nodemailer', () => ({
   default: {
     createTransport: jest.fn().mockReturnValue({
-      sendMail: jest.fn<() => Promise<{ messageId: string }>>().mockResolvedValue({ messageId: 'mock-message-id' }),
+      sendMail: jest
+        .fn<() => Promise<{ messageId: string }>>()
+        .mockResolvedValue({ messageId: 'mock-message-id' }),
     }),
   },
 }));
