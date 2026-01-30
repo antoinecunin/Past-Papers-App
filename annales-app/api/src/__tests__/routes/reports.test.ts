@@ -6,6 +6,7 @@ import { Exam } from '../../models/Exam.js';
 import { AnswerModel } from '../../models/Answer.js';
 import { createAuthenticatedUser } from '../helpers/auth.helper.js';
 import { Types } from 'mongoose';
+import { errorHandler } from '../../middleware/errorHandler.js';
 
 /**
  * Tests pour /api/reports
@@ -18,6 +19,7 @@ describe('GET /api/reports/metadata', () => {
     app = express();
     app.use(express.json());
     app.use('/api/reports', reportsRouter);
+    app.use(errorHandler);
   });
 
   it('should return report metadata without authentication', async () => {
@@ -91,6 +93,7 @@ describe('POST /api/reports', () => {
     app = express();
     app.use(express.json());
     app.use('/api/reports', reportsRouter);
+    app.use(errorHandler);
   });
 
   afterEach(async () => {
@@ -132,7 +135,7 @@ describe('POST /api/reports', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('ID cible invalide');
+    expect(response.body.error).toContain('(ObjectId) invalide');
   });
 
   it('should reject invalid reason', async () => {
@@ -210,10 +213,10 @@ describe('POST /api/reports', () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('message');
-    expect(response.body).toHaveProperty('reportId');
+    expect(response.body).toHaveProperty('id');
 
     // Vérifier que le signalement a été créé
-    const report = await ReportModel.findById(response.body.reportId);
+    const report = await ReportModel.findById(response.body.id);
     expect(report).toBeTruthy();
     expect(report?.type).toBe('exam');
     expect(report?.targetId.toString()).toBe(exam._id.toString());
@@ -253,9 +256,9 @@ describe('POST /api/reports', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('reportId');
+    expect(response.body).toHaveProperty('id');
 
-    const report = await ReportModel.findById(response.body.reportId);
+    const report = await ReportModel.findById(response.body.id);
     expect(report?.type).toBe('comment');
     expect(report?.targetId.toString()).toBe(answer._id.toString());
   });
@@ -302,6 +305,7 @@ describe('GET /api/reports', () => {
     app = express();
     app.use(express.json());
     app.use('/api/reports', reportsRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -313,9 +317,7 @@ describe('GET /api/reports', () => {
   it('should forbid non-admin users', async () => {
     const { token } = await createAuthenticatedUser({ role: 'user' });
 
-    const response = await request(app)
-      .get('/api/reports')
-      .set('Authorization', `Bearer ${token}`);
+    const response = await request(app).get('/api/reports').set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(403);
     expect(response.body.error).toContain('administrateurs');
@@ -416,7 +418,9 @@ describe('GET /api/reports', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.reports.length).toBeGreaterThan(0);
-    expect(response.body.reports.every((r: { status: string }) => r.status === 'pending')).toBe(true);
+    expect(response.body.reports.every((r: { status: string }) => r.status === 'pending')).toBe(
+      true
+    );
   });
 
   it('should paginate results', async () => {
@@ -443,6 +447,7 @@ describe('PUT /api/reports/:id/review', () => {
     app = express();
     app.use(express.json());
     app.use('/api/reports', reportsRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {

@@ -11,6 +11,7 @@ import { router as answers } from './routes/answers.js';
 import { router as auth } from './routes/auth.js';
 import { router as reports } from './routes/reports.js';
 import { setupSwagger } from './swagger.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 app.use(helmet());
@@ -43,6 +44,7 @@ app.use('/api/answers', answers);
 app.use('/api/reports', reports);
 
 setupSwagger(app);
+app.use(errorHandler);
 
 const port = Number(process.env.API_PORT || 3000);
 const host = process.env.API_HOST ?? '0.0.0.0';

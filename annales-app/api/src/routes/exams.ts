@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
 import { examService } from '../services/exam.service.js';
-import { ServiceError } from '../services/ServiceError.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 export const router = Router();
 
@@ -50,15 +50,14 @@ export const router = Router();
  *       500:
  *         description: Erreur serveur
  */
-router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
-  try {
+router.get(
+  '/',
+  authMiddleware,
+  asyncHandler(async (_req: AuthenticatedRequest, res) => {
     const items = await examService.findAll();
     res.json(items);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des examens:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -114,19 +113,15 @@ router.get('/', authMiddleware, async (_req: AuthenticatedRequest, res) => {
  *       500:
  *         description: Erreur serveur
  */
-router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
+router.get(
+  '/:id',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
     const exam = await examService.findById(id);
     res.json(exam);
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error("Erreur lors de la récupération de l'examen:", error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -157,19 +152,15 @@ router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
  *       500:
  *         description: Erreur serveur
  */
-router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
+router.delete(
+  '/:id',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const { id } = req.params;
     const isAdmin = AuthorizationUtils.isAdmin(req.user);
 
     await examService.delete(id, req.user!.id, isAdmin);
 
     res.json({ message: 'Examen supprimé avec succès' });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors de la suppression:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);

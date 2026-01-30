@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { ReportType, ReportReason, ReportStatus } from '../models/Report.js';
-import { Types } from 'mongoose';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
 import { REPORT_TYPES, REPORT_REASONS, REPORT_STATUSES } from '../constants/reportMetadata.js';
 import { reportService } from '../services/report.service.js';
-import { ServiceError } from '../services/ServiceError.js';
+import { objectIdSchema } from '../utils/validation.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 export const router = Router();
 
@@ -18,14 +18,9 @@ const reportReasonSchema = z.nativeEnum(ReportReason, {
   errorMap: () => ({ message: 'Raison de signalement invalide' }),
 });
 
-const objectIdSchema = z.string().refine(
-  (val) => Types.ObjectId.isValid(val),
-  { message: 'ID cible invalide' }
-);
-
 const createReportSchema = z.object({
   type: reportTypeSchema,
-  targetId: objectIdSchema,
+  targetId: objectIdSchema('targetId'),
   reason: reportReasonSchema,
   description: z.string().max(500, 'Description trop longue').optional(),
 });
@@ -33,7 +28,12 @@ const createReportSchema = z.object({
 const getReportsQuerySchema = z.object({
   status: z.nativeEnum(ReportStatus).optional(),
   type: z.nativeEnum(ReportType).optional(),
-  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).optional().default('20'),
+  limit: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100))
+    .optional()
+    .default('20'),
   offset: z.string().transform(Number).pipe(z.number().int().min(0)).optional().default('0'),
 });
 
@@ -143,8 +143,10 @@ router.get('/metadata', (req, res) => {
  *       500:
  *         description: Erreur serveur
  */
-router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
+router.post(
+  '/',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const result = createReportSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -160,17 +162,11 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     });
 
     res.status(201).json({
+      id: reportId,
       message: 'Signalement créé avec succès',
-      reportId,
     });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur création signalement:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -218,9 +214,10 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
  *       500:
  *         description: Erreur serveur
  */
-router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
-    // Vérifier que l'utilisateur est admin
+router.get(
+  '/',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     if (!AuthorizationUtils.isAdmin(req.user)) {
       return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
     }
@@ -234,11 +231,8 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
     const reportsResult = await reportService.findAll({ status, type, limit, offset });
 
     res.json(reportsResult);
-  } catch (error) {
-    console.error('Erreur récupération signalements:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -285,9 +279,10 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
  *       500:
  *         description: Erreur serveur
  */
-router.put('/:id/review', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
-    // Vérifier que l'utilisateur est admin
+router.put(
+  '/:id/review',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     if (!AuthorizationUtils.isAdmin(req.user)) {
       return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
     }
@@ -304,11 +299,5 @@ router.put('/:id/review', authMiddleware, async (req: AuthenticatedRequest, res)
 
     const actionText = action === 'approve' ? 'approuvé et contenu supprimé' : 'rejeté';
     res.json({ message: `Signalement ${actionText} avec succès` });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur traitement signalement:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);

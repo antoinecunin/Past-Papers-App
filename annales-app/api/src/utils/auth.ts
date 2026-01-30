@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { ALLOWED_EMAIL_DOMAIN, BCRYPT_SALT_ROUNDS } from '../constants/auth.js';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
@@ -16,8 +17,7 @@ export interface JwtPayload {
 
 export class AuthUtils {
   static async hashPassword(password: string): Promise<string> {
-    const saltRounds = 12;
-    return bcrypt.hash(password, saltRounds);
+    return bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
   }
 
   static async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
@@ -42,17 +42,9 @@ export class AuthUtils {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  static generateVerificationToken(): string {
-    return crypto.randomBytes(32).toString('hex');
-  }
-
-  static generateResetToken(): string {
-    return crypto.randomBytes(32).toString('hex');
-  }
-
   static isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) && email.endsWith('@etu.unistra.fr');
+    return emailRegex.test(email) && email.endsWith(ALLOWED_EMAIL_DOMAIN);
   }
 
   static isValidPassword(password: string): boolean {

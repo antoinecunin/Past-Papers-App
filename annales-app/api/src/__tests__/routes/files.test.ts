@@ -4,6 +4,7 @@ import { router as filesRouter } from '../../routes/files.js';
 import { Exam } from '../../models/Exam.js';
 import { createAuthenticatedUser } from '../helpers/auth.helper.js';
 import { Types } from 'mongoose';
+import { errorHandler } from '../../middleware/errorHandler.js';
 
 /**
  * Tests pour /api/files
@@ -16,6 +17,7 @@ describe('POST /api/files/upload', () => {
     app = express();
     app.use(express.json());
     app.use('/api/files', filesRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -72,12 +74,12 @@ describe('POST /api/files/upload', () => {
       .attach('file', pdfBuffer, { filename: 'exam.pdf', contentType: 'application/pdf' });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('examId');
+    expect(response.body).toHaveProperty('id');
     expect(response.body).toHaveProperty('key');
     expect(response.body).toHaveProperty('pages');
     expect(response.body.pages).toBe(5);
 
-    const exam = await Exam.findById(response.body.examId);
+    const exam = await Exam.findById(response.body.id);
     expect(exam).toBeTruthy();
     expect(exam?.title).toBe('Exam 2024');
     expect(exam?.year).toBe(2024);
@@ -122,6 +124,7 @@ describe('GET /api/files/:examId/download', () => {
     app = express();
     app.use(express.json());
     app.use('/api/files', filesRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {

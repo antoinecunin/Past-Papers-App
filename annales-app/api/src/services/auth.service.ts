@@ -57,7 +57,7 @@ class AuthService {
     const hashedPassword = await AuthUtils.hashPassword(password);
 
     // Générer un token de vérification
-    const verificationToken = AuthUtils.generateVerificationToken();
+    const verificationToken = AuthUtils.generateRandomToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
     // Créer l'utilisateur
@@ -150,7 +150,7 @@ class AuthService {
       return;
     }
 
-    const resetToken = AuthUtils.generateResetToken();
+    const resetToken = AuthUtils.generateRandomToken();
     const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1h
 
     user.resetPasswordToken = resetToken;
@@ -194,7 +194,7 @@ class AuthService {
       throw ServiceError.badRequest('Email déjà vérifié');
     }
 
-    const verificationToken = AuthUtils.generateVerificationToken();
+    const verificationToken = AuthUtils.generateRandomToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
     user.verificationToken = verificationToken;

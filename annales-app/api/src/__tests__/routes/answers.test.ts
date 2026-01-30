@@ -7,6 +7,7 @@ import { AnswerModel } from '../../models/Answer.js';
 import { createAuthenticatedUser } from '../helpers/auth.helper.js';
 import { createExamData } from '../fixtures/exam.fixture.js';
 import { createAnswerData } from '../fixtures/answer.fixture.js';
+import { errorHandler } from '../../middleware/errorHandler.js';
 
 /**
  * Tests pour /api/answers
@@ -18,6 +19,7 @@ describe('GET /api/answers', () => {
     app = express();
     app.use(express.json());
     app.use('/api/answers', answersRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -29,9 +31,7 @@ describe('GET /api/answers', () => {
   it('should require examId parameter', async () => {
     const { token } = await createAuthenticatedUser();
 
-    const response = await request(app)
-      .get('/api/answers')
-      .set('Authorization', `Bearer ${token}`);
+    const response = await request(app).get('/api/answers').set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(400);
     expect(response.body.error).toContain('examId');
@@ -116,9 +116,27 @@ describe('GET /api/answers', () => {
 
     // Create 3 replies
     await AnswerModel.create([
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      }),
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      }),
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      }),
     ]);
 
     const response = await request(app)
@@ -139,7 +157,13 @@ describe('GET /api/answers', () => {
     );
 
     await AnswerModel.create(
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
     );
 
     const response = await request(app)
@@ -159,6 +183,7 @@ describe('POST /api/answers', () => {
     app = express();
     app.use(express.json());
     app.use('/api/answers', answersRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -401,7 +426,13 @@ describe('POST /api/answers', () => {
       );
 
       const reply = await AnswerModel.create(
-        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+        createAnswerData({
+          examId: exam._id,
+          page: 1,
+          yTop: 0.5,
+          authorId: user._id,
+          parentId: root._id,
+        })
       );
 
       const response = await request(app)
@@ -421,7 +452,9 @@ describe('POST /api/answers', () => {
     it('should reject cross-exam reply (400)', async () => {
       const { user, token } = await createAuthenticatedUser();
       const exam1 = await ExamModel.create(createExamData({ uploadedBy: user._id }));
-      const exam2 = await ExamModel.create(createExamData({ uploadedBy: user._id, title: 'Another Exam' }));
+      const exam2 = await ExamModel.create(
+        createExamData({ uploadedBy: user._id, title: 'Another Exam' })
+      );
 
       const root = await AnswerModel.create(
         createAnswerData({ examId: exam1._id, page: 1, yTop: 0.5, authorId: user._id })
@@ -450,6 +483,7 @@ describe('PUT /api/answers/:id', () => {
     app = express();
     app.use(express.json());
     app.use('/api/answers', answersRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -506,6 +540,7 @@ describe('DELETE /api/answers/:id', () => {
     app = express();
     app.use(express.json());
     app.use('/api/answers', answersRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -581,10 +616,22 @@ describe('DELETE /api/answers/:id', () => {
     );
 
     const reply1 = await AnswerModel.create(
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
     );
     const reply2 = await AnswerModel.create(
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
     );
 
     const response = await request(app)
@@ -608,7 +655,13 @@ describe('DELETE /api/answers/:id', () => {
     );
 
     const reply = await AnswerModel.create(
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
     );
 
     const response = await request(app)
@@ -630,6 +683,7 @@ describe('GET /api/answers/:id/replies', () => {
     app = express();
     app.use(express.json());
     app.use('/api/answers', answersRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -658,8 +712,20 @@ describe('GET /api/answers/:id/replies', () => {
     );
 
     await AnswerModel.create([
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      }),
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      }),
     ]);
 
     const response = await request(app)
@@ -682,7 +748,13 @@ describe('GET /api/answers/:id/replies', () => {
     // Create 3 replies
     for (let i = 0; i < 3; i++) {
       await AnswerModel.create(
-        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+        createAnswerData({
+          examId: exam._id,
+          page: 1,
+          yTop: 0.5,
+          authorId: user._id,
+          parentId: root._id,
+        })
       );
     }
 
@@ -706,7 +778,13 @@ describe('GET /api/answers/:id/replies', () => {
     // Create 5 replies
     for (let i = 0; i < 5; i++) {
       await AnswerModel.create(
-        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+        createAnswerData({
+          examId: exam._id,
+          page: 1,
+          yTop: 0.5,
+          authorId: user._id,
+          parentId: root._id,
+        })
       );
     }
 
@@ -755,10 +833,22 @@ describe('GET /api/answers/:id/replies', () => {
 
     // Create replies sequentially to ensure _id ordering
     const reply1 = await AnswerModel.create(
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
     );
     const reply2 = await AnswerModel.create(
-      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
     );
 
     const response = await request(app)

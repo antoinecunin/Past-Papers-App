@@ -3,6 +3,7 @@ import express from 'express';
 import { router as authRouter } from '../../routes/auth.js';
 import { UserModel } from '../../models/User.js';
 import bcrypt from 'bcryptjs';
+import { errorHandler } from '../../middleware/errorHandler.js';
 
 /**
  * Tests pour /api/auth
@@ -16,58 +17,51 @@ describe('POST /api/auth/register', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   describe('Validation des données', () => {
     it('should reject invalid email format', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'invalid-email',
-          password: 'password123',
-          firstName: 'John',
-          lastName: 'Doe',
-        });
+      const response = await request(app).post('/api/auth/register').send({
+        email: 'invalid-email',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
     });
 
     it('should reject non-unistra.fr email', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@gmail.com',
-          password: 'password123',
-          firstName: 'John',
-          lastName: 'Doe',
-        });
+      const response = await request(app).post('/api/auth/register').send({
+        email: 'test@gmail.com',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('@etu.unistra.fr');
     });
 
     it('should reject short password', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@etu.unistra.fr',
-          password: '123',
-          firstName: 'John',
-          lastName: 'Doe',
-        });
+      const response = await request(app).post('/api/auth/register').send({
+        email: 'test@etu.unistra.fr',
+        password: '123',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('8 caractères');
     });
 
     it('should reject missing fields', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'test@etu.unistra.fr',
-          password: 'password123',
-        });
+      const response = await request(app).post('/api/auth/register').send({
+        email: 'test@etu.unistra.fr',
+        password: 'password123',
+      });
 
       expect(response.status).toBe(400);
     });
@@ -82,9 +76,7 @@ describe('POST /api/auth/register', () => {
         lastName: 'Doe',
       };
 
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(userData);
+      const response = await request(app).post('/api/auth/register').send(userData);
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('message');
@@ -99,14 +91,12 @@ describe('POST /api/auth/register', () => {
 
     it('should hash password', async () => {
       const password = 'password123';
-      await request(app)
-        .post('/api/auth/register')
-        .send({
-          email: 'hashtest@etu.unistra.fr',
-          password,
-          firstName: 'Hash',
-          lastName: 'Test',
-        });
+      await request(app).post('/api/auth/register').send({
+        email: 'hashtest@etu.unistra.fr',
+        password,
+        firstName: 'Hash',
+        lastName: 'Test',
+      });
 
       const user = await UserModel.findOne({ email: 'hashtest@etu.unistra.fr' });
       expect(user?.password).not.toBe(password);
@@ -137,6 +127,7 @@ describe('POST /api/auth/login', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(async () => {
@@ -154,12 +145,10 @@ describe('POST /api/auth/login', () => {
   });
 
   it('should login with valid credentials', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'verified@etu.unistra.fr',
-        password: 'password123',
-      });
+    const response = await request(app).post('/api/auth/login').send({
+      email: 'verified@etu.unistra.fr',
+      password: 'password123',
+    });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('token');
@@ -169,24 +158,20 @@ describe('POST /api/auth/login', () => {
   });
 
   it('should reject invalid password', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'verified@etu.unistra.fr',
-        password: 'wrongpassword',
-      });
+    const response = await request(app).post('/api/auth/login').send({
+      email: 'verified@etu.unistra.fr',
+      password: 'wrongpassword',
+    });
 
     expect(response.status).toBe(401);
     expect(response.body.error).toContain('Email ou mot de passe incorrect');
   });
 
   it('should reject non-existent user', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'nonexistent@etu.unistra.fr',
-        password: 'password123',
-      });
+    const response = await request(app).post('/api/auth/login').send({
+      email: 'nonexistent@etu.unistra.fr',
+      password: 'password123',
+    });
 
     expect(response.status).toBe(401);
   });
@@ -203,24 +188,20 @@ describe('POST /api/auth/login', () => {
       verificationToken: 'some-token',
     });
 
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'unverified@etu.unistra.fr',
-        password: 'password123',
-      });
+    const response = await request(app).post('/api/auth/login').send({
+      email: 'unverified@etu.unistra.fr',
+      password: 'password123',
+    });
 
     expect(response.status).toBe(401);
     expect(response.body.error).toContain('Email non vérifié');
   });
 
   it('should return user data without sensitive fields', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'verified@etu.unistra.fr',
-        password: 'password123',
-      });
+    const response = await request(app).post('/api/auth/login').send({
+      email: 'verified@etu.unistra.fr',
+      password: 'password123',
+    });
 
     expect(response.body.user).not.toHaveProperty('password');
     expect(response.body.user).not.toHaveProperty('verificationToken');
@@ -235,6 +216,7 @@ describe('POST /api/auth/verify-email', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   it('should verify email with valid token', async () => {
@@ -253,9 +235,7 @@ describe('POST /api/auth/verify-email', () => {
       verificationExpires: futureDate,
     });
 
-    const response = await request(app)
-      .post('/api/auth/verify-email')
-      .send({ token });
+    const response = await request(app).post('/api/auth/verify-email').send({ token });
 
     expect(response.status).toBe(200);
     expect(response.body.message).toContain('vérifié');
@@ -288,9 +268,7 @@ describe('POST /api/auth/verify-email', () => {
       verificationToken: null,
     });
 
-    const response = await request(app)
-      .post('/api/auth/verify-email')
-      .send({ token });
+    const response = await request(app).post('/api/auth/verify-email').send({ token });
 
     expect(response.status).toBe(400);
   });
@@ -303,6 +281,7 @@ describe('POST /api/auth/forgot-password', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   it('should return 400 for missing email', async () => {
@@ -361,6 +340,7 @@ describe('POST /api/auth/reset-password', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   it('should return 400 for missing fields', async () => {

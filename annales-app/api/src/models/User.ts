@@ -1,4 +1,5 @@
 import { Schema, model, Types } from 'mongoose';
+import { ALLOWED_EMAIL_DOMAIN } from '../constants/auth.js';
 
 export enum UserRole {
   USER = 'user',
@@ -31,9 +32,9 @@ const UserSchema = new Schema<User>(
       trim: true,
       validate: {
         validator: (email: string) => {
-          return email.endsWith('@etu.unistra.fr');
+          return email.endsWith(ALLOWED_EMAIL_DOMAIN);
         },
-        message: "L'email doit se terminer par @etu.unistra.fr",
+        message: `L'email doit se terminer par ${ALLOWED_EMAIL_DOMAIN}`,
       },
     },
     password: {

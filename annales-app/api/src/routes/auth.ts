@@ -2,8 +2,9 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
-import { ServiceError } from '../services/ServiceError.js';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
+import { ALLOWED_EMAIL_DOMAIN } from '../constants/auth.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 const router = Router();
 
@@ -37,8 +38,8 @@ const registerSchema = z.object({
   email: z
     .string()
     .email('Email invalide')
-    .refine((val) => val.endsWith('@etu.unistra.fr'), {
-      message: "L'email doit se terminer par @etu.unistra.fr",
+    .refine(val => val.endsWith(ALLOWED_EMAIL_DOMAIN), {
+      message: `L'email doit se terminer par ${ALLOWED_EMAIL_DOMAIN}`,
     }),
   password: passwordSchema,
   firstName: z.string().trim().min(1, 'Prénom requis').max(50, 'Prénom trop long'),
@@ -64,7 +65,7 @@ const updateProfileSchema = z
     firstName: z.string().trim().min(1, 'Prénom requis').max(50, 'Prénom trop long').optional(),
     lastName: z.string().trim().min(1, 'Nom requis').max(50, 'Nom trop long').optional(),
   })
-  .refine((data) => data.firstName || data.lastName, {
+  .refine(data => data.firstName || data.lastName, {
     message: 'Au moins un champ doit être fourni',
   });
 
@@ -117,8 +118,10 @@ const deleteAccountSchema = z.object({
  *       409:
  *         description: Email déjà utilisé
  */
-router.post('/register', registerLimiter, async (req, res) => {
-  try {
+router.post(
+  '/register',
+  registerLimiter,
+  asyncHandler(async (req, res) => {
     const result = registerSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -127,17 +130,11 @@ router.post('/register', registerLimiter, async (req, res) => {
     const { userId } = await authService.register(result.data);
 
     res.status(201).json({
+      id: userId,
       message: 'Inscription réussie. Vérifiez votre email pour activer votre compte.',
-      userId,
     });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message, ...error.details });
-    }
-    console.error("Erreur lors de l'inscription:", error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -192,8 +189,10 @@ router.post('/register', registerLimiter, async (req, res) => {
  *       401:
  *         description: Identifiants incorrects ou email non vérifié
  */
-router.post('/login', authLimiter, async (req, res) => {
-  try {
+router.post(
+  '/login',
+  authLimiter,
+  asyncHandler(async (req, res) => {
     const result = loginSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -203,14 +202,8 @@ router.post('/login', authLimiter, async (req, res) => {
     const loginResult = await authService.login(email, password);
 
     res.json(loginResult);
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message, ...error.details });
-    }
-    console.error('Erreur lors de la connexion:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -235,8 +228,9 @@ router.post('/login', authLimiter, async (req, res) => {
  *       400:
  *         description: Token invalide ou expiré
  */
-router.post('/verify-email', async (req, res) => {
-  try {
+router.post(
+  '/verify-email',
+  asyncHandler(async (req, res) => {
     const { token } = req.body;
 
     if (!token) {
@@ -246,14 +240,8 @@ router.post('/verify-email', async (req, res) => {
     await authService.verifyEmail(token);
 
     res.json({ message: 'Email vérifié avec succès' });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors de la vérification:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -279,8 +267,10 @@ router.post('/verify-email', async (req, res) => {
  *       404:
  *         description: Utilisateur non trouvé
  */
-router.post('/forgot-password', authLimiter, async (req, res) => {
-  try {
+router.post(
+  '/forgot-password',
+  authLimiter,
+  asyncHandler(async (req, res) => {
     const result = forgotPasswordSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -291,11 +281,8 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 
     // Toujours retourner le même message (sécurité)
     res.json({ message: 'Si cet email existe, un lien de réinitialisation a été envoyé' });
-  } catch (error) {
-    console.error('Erreur lors de la demande de réinitialisation:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -324,8 +311,9 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
  *       400:
  *         description: Token invalide ou expiré
  */
-router.post('/reset-password', async (req, res) => {
-  try {
+router.post(
+  '/reset-password',
+  asyncHandler(async (req, res) => {
     const result = resetPasswordSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -335,14 +323,8 @@ router.post('/reset-password', async (req, res) => {
     await authService.resetPassword(token, password);
 
     res.json({ message: 'Mot de passe réinitialisé avec succès' });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors de la réinitialisation:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -368,8 +350,10 @@ router.post('/reset-password', async (req, res) => {
  *       400:
  *         description: Utilisateur déjà vérifié ou non trouvé
  */
-router.post('/resend-verification', authLimiter, async (req, res) => {
-  try {
+router.post(
+  '/resend-verification',
+  authLimiter,
+  asyncHandler(async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
@@ -379,14 +363,8 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
     await authService.resendVerification(email);
 
     res.json({ message: 'Email de vérification renvoyé' });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors du renvoi de vérification:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -417,13 +395,13 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
  *       403:
  *         description: Disponible uniquement en développement
  */
-router.post('/dev/verify-user', async (req, res) => {
-  // Route disponible uniquement en développement
-  if (process.env.NODE_ENV !== 'development') {
-    return res.status(403).json({ error: 'Route disponible uniquement en développement' });
-  }
+router.post(
+  '/dev/verify-user',
+  asyncHandler(async (req, res) => {
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(403).json({ error: 'Route disponible uniquement en développement' });
+    }
 
-  try {
     const { email } = req.body;
 
     if (!email) {
@@ -433,14 +411,8 @@ router.post('/dev/verify-user', async (req, res) => {
     await authService.devVerifyUser(email);
 
     res.json({ message: 'Utilisateur marqué comme vérifié', email });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors de la vérification dev:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -476,18 +448,14 @@ router.post('/dev/verify-user', async (req, res) => {
  *       401:
  *         description: Non authentifié
  */
-router.get('/profile', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
+router.get(
+  '/profile',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const profile = await authService.getProfile(req.user!.id);
     res.json(profile);
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors de la récupération du profil:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -517,8 +485,10 @@ router.get('/profile', authMiddleware, async (req: AuthenticatedRequest, res) =>
  *       401:
  *         description: Non authentifié
  */
-router.patch('/profile', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
+router.patch(
+  '/profile',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const result = updateProfileSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -526,14 +496,8 @@ router.patch('/profile', authMiddleware, async (req: AuthenticatedRequest, res) 
 
     const user = await authService.updateProfile(req.user!.id, result.data);
     res.json({ message: 'Profil mis à jour', user });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors de la mise à jour du profil:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -568,8 +532,11 @@ router.patch('/profile', authMiddleware, async (req: AuthenticatedRequest, res) 
  *       401:
  *         description: Mot de passe actuel incorrect
  */
-router.post('/change-password', authMiddleware, authLimiter, async (req: AuthenticatedRequest, res) => {
-  try {
+router.post(
+  '/change-password',
+  authMiddleware,
+  authLimiter,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const result = changePasswordSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -579,14 +546,8 @@ router.post('/change-password', authMiddleware, authLimiter, async (req: Authent
     await authService.changePassword(req.user!.id, currentPassword, newPassword);
 
     res.json({ message: 'Mot de passe modifié avec succès' });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors du changement de mot de passe:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 /**
  * @swagger
@@ -620,8 +581,11 @@ router.post('/change-password', authMiddleware, authLimiter, async (req: Authent
  *       401:
  *         description: Mot de passe incorrect
  */
-router.delete('/account', authMiddleware, authLimiter, async (req: AuthenticatedRequest, res) => {
-  try {
+router.delete(
+  '/account',
+  authMiddleware,
+  authLimiter,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const result = deleteAccountSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -630,13 +594,7 @@ router.delete('/account', authMiddleware, authLimiter, async (req: Authenticated
     await authService.deleteAccount(req.user!.id, result.data.password);
 
     res.json({ message: 'Compte supprimé avec succès' });
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return res.status(error.statusCode).json({ error: error.message });
-    }
-    console.error('Erreur lors de la suppression du compte:', error);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-  }
-});
+  })
+);
 
 export { router };

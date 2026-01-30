@@ -6,6 +6,7 @@ import { AnswerModel } from '../../models/Answer.js';
 import { createAuthenticatedUser } from '../helpers/auth.helper.js';
 import { createExamData } from '../fixtures/exam.fixture.js';
 import { Types } from 'mongoose';
+import { errorHandler } from '../../middleware/errorHandler.js';
 
 /**
  * Tests pour /api/exams
@@ -18,6 +19,7 @@ describe('GET /api/exams', () => {
     app = express();
     app.use(express.json());
     app.use('/api/exams', examsRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -29,9 +31,7 @@ describe('GET /api/exams', () => {
   it('should return empty array when no exams', async () => {
     const { token } = await createAuthenticatedUser();
 
-    const response = await request(app)
-      .get('/api/exams')
-      .set('Authorization', `Bearer ${token}`);
+    const response = await request(app).get('/api/exams').set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([]);
@@ -42,14 +42,12 @@ describe('GET /api/exams', () => {
 
     // Créer plusieurs examens avec délai pour garantir l'ordre de création
     await ExamModel.create(createExamData({ title: 'Exam 1', year: 2024, uploadedBy: user._id }));
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 10));
     await ExamModel.create(createExamData({ title: 'Exam 2', year: 2023, uploadedBy: user._id }));
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 10));
     await ExamModel.create(createExamData({ title: 'Exam 3', year: 2022, uploadedBy: user._id }));
 
-    const response = await request(app)
-      .get('/api/exams')
-      .set('Authorization', `Bearer ${token}`);
+    const response = await request(app).get('/api/exams').set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(3);
@@ -62,9 +60,7 @@ describe('GET /api/exams', () => {
 
     await ExamModel.create(createExamData({ uploadedBy: user._id }));
 
-    const response = await request(app)
-      .get('/api/exams')
-      .set('Authorization', `Bearer ${token}`);
+    const response = await request(app).get('/api/exams').set('Authorization', `Bearer ${token}`);
 
     const exam = response.body[0];
     expect(exam).toHaveProperty('_id');
@@ -86,6 +82,7 @@ describe('GET /api/exams/:id', () => {
     app = express();
     app.use(express.json());
     app.use('/api/exams', examsRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -139,6 +136,7 @@ describe('DELETE /api/exams/:id', () => {
     app = express();
     app.use(express.json());
     app.use('/api/exams', examsRouter);
+    app.use(errorHandler);
   });
 
   it('should require authentication', async () => {
@@ -223,9 +221,7 @@ describe('DELETE /api/exams/:id', () => {
       },
     ]);
 
-    await request(app)
-      .delete(`/api/exams/${exam._id}`)
-      .set('Authorization', `Bearer ${token}`);
+    await request(app).delete(`/api/exams/${exam._id}`).set('Authorization', `Bearer ${token}`);
 
     // Vérifier que les réponses ont été supprimées
     const remainingAnswers = await AnswerModel.find({ examId: exam._id });

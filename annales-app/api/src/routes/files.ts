@@ -3,9 +3,10 @@ import { z } from 'zod';
 import multer from 'multer';
 import { uploadBuffer, objectKey, downloadFile } from '../services/s3.js';
 import { Exam } from '../models/Exam.js';
-import { Types } from 'mongoose';
 import { PDFDocument } from 'pdf-lib';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
+import { objectIdSchema } from '../utils/validation.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 export const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -14,18 +15,26 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 const currentYear = new Date().getFullYear();
 
 const uploadSchema = z.object({
-  title: z.string({ required_error: 'Le titre est obligatoire' }).min(1, 'Le titre est obligatoire'),
-  year: z.string()
+  title: z
+    .string({ required_error: 'Le titre est obligatoire' })
+    .min(1, 'Le titre est obligatoire'),
+  year: z
+    .string()
     .transform(Number)
-    .pipe(z.number().int().min(1900, 'Année invalide').max(currentYear + 1, 'Année invalide')),
-  module: z.string({ required_error: 'Le module est obligatoire' }).min(1, 'Le module est obligatoire'),
+    .pipe(
+      z
+        .number()
+        .int()
+        .min(1900, 'Année invalide')
+        .max(currentYear + 1, 'Année invalide')
+    ),
+  module: z
+    .string({ required_error: 'Le module est obligatoire' })
+    .min(1, 'Le module est obligatoire'),
 });
 
 const examIdParamSchema = z.object({
-  examId: z.string().refine(
-    (val) => Types.ObjectId.isValid(val),
-    { message: 'examId invalide' }
-  ),
+  examId: objectIdSchema('examId'),
 });
 
 /**
@@ -65,8 +74,9 @@ const examIdParamSchema = z.object({
  *             schema:
  *               type: object
  *               properties:
- *                 examId:
+ *                 id:
  *                   type: string
+ *                   description: ID de l'examen créé
  *                 key:
  *                   type: string
  *                 pages:
@@ -84,7 +94,7 @@ router.post(
   '/upload',
   authMiddleware,
   upload.single('file'),
-  async (req: AuthenticatedRequest, res) => {
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     if (!req.file) return res.status(400).json({ error: 'Fichier manquant' });
 
     // Validation du type MIME
@@ -107,14 +117,10 @@ router.post(
       const pdf = await PDFDocument.load(req.file.buffer);
       pages = pdf.getPageCount();
     } catch {
-      return res.status(400).json({ error: 'Le fichier n\'est pas un PDF valide' });
+      return res.status(400).json({ error: "Le fichier n'est pas un PDF valide" });
     }
 
-    const key = objectKey(
-      'annales',
-      `${year}`,
-      req.file.originalname.replace(/\s+/g, '_')
-    );
+    const key = objectKey('annales', `${year}`, req.file.originalname.replace(/\s+/g, '_'));
     await uploadBuffer(key, req.file.buffer, req.file.mimetype);
 
     const exam = await Exam.create({
@@ -125,8 +131,8 @@ router.post(
       pages,
       uploadedBy: req.user!.id,
     });
-    res.json({ examId: exam._id, key, pages });
-  }
+    res.json({ id: exam._id, key, pages });
+  })
 );
 
 /**
@@ -170,8 +176,10 @@ router.post(
  *       500:
  *         description: Erreur serveur
  */
-router.get('/:examId/download', authMiddleware, async (req: AuthenticatedRequest, res) => {
-  try {
+router.get(
+  '/:examId/download',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
     const result = examIdParamSchema.safeParse(req.params);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
@@ -179,24 +187,20 @@ router.get('/:examId/download', authMiddleware, async (req: AuthenticatedRequest
 
     const { examId } = result.data;
 
-    // Recherche de l'examen
     const exam = await Exam.findById(examId);
     if (!exam) {
       return res.status(404).json({ error: 'Examen non trouvé' });
     }
 
-    // Téléchargement du fichier depuis S3
     const { stream, contentType, contentLength } = await downloadFile(exam.fileKey);
 
-    // Configuration des headers pour le téléchargement
     res.set({
       'Content-Type': contentType || 'application/pdf',
       'Content-Length': contentLength?.toString(),
       'Content-Disposition': `inline; filename="${exam.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`,
-      'Cache-Control': 'public, max-age=3600', // Cache 1 heure
+      'Cache-Control': 'public, max-age=3600',
     });
 
-    // Stream du fichier vers la réponse
     stream.pipe(res);
 
     stream.on('error', error => {
@@ -205,10 +209,5 @@ router.get('/:examId/download', authMiddleware, async (req: AuthenticatedRequest
         res.status(500).json({ error: 'Erreur lors du téléchargement' });
       }
     });
-  } catch (error) {
-    console.error('Erreur téléchargement:', error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Erreur interne du serveur' });
-    }
-  }
-});
+  })
+);

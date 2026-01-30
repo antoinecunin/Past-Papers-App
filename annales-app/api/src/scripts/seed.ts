@@ -99,7 +99,10 @@ async function connectToDatabase(): Promise<void> {
   logSuccess('Connecté à MongoDB');
 }
 
-async function createUsers(users: SeedUser[], verbose: boolean): Promise<Map<string, mongoose.Types.ObjectId>> {
+async function createUsers(
+  users: SeedUser[],
+  verbose: boolean
+): Promise<Map<string, mongoose.Types.ObjectId>> {
   log('👤', `Création de ${users.length} utilisateurs...`);
   const userIds = new Map<string, mongoose.Types.ObjectId>();
 
@@ -197,37 +200,37 @@ async function createExams(
 // Commentaires de test pour le seeding
 const sampleComments = [
   'La réponse à la question 1 est 42.',
-  'Attention, il y a une erreur dans l\'énoncé.',
+  "Attention, il y a une erreur dans l'énoncé.",
   'Pour la question 3, utiliser la formule de récurrence.',
-  'Cette partie n\'était pas au programme cette année.',
+  "Cette partie n'était pas au programme cette année.",
   'Correction complète disponible sur le forum.',
-  'Je pense que c\'est un piège, vérifiez les hypothèses.',
+  "Je pense que c'est un piège, vérifiez les hypothèses.",
   'Merci pour ce partage !',
   'La méthode vue en TD fonctionne bien ici.',
 ];
 
 // Réponses de test pour les threads
 const sampleReplies = [
-  'Je suis d\'accord, bonne analyse.',
-  'Tu es sûr ? J\'avais trouvé autre chose.',
-  'Merci pour l\'explication !',
-  'Ça m\'a bien aidé pour comprendre.',
-  'Je ne suis pas d\'accord, voici pourquoi...',
-  'Quelqu\'un peut confirmer ?',
-  'C\'est exactement ce que le prof a dit en cours.',
-  'Attention, cette formule n\'est valable que si n > 0.',
-  'Je viens de vérifier, c\'est correct.',
+  "Je suis d'accord, bonne analyse.",
+  "Tu es sûr ? J'avais trouvé autre chose.",
+  "Merci pour l'explication !",
+  "Ça m'a bien aidé pour comprendre.",
+  "Je ne suis pas d'accord, voici pourquoi...",
+  "Quelqu'un peut confirmer ?",
+  "C'est exactement ce que le prof a dit en cours.",
+  "Attention, cette formule n'est valable que si n > 0.",
+  "Je viens de vérifier, c'est correct.",
   'Il y a une autre méthode plus simple.',
   'Super explication, merci beaucoup !',
   'On peut aussi utiliser le théorème de...',
-  'J\'ai eu le même résultat en utilisant une autre approche.',
+  "J'ai eu le même résultat en utilisant une autre approche.",
   'Le corrigé officiel donne la même chose.',
-  'Bonne remarque, je n\'avais pas vu ça.',
+  "Bonne remarque, je n'avais pas vu ça.",
   'En fait il faut distinguer deux cas ici.',
   'Voir aussi la question 5 qui est liée.',
   'Le prof avait donné un indice en amphi.',
-  'C\'est plus clair maintenant, merci !',
-  'Il me semble qu\'il manque un facteur 2.',
+  "C'est plus clair maintenant, merci !",
+  "Il me semble qu'il manque un facteur 2.",
 ];
 
 async function createAnswers(
@@ -237,20 +240,33 @@ async function createAnswers(
 ): Promise<{ answerIds: mongoose.Types.ObjectId[]; replyCount: number }> {
   log('💬', 'Création des commentaires et réponses...');
   const answerIds: mongoose.Types.ObjectId[] = [];
-  const rootAnswers: { id: mongoose.Types.ObjectId; examId: mongoose.Types.ObjectId; page: number; yTop: number }[] = [];
+  const rootAnswers: {
+    id: mongoose.Types.ObjectId;
+    examId: mongoose.Types.ObjectId;
+    page: number;
+    yTop: number;
+  }[] = [];
   const userIdArray = Array.from(userIds.values());
   let replyCount = 0;
 
   // Créer 2-3 commentaires racines par examen
-  for (const examId of examIds) {
+  // Le premier commentaire du premier examen est déterministe (page 1, yTop 0.3)
+  // pour retrouver facilement les 15 réponses de test
+  for (let examIndex = 0; examIndex < examIds.length; examIndex++) {
+    const examId = examIds[examIndex];
     const numComments = 2 + Math.floor(Math.random() * 2); // 2 ou 3 commentaires
 
     for (let i = 0; i < numComments; i++) {
       try {
-        const authorId = userIdArray[Math.floor(Math.random() * userIdArray.length)];
-        const comment = sampleComments[Math.floor(Math.random() * sampleComments.length)];
-        const page = 1 + Math.floor(Math.random() * 3);
-        const yTop = Math.round((Math.random() * 0.8 + 0.1) * 100) / 100;
+        const isFirstComment = examIndex === 0 && i === 0;
+        const authorId = isFirstComment
+          ? userIdArray[0]
+          : userIdArray[Math.floor(Math.random() * userIdArray.length)];
+        const comment = isFirstComment
+          ? sampleComments[0]
+          : sampleComments[Math.floor(Math.random() * sampleComments.length)];
+        const page = isFirstComment ? 1 : 1 + Math.floor(Math.random() * 3);
+        const yTop = isFirstComment ? 0.3 : Math.round((Math.random() * 0.8 + 0.1) * 100) / 100;
 
         const answer = await AnswerModel.create({
           examId,
@@ -366,7 +382,10 @@ async function createReports(
   const examReportCount = Math.ceil(count * 0.6);
   const commentReportCount = count - examReportCount;
 
-  log('🚨', `Création de ${count} signalements (${examReportCount} examens, ${commentReportCount} commentaires)...`);
+  log(
+    '🚨',
+    `Création de ${count} signalements (${examReportCount} examens, ${commentReportCount} commentaires)...`
+  );
 
   let examReportsCreated = 0;
   let commentReportsCreated = 0;
@@ -382,7 +401,7 @@ async function createReports(
       await ReportModel.create({
         type: ReportType.EXAM,
         targetId: examIds[examIndex],
-        reason: item.reason as ReportReason || ReportReason.OTHER,
+        reason: (item.reason as ReportReason) || ReportReason.OTHER,
         description: item.description,
         reportedBy: userIdArray[userIndex],
         status: (item.status as ReportStatus) || ReportStatus.PENDING,
@@ -415,7 +434,12 @@ async function createReports(
       const reason = reasons[Math.floor(Math.random() * reasons.length)];
       const description = examDescriptions[Math.floor(Math.random() * examDescriptions.length)];
       const statusRoll = Math.random();
-      const status = statusRoll < 0.7 ? ReportStatus.PENDING : statusRoll < 0.85 ? ReportStatus.APPROVED : ReportStatus.REJECTED;
+      const status =
+        statusRoll < 0.7
+          ? ReportStatus.PENDING
+          : statusRoll < 0.85
+            ? ReportStatus.APPROVED
+            : ReportStatus.REJECTED;
 
       await ReportModel.create({
         type: ReportType.EXAM,
@@ -451,27 +475,38 @@ async function createReports(
 
     try {
       const reason = reasons[Math.floor(Math.random() * reasons.length)];
-      const description = commentDescriptions[Math.floor(Math.random() * commentDescriptions.length)];
+      const description =
+        commentDescriptions[Math.floor(Math.random() * commentDescriptions.length)];
       const statusRoll = Math.random();
-      const status = statusRoll < 0.7 ? ReportStatus.PENDING : statusRoll < 0.85 ? ReportStatus.APPROVED : ReportStatus.REJECTED;
+      const status =
+        statusRoll < 0.7
+          ? ReportStatus.PENDING
+          : statusRoll < 0.85
+            ? ReportStatus.APPROVED
+            : ReportStatus.REJECTED;
 
       await ReportModel.create({
         type: ReportType.COMMENT,
         targetId: answerIds[answerIndex],
         reason,
-        description: description ? `${description} (comment #${commentReportsCreated + 1})` : undefined,
+        description: description
+          ? `${description} (comment #${commentReportsCreated + 1})`
+          : undefined,
         reportedBy: userIdArray[userIndex],
         status,
       });
 
       commentReportsCreated++;
-      if (verbose) logSuccess(`Signalement comment #${commentReportsCreated}: ${reason} (${status})`);
+      if (verbose)
+        logSuccess(`Signalement comment #${commentReportsCreated}: ${reason} (${status})`);
     } catch {
       // Ignore
     }
   }
 
-  logSuccess(`${examReportsCreated + commentReportsCreated} signalements créés (${examReportsCreated} examens, ${commentReportsCreated} commentaires)`);
+  logSuccess(
+    `${examReportsCreated + commentReportsCreated} signalements créés (${examReportsCreated} examens, ${commentReportsCreated} commentaires)`
+  );
   return { examReports: examReportsCreated, commentReports: commentReportsCreated };
 }
 
@@ -523,7 +558,9 @@ async function main() {
     console.log(`   - ${examIds.length} examens`);
     console.log(`   - ${answerIds.length} commentaires racines`);
     console.log(`   - ${replyCount} réponses (threads)`);
-    console.log(`   - ${reportStats.examReports + reportStats.commentReports} signalements (${reportStats.examReports} examens, ${reportStats.commentReports} commentaires)`);
+    console.log(
+      `   - ${reportStats.examReports + reportStats.commentReports} signalements (${reportStats.examReports} examens, ${reportStats.commentReports} commentaires)`
+    );
 
     // Afficher les credentials de connexion
     console.log('\n📋 Credentials de test:');

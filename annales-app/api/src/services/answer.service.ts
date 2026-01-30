@@ -26,9 +26,7 @@ class AnswerService {
       filter.page = page;
     }
 
-    const answers = await AnswerModel.find(filter)
-      .sort({ page: 1, yTop: 1, createdAt: 1 })
-      .lean();
+    const answers = await AnswerModel.find(filter).sort({ page: 1, yTop: 1, createdAt: 1 }).lean();
 
     // Compter les réponses pour chaque commentaire racine
     const answerIds = answers.map(a => a._id);
@@ -91,10 +89,6 @@ class AnswerService {
 
     // Validation du parent si c'est une réponse
     if (parentId) {
-      if (!Types.ObjectId.isValid(parentId)) {
-        throw ServiceError.badRequest('parentId invalide');
-      }
-
       const parent = await AnswerModel.findById(parentId);
       if (!parent) {
         throw ServiceError.notFound('Commentaire parent non trouvé');
@@ -102,12 +96,14 @@ class AnswerService {
 
       // Pas de réponse à une réponse (un seul niveau de nesting)
       if (parent.parentId) {
-        throw ServiceError.badRequest('Impossible de répondre à une réponse (un seul niveau autorisé)');
+        throw ServiceError.badRequest(
+          'Impossible de répondre à une réponse (un seul niveau autorisé)'
+        );
       }
 
       // Le parent doit appartenir au même examen
       if (parent.examId.toString() !== examId) {
-        throw ServiceError.badRequest('Le commentaire parent n\'appartient pas au même examen');
+        throw ServiceError.badRequest("Le commentaire parent n'appartient pas au même examen");
       }
     }
 

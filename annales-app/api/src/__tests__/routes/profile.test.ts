@@ -7,6 +7,7 @@ import { AnswerModel } from '../../models/Answer.js';
 import { ReportModel, ReportType, ReportReason } from '../../models/Report.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { errorHandler } from '../../middleware/errorHandler.js';
 
 /**
  * Tests pour les routes de profil utilisateur
@@ -30,6 +31,7 @@ describe('GET /api/auth/profile', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(async () => {
@@ -89,6 +91,7 @@ describe('PATCH /api/auth/profile', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(async () => {
@@ -187,9 +190,7 @@ describe('PATCH /api/auth/profile', () => {
   });
 
   it('should return 401 without token', async () => {
-    const response = await request(app)
-      .patch('/api/auth/profile')
-      .send({ firstName: 'Test' });
+    const response = await request(app).patch('/api/auth/profile').send({ firstName: 'Test' });
 
     expect(response.status).toBe(401);
   });
@@ -203,6 +204,7 @@ describe('POST /api/auth/change-password', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(async () => {
@@ -323,6 +325,7 @@ describe('DELETE /api/auth/account', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(async () => {
