@@ -13,6 +13,8 @@ export interface Answer {
   yTop: number; // Position Y du commentaire [0,1]
   content: AnswerContent;
   authorId?: string; // ID utilisateur
+  parentId?: string; // ID du commentaire parent (thread)
+  replyCount?: number; // Nombre de réponses (uniquement sur les racines)
   createdAt: string;
   updatedAt: string;
 }

@@ -80,17 +80,23 @@ const createAnswerSchema = z.object({
   page: z.number({ required_error: 'page requis' }).int().min(1, 'page doit être un entier >= 1'),
   yTop: z.number({ required_error: 'yTop requis' }).min(0, 'yTop doit être >= 0').max(1, 'yTop doit être <= 1'),
   content: contentSchema,
+  parentId: objectIdSchema('parentId').optional(),
 });
 
 const updateAnswerSchema = z.object({
   content: contentSchema,
 });
 
+const getRepliesQuerySchema = z.object({
+  cursor: objectIdSchema('cursor').optional(),
+  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(50)).optional(),
+});
+
 /**
  * @swagger
  * /answers:
  *   get:
- *     summary: Lister les commentaires d'un examen
+ *     summary: Lister les commentaires racines d'un examen
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -110,7 +116,7 @@ const updateAnswerSchema = z.object({
  *         description: Numéro de page (optionnel, filtre les résultats)
  *     responses:
  *       200:
- *         description: Liste des commentaires triés par page, position Y et date de création
+ *         description: Liste des commentaires racines triés par page, position Y et date de création
  *         content:
  *           application/json:
  *             schema:
@@ -140,6 +146,13 @@ const updateAnswerSchema = z.object({
  *                   authorId:
  *                     type: string
  *                     description: ID de l'auteur du commentaire
+ *                   parentId:
+ *                     type: string
+ *                     nullable: true
+ *                     description: Toujours null pour les commentaires racines
+ *                   replyCount:
+ *                     type: integer
+ *                     description: Nombre de réponses dans le thread
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -158,7 +171,7 @@ const updateAnswerSchema = z.object({
  * @swagger
  * /answers:
  *   post:
- *     summary: Créer un commentaire sur un examen
+ *     summary: Créer un commentaire ou une réponse sur un examen
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -196,6 +209,9 @@ const updateAnswerSchema = z.object({
  *                   rendered:
  *                     type: string
  *                     description: HTML rendu (pour LaTeX)
+ *               parentId:
+ *                 type: string
+ *                 description: ID du commentaire parent (pour créer une réponse dans un thread)
  *     responses:
  *       200:
  *         description: Commentaire créé
@@ -211,6 +227,92 @@ const updateAnswerSchema = z.object({
  *         description: Paramètres invalides
  *       401:
  *         description: Non authentifié
+ *       404:
+ *         description: Commentaire parent non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+
+/**
+ * @swagger
+ * /answers/{id}/replies:
+ *   get:
+ *     summary: Lister les réponses d'un commentaire (thread)
+ *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du commentaire parent
+ *       - in: query
+ *         name: cursor
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: ID du dernier élément chargé (pour pagination par curseur)
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Nombre de réponses à retourner
+ *     responses:
+ *       200:
+ *         description: Liste des réponses paginées
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 replies:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       examId:
+ *                         type: string
+ *                       page:
+ *                         type: integer
+ *                       yTop:
+ *                         type: number
+ *                       content:
+ *                         type: object
+ *                         properties:
+ *                           type:
+ *                             type: string
+ *                             enum: [text, image, latex]
+ *                           data:
+ *                             type: string
+ *                           rendered:
+ *                             type: string
+ *                       authorId:
+ *                         type: string
+ *                       parentId:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                 hasMore:
+ *                   type: boolean
+ *                   description: Indique s'il y a plus de réponses à charger
+ *       400:
+ *         description: Paramètres invalides
+ *       401:
+ *         description: Non authentifié
+ *       404:
+ *         description: Commentaire non trouvé
  *       500:
  *         description: Erreur serveur
  */
@@ -239,17 +341,21 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { examId, page, yTop, content } = result.data;
+    const { examId, page, yTop, content, parentId } = result.data;
     const { id } = await answerService.create({
       examId,
       page,
       yTop,
       content: content as { type: 'text' | 'image' | 'latex'; data: string; rendered?: string },
       authorId: req.user!.id,
+      parentId,
     });
 
     return res.json({ id });
   } catch (err) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     console.error(err);
     return res.status(500).json({ error: 'Erreur interne du serveur' });
   }
@@ -358,6 +464,28 @@ router.delete('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => 
     await answerService.delete(id, req.user!.id, isAdmin);
 
     return res.json({ success: true, message: 'Commentaire supprimé' });
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
+router.get('/:id/replies', authMiddleware, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const queryResult = getRepliesQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return res.status(400).json({ error: queryResult.error.errors[0].message });
+    }
+
+    const { cursor, limit } = queryResult.data;
+    const result = await answerService.findReplies(id, cursor, limit || 10);
+
+    return res.json(result);
   } catch (error) {
     if (error instanceof ServiceError) {
       return res.status(error.statusCode).json({ error: error.message });

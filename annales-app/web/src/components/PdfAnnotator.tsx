@@ -6,6 +6,7 @@ import { renderLatex } from '../utils/latex';
 import { PermissionUtils } from '../utils/permissions';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
+import { ReplyForm } from './ReplyForm';
 import { useAuthStore } from '../stores/authStore';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
 import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor, isAllowedImageUrl } from '../constants/content';
@@ -37,6 +38,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const [highlightedAnswers, setHighlightedAnswers] = useState<string[]>([]); // IDs des commentaires mis en valeur
   const highlightTimeoutRef = useRef<number | null>(null); // Référence vers le timeout actuel
   const currentHighlightedMarkerRef = useRef<HTMLElement | null>(null); // Référence vers le marqueur actuellement mis en valeur
+
+  // Thread state
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [openThreads, setOpenThreads] = useState<Record<string, boolean>>({});
+  const [loadedReplies, setLoadedReplies] = useState<Record<string, { replies: Answer[]; hasMore: boolean; cursor?: string }>>({});
 
   // Hook pour le positionnement par clic
   const { pendingPosition, handlePageClick, confirmComment, cancelComment } = useCommentPositioning(
@@ -801,6 +807,99 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [token]
   );
 
+  // Charger les réponses d'un thread
+  const loadReplies = useCallback(
+    async (parentId: string, cursor?: string) => {
+      if (!token) return;
+      try {
+        const params = new URLSearchParams();
+        if (cursor) params.set('cursor', cursor);
+        params.set('limit', '10');
+
+        const res = await fetch(`/api/answers/${parentId}/replies?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to load replies');
+        const data: { replies: Answer[]; hasMore: boolean } = await res.json();
+
+        setLoadedReplies(prev => {
+          const existing = prev[parentId];
+          const newReplies = cursor && existing
+            ? [...existing.replies, ...data.replies]
+            : data.replies;
+          const lastReply = newReplies[newReplies.length - 1];
+          return {
+            ...prev,
+            [parentId]: {
+              replies: newReplies,
+              hasMore: data.hasMore,
+              cursor: lastReply?._id,
+            },
+          };
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    [token]
+  );
+
+  // Toggle thread open/close
+  const toggleThread = useCallback(
+    (parentId: string) => {
+      setOpenThreads(prev => {
+        const isOpen = !prev[parentId];
+        if (isOpen && !loadedReplies[parentId]) {
+          loadReplies(parentId);
+        }
+        return { ...prev, [parentId]: isOpen };
+      });
+    },
+    [loadReplies, loadedReplies]
+  );
+
+  // Créer une réponse dans un thread
+  const replyToAnswer = useCallback(
+    async (parentId: string, content: AnswerContent) => {
+      if (!token) return;
+      // Trouver le parent pour hériter de page/yTop
+      const parent = allAnswers.find(a => a._id === parentId);
+      if (!parent) return;
+
+      // Pré-rendre le LaTeX si nécessaire
+      if (content.type === 'latex' && !content.rendered) {
+        content.rendered = renderLatex(content.data);
+      }
+
+      const res = await fetch('/api/answers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          examId,
+          page: parent.page,
+          yTop: parent.yTop,
+          content,
+          parentId,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create reply');
+
+      setReplyingTo(null);
+      // Recharger les réponses du thread et les commentaires racines (pour mettre à jour replyCount)
+      await Promise.all([
+        loadReplies(parentId),
+        loadAllAnswers(),
+      ]);
+      // S'assurer que le thread est ouvert
+      setOpenThreads(prev => ({ ...prev, [parentId]: true }));
+    },
+    [token, examId, allAnswers, loadReplies, loadAllAnswers]
+  );
+
   return (
     <div style={wrapperStyle} data-pdf-annotator>
       <div style={{ ...pdfPaneStyle, position: 'relative' }}>
@@ -935,7 +1034,61 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 onEdit={PermissionUtils.canEdit(user, a.authorId || '') ? editAnswer : undefined}
                 onDelete={PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined}
                 onReport={reportAnswer}
+                onReply={!a.parentId ? (id) => setReplyingTo(replyingTo === id ? null : id) : undefined}
               />
+
+              {/* Thread: bouton pour voir les réponses */}
+              {!a.parentId && (a.replyCount || 0) > 0 && (
+                <button
+                  onClick={e => { e.stopPropagation(); toggleThread(a._id); }}
+                  style={threadToggleStyle}
+                >
+                  {openThreads[a._id]
+                    ? 'Masquer les réponses'
+                    : `Voir les ${a.replyCount} réponse${(a.replyCount || 0) > 1 ? 's' : ''}`}
+                </button>
+              )}
+
+              {/* Thread: réponses chargées */}
+              {openThreads[a._id] && loadedReplies[a._id] && (
+                <div style={threadContainerStyle}>
+                  {loadedReplies[a._id].replies.map(reply => (
+                    <div
+                      key={reply._id}
+                      style={replyItemStyle}
+                    >
+                      <div style={commentMetaStyle}>
+                        {reply.content.type.toUpperCase()}
+                      </div>
+                      <AnswerContentDisplay
+                        answer={reply}
+                        onEdit={PermissionUtils.canEdit(user, reply.authorId || '') ? editAnswer : undefined}
+                        onDelete={PermissionUtils.canDelete(user, reply.authorId || '') ? deleteAnswer : undefined}
+                        onReport={reportAnswer}
+                      />
+                    </div>
+                  ))}
+                  {loadedReplies[a._id].hasMore && (
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        loadReplies(a._id, loadedReplies[a._id].cursor);
+                      }}
+                      style={loadMoreStyle}
+                    >
+                      Charger plus de réponses
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Thread: formulaire de réponse */}
+              {replyingTo === a._id && (
+                <ReplyForm
+                  onSubmit={content => replyToAnswer(a._id, content)}
+                  onCancel={() => setReplyingTo(null)}
+                />
+              )}
             </li>
           ))}
           {!(selectedGroup || answers).length && (
@@ -1015,4 +1168,36 @@ const commentMetaStyle: React.CSSProperties = {
   fontSize: 12,
   color: '#6b7280',
   marginBottom: 4,
+};
+const threadToggleStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#2563eb',
+  cursor: 'pointer',
+  fontSize: '12px',
+  padding: '4px 0',
+  textDecoration: 'underline',
+};
+const threadContainerStyle: React.CSSProperties = {
+  borderLeft: '2px solid #d1d5db',
+  marginLeft: 8,
+  paddingLeft: 10,
+  marginTop: 4,
+};
+const replyItemStyle: React.CSSProperties = {
+  padding: '6px 0',
+  borderBottom: '1px dotted #e5e7eb',
+  wordWrap: 'break-word',
+  overflowWrap: 'break-word',
+  wordBreak: 'break-word',
+  maxWidth: '100%',
+};
+const loadMoreStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#2563eb',
+  cursor: 'pointer',
+  fontSize: '11px',
+  padding: '4px 0',
+  textDecoration: 'underline',
 };

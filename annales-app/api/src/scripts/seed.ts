@@ -5,6 +5,7 @@
  * Ce script lit la configuration depuis dev-seed.json et crée :
  * - Les utilisateurs (avec hash bcrypt)
  * - Les examens (upload fichiers vers S3)
+ * - Les commentaires racines + réponses (threads)
  * - Les signalements
  */
 
@@ -205,16 +206,42 @@ const sampleComments = [
   'La méthode vue en TD fonctionne bien ici.',
 ];
 
+// Réponses de test pour les threads
+const sampleReplies = [
+  'Je suis d\'accord, bonne analyse.',
+  'Tu es sûr ? J\'avais trouvé autre chose.',
+  'Merci pour l\'explication !',
+  'Ça m\'a bien aidé pour comprendre.',
+  'Je ne suis pas d\'accord, voici pourquoi...',
+  'Quelqu\'un peut confirmer ?',
+  'C\'est exactement ce que le prof a dit en cours.',
+  'Attention, cette formule n\'est valable que si n > 0.',
+  'Je viens de vérifier, c\'est correct.',
+  'Il y a une autre méthode plus simple.',
+  'Super explication, merci beaucoup !',
+  'On peut aussi utiliser le théorème de...',
+  'J\'ai eu le même résultat en utilisant une autre approche.',
+  'Le corrigé officiel donne la même chose.',
+  'Bonne remarque, je n\'avais pas vu ça.',
+  'En fait il faut distinguer deux cas ici.',
+  'Voir aussi la question 5 qui est liée.',
+  'Le prof avait donné un indice en amphi.',
+  'C\'est plus clair maintenant, merci !',
+  'Il me semble qu\'il manque un facteur 2.',
+];
+
 async function createAnswers(
   examIds: mongoose.Types.ObjectId[],
   userIds: Map<string, mongoose.Types.ObjectId>,
   verbose: boolean
-): Promise<mongoose.Types.ObjectId[]> {
-  log('💬', 'Création des commentaires...');
+): Promise<{ answerIds: mongoose.Types.ObjectId[]; replyCount: number }> {
+  log('💬', 'Création des commentaires et réponses...');
   const answerIds: mongoose.Types.ObjectId[] = [];
+  const rootAnswers: { id: mongoose.Types.ObjectId; examId: mongoose.Types.ObjectId; page: number; yTop: number }[] = [];
   const userIdArray = Array.from(userIds.values());
+  let replyCount = 0;
 
-  // Créer 2-3 commentaires par examen
+  // Créer 2-3 commentaires racines par examen
   for (const examId of examIds) {
     const numComments = 2 + Math.floor(Math.random() * 2); // 2 ou 3 commentaires
 
@@ -222,11 +249,13 @@ async function createAnswers(
       try {
         const authorId = userIdArray[Math.floor(Math.random() * userIdArray.length)];
         const comment = sampleComments[Math.floor(Math.random() * sampleComments.length)];
+        const page = 1 + Math.floor(Math.random() * 3);
+        const yTop = Math.round((Math.random() * 0.8 + 0.1) * 100) / 100;
 
         const answer = await AnswerModel.create({
           examId,
-          page: 1 + Math.floor(Math.random() * 3), // Pages 1-3
-          yTop: Math.random() * 0.8 + 0.1, // Position 0.1-0.9
+          page,
+          yTop,
           content: {
             type: 'text',
             data: comment,
@@ -234,15 +263,60 @@ async function createAnswers(
           authorId,
         });
 
-        answerIds.push(answer._id as mongoose.Types.ObjectId);
+        const answerId = answer._id as mongoose.Types.ObjectId;
+        answerIds.push(answerId);
+        rootAnswers.push({ id: answerId, examId, page, yTop });
       } catch {
         // Ignore les erreurs
       }
     }
   }
 
-  if (verbose) logSuccess(`${answerIds.length} commentaires créés`);
-  return answerIds;
+  if (verbose) logSuccess(`${answerIds.length} commentaires racines créés`);
+
+  // Créer des réponses sur certains commentaires
+  // - Le premier commentaire racine reçoit 15 réponses (pour tester l'infinite scroll, limit=10)
+  // - Quelques autres reçoivent 1-3 réponses
+  for (let i = 0; i < rootAnswers.length; i++) {
+    const root = rootAnswers[i];
+    let numReplies: number;
+
+    if (i === 0) {
+      // Premier commentaire : 15 réponses pour déclencher l'infinite scroll
+      numReplies = 15;
+    } else if (Math.random() < 0.4) {
+      // 40% des autres commentaires ont 1-3 réponses
+      numReplies = 1 + Math.floor(Math.random() * 3);
+    } else {
+      continue; // Pas de réponses
+    }
+
+    for (let j = 0; j < numReplies; j++) {
+      try {
+        const authorId = userIdArray[Math.floor(Math.random() * userIdArray.length)];
+        const replyText = sampleReplies[Math.floor(Math.random() * sampleReplies.length)];
+
+        await AnswerModel.create({
+          examId: root.examId,
+          page: root.page,
+          yTop: root.yTop,
+          content: {
+            type: 'text',
+            data: replyText,
+          },
+          authorId,
+          parentId: root.id,
+        });
+
+        replyCount++;
+      } catch {
+        // Ignore les erreurs
+      }
+    }
+  }
+
+  if (verbose) logSuccess(`${replyCount} réponses créées (dont 15 sur le premier commentaire)`);
+  return { answerIds, replyCount };
 }
 
 async function createReports(
@@ -436,8 +510,8 @@ async function main() {
     const uploaderEmail = config.users.find(u => u.isVerified)?.email || config.users[0].email;
     const examIds = await createExams(config.files, uploaderEmail, userIds, configDir, verbose);
 
-    // Créer les commentaires sur les examens
-    const answerIds = await createAnswers(examIds, userIds, verbose);
+    // Créer les commentaires et réponses sur les examens
+    const { answerIds, replyCount } = await createAnswers(examIds, userIds, verbose);
 
     // Créer les signalements (examens + commentaires)
     const reportStats = await createReports(config.reports, examIds, answerIds, userIds, verbose);
@@ -447,7 +521,8 @@ async function main() {
     log('🎉', 'Seeding terminé avec succès!', colors.green);
     console.log(`   - ${userIds.size} utilisateurs`);
     console.log(`   - ${examIds.length} examens`);
-    console.log(`   - ${answerIds.length} commentaires`);
+    console.log(`   - ${answerIds.length} commentaires racines`);
+    console.log(`   - ${replyCount} réponses (threads)`);
     console.log(`   - ${reportStats.examReports + reportStats.commentReports} signalements (${reportStats.examReports} examens, ${reportStats.commentReports} commentaires)`);
 
     // Afficher les credentials de connexion

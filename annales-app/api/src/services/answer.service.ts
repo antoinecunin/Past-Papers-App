@@ -8,6 +8,7 @@ export interface CreateAnswerData {
   yTop: number;
   content: AnswerContent;
   authorId: string;
+  parentId?: string;
 }
 
 export interface UpdateAnswerData {
@@ -16,10 +17,11 @@ export interface UpdateAnswerData {
 
 class AnswerService {
   /**
-   * Liste les commentaires d'un examen (optionnellement filtrés par page)
+   * Liste les commentaires racines d'un examen (optionnellement filtrés par page)
+   * Retourne uniquement les commentaires sans parentId, avec un replyCount
    */
-  async findByExam(examId: string, page?: number): Promise<Answer[]> {
-    const filter: { examId: string; page?: number } = { examId };
+  async findByExam(examId: string, page?: number): Promise<(Answer & { replyCount: number })[]> {
+    const filter: Record<string, unknown> = { examId, parentId: null };
     if (page) {
       filter.page = page;
     }
@@ -28,20 +30,93 @@ class AnswerService {
       .sort({ page: 1, yTop: 1, createdAt: 1 })
       .lean();
 
-    return answers as Answer[];
+    // Compter les réponses pour chaque commentaire racine
+    const answerIds = answers.map(a => a._id);
+    const replyCounts = await AnswerModel.aggregate([
+      { $match: { parentId: { $in: answerIds } } },
+      { $group: { _id: '$parentId', count: { $sum: 1 } } },
+    ]);
+
+    const replyCountMap = new Map<string, number>();
+    for (const rc of replyCounts) {
+      replyCountMap.set(rc._id.toString(), rc.count);
+    }
+
+    return answers.map(a => ({
+      ...a,
+      replyCount: replyCountMap.get(a._id.toString()) || 0,
+    })) as (Answer & { replyCount: number })[];
   }
 
   /**
-   * Crée un nouveau commentaire
+   * Retourne les réponses d'un commentaire racine, paginées par curseur
+   */
+  async findReplies(
+    parentId: string,
+    cursor?: string,
+    limit = 10
+  ): Promise<{ replies: Answer[]; hasMore: boolean }> {
+    if (!Types.ObjectId.isValid(parentId)) {
+      throw ServiceError.badRequest('ID invalide');
+    }
+
+    const parent = await AnswerModel.findById(parentId);
+    if (!parent) {
+      throw ServiceError.notFound('Commentaire non trouvé');
+    }
+
+    const filter: Record<string, unknown> = { parentId: new Types.ObjectId(parentId) };
+    if (cursor && Types.ObjectId.isValid(cursor)) {
+      filter._id = { $gt: new Types.ObjectId(cursor) };
+    }
+
+    const replies = await AnswerModel.find(filter)
+      .sort({ _id: 1 })
+      .limit(limit + 1)
+      .lean();
+
+    const hasMore = replies.length > limit;
+    if (hasMore) {
+      replies.pop();
+    }
+
+    return { replies: replies as Answer[], hasMore };
+  }
+
+  /**
+   * Crée un nouveau commentaire ou une réponse
    */
   async create(data: CreateAnswerData): Promise<{ id: string }> {
-    const { examId, page, yTop, content, authorId } = data;
+    const { examId, page, yTop, content, authorId, parentId } = data;
+
+    // Validation du parent si c'est une réponse
+    if (parentId) {
+      if (!Types.ObjectId.isValid(parentId)) {
+        throw ServiceError.badRequest('parentId invalide');
+      }
+
+      const parent = await AnswerModel.findById(parentId);
+      if (!parent) {
+        throw ServiceError.notFound('Commentaire parent non trouvé');
+      }
+
+      // Pas de réponse à une réponse (un seul niveau de nesting)
+      if (parent.parentId) {
+        throw ServiceError.badRequest('Impossible de répondre à une réponse (un seul niveau autorisé)');
+      }
+
+      // Le parent doit appartenir au même examen
+      if (parent.examId.toString() !== examId) {
+        throw ServiceError.badRequest('Le commentaire parent n\'appartient pas au même examen');
+      }
+    }
 
     const docData = {
       examId,
       page,
       yTop,
       authorId,
+      parentId: parentId || null,
       content: {
         type: content.type,
         data: content.data.trim(),
@@ -89,7 +164,7 @@ class AnswerService {
   }
 
   /**
-   * Supprime un commentaire
+   * Supprime un commentaire (et ses réponses si c'est un commentaire racine)
    * @param id - ID du commentaire
    * @param userId - ID de l'utilisateur effectuant la suppression
    * @param isAdmin - Si l'utilisateur est admin
@@ -108,6 +183,11 @@ class AnswerService {
     const isOwner = existingAnswer.authorId?.toString() === userId;
     if (!isOwner && !isAdmin) {
       throw ServiceError.forbidden('Vous ne pouvez supprimer que vos propres commentaires');
+    }
+
+    // Cascade delete des réponses si c'est un commentaire racine
+    if (!existingAnswer.parentId) {
+      await AnswerModel.deleteMany({ parentId: existingAnswer._id });
     }
 
     await AnswerModel.findByIdAndDelete(id);

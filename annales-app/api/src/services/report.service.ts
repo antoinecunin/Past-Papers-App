@@ -226,6 +226,11 @@ class ReportService {
           await Exam.findByIdAndDelete(exam._id);
         }
       } else if (report.type === ReportType.COMMENT) {
+        // Cascade delete des réponses si c'est un commentaire racine
+        const comment = await AnswerModel.findById(report.targetId);
+        if (comment && !comment.parentId) {
+          await AnswerModel.deleteMany({ parentId: comment._id });
+        }
         await AnswerModel.findByIdAndDelete(report.targetId);
       }
     }

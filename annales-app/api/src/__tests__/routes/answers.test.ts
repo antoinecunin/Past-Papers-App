@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express from 'express';
+import { Types } from 'mongoose';
 import { router as answersRouter } from '../../routes/answers.js';
 import { Exam as ExamModel } from '../../models/Exam.js';
 import { AnswerModel } from '../../models/Answer.js';
@@ -47,7 +48,7 @@ describe('GET /api/answers', () => {
     expect(response.body.error).toContain('ObjectId');
   });
 
-  it('should return all answers for an exam', async () => {
+  it('should return all root answers for an exam', async () => {
     const { user, token } = await createAuthenticatedUser();
     const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
 
@@ -103,6 +104,51 @@ describe('GET /api/answers', () => {
     expect(response.body[1].page).toBe(1);
     expect(response.body[1].yTop).toBe(0.7);
     expect(response.body[2].page).toBe(2);
+  });
+
+  it('should return replyCount for root answers', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    // Create 3 replies
+    await AnswerModel.create([
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
+    ]);
+
+    const response = await request(app)
+      .get(`/api/answers?examId=${exam._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1); // Only root, not replies
+    expect(response.body[0].replyCount).toBe(3);
+  });
+
+  it('should not include replies in root answers list', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+    );
+
+    const response = await request(app)
+      .get(`/api/answers?examId=${exam._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]._id).toBe(root._id.toString());
   });
 });
 
@@ -299,6 +345,102 @@ describe('POST /api/answers', () => {
       expect(answer?.content?.data).toBe('Test with spaces');
     });
   });
+
+  describe('Replies (threads)', () => {
+    it('should create a reply to an existing root comment', async () => {
+      const { user, token } = await createAuthenticatedUser();
+      const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+      const root = await AnswerModel.create(
+        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+      );
+
+      const response = await request(app)
+        .post('/api/answers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          examId: exam._id.toString(),
+          page: 1,
+          yTop: 0.5,
+          content: { type: 'text', data: 'Reply to comment' },
+          parentId: root._id.toString(),
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('id');
+
+      const reply = await AnswerModel.findById(response.body.id);
+      expect(reply?.parentId?.toString()).toBe(root._id.toString());
+    });
+
+    it('should reject reply to a non-existent parent (404)', async () => {
+      const { user, token } = await createAuthenticatedUser();
+      const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+      const fakeParentId = new Types.ObjectId();
+
+      const response = await request(app)
+        .post('/api/answers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          examId: exam._id.toString(),
+          page: 1,
+          yTop: 0.5,
+          content: { type: 'text', data: 'Reply' },
+          parentId: fakeParentId.toString(),
+        });
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should reject reply to a reply (400, single level only)', async () => {
+      const { user, token } = await createAuthenticatedUser();
+      const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+      const root = await AnswerModel.create(
+        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+      );
+
+      const reply = await AnswerModel.create(
+        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      );
+
+      const response = await request(app)
+        .post('/api/answers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          examId: exam._id.toString(),
+          page: 1,
+          yTop: 0.5,
+          content: { type: 'text', data: 'Nested reply' },
+          parentId: reply._id.toString(),
+        });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should reject cross-exam reply (400)', async () => {
+      const { user, token } = await createAuthenticatedUser();
+      const exam1 = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+      const exam2 = await ExamModel.create(createExamData({ uploadedBy: user._id, title: 'Another Exam' }));
+
+      const root = await AnswerModel.create(
+        createAnswerData({ examId: exam1._id, page: 1, yTop: 0.5, authorId: user._id })
+      );
+
+      const response = await request(app)
+        .post('/api/answers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          examId: exam2._id.toString(),
+          page: 1,
+          yTop: 0.5,
+          content: { type: 'text', data: 'Cross-exam reply' },
+          parentId: root._id.toString(),
+        });
+
+      expect(response.status).toBe(400);
+    });
+  });
 });
 
 describe('PUT /api/answers/:id', () => {
@@ -428,5 +570,203 @@ describe('DELETE /api/answers/:id', () => {
 
     const deleted = await AnswerModel.findById(answer._id);
     expect(deleted).toBeNull();
+  });
+
+  it('should cascade-delete replies when deleting a root comment', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    const reply1 = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+    );
+    const reply2 = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+    );
+
+    const response = await request(app)
+      .delete(`/api/answers/${root._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+
+    // Root and all replies should be gone
+    expect(await AnswerModel.findById(root._id)).toBeNull();
+    expect(await AnswerModel.findById(reply1._id)).toBeNull();
+    expect(await AnswerModel.findById(reply2._id)).toBeNull();
+  });
+
+  it('should not cascade when deleting a reply (parent stays)', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    const reply = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+    );
+
+    const response = await request(app)
+      .delete(`/api/answers/${reply._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+
+    // Reply is gone but root stays
+    expect(await AnswerModel.findById(reply._id)).toBeNull();
+    expect(await AnswerModel.findById(root._id)).toBeTruthy();
+  });
+});
+
+describe('GET /api/answers/:id/replies', () => {
+  let app: express.Application;
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/api/answers', answersRouter);
+  });
+
+  it('should require authentication', async () => {
+    const response = await request(app).get('/api/answers/123/replies');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('should return 404 for non-existent parent', async () => {
+    const { token } = await createAuthenticatedUser();
+    const fakeId = new Types.ObjectId();
+
+    const response = await request(app)
+      .get(`/api/answers/${fakeId}/replies`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should return replies for a root comment', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    await AnswerModel.create([
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id }),
+    ]);
+
+    const response = await request(app)
+      .get(`/api/answers/${root._id}/replies`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.replies).toHaveLength(2);
+    expect(response.body.hasMore).toBe(false);
+  });
+
+  it('should return hasMore when there are more replies', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    // Create 3 replies
+    for (let i = 0; i < 3; i++) {
+      await AnswerModel.create(
+        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      );
+    }
+
+    const response = await request(app)
+      .get(`/api/answers/${root._id}/replies?limit=2`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.replies).toHaveLength(2);
+    expect(response.body.hasMore).toBe(true);
+  });
+
+  it('should paginate replies using cursor', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    // Create 5 replies
+    for (let i = 0; i < 5; i++) {
+      await AnswerModel.create(
+        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+      );
+    }
+
+    // First page
+    const firstPage = await request(app)
+      .get(`/api/answers/${root._id}/replies?limit=2`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(firstPage.body.replies).toHaveLength(2);
+    expect(firstPage.body.hasMore).toBe(true);
+
+    // Second page using cursor
+    const cursor = firstPage.body.replies[1]._id;
+    const secondPage = await request(app)
+      .get(`/api/answers/${root._id}/replies?limit=2&cursor=${cursor}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(secondPage.body.replies).toHaveLength(2);
+    expect(secondPage.body.hasMore).toBe(true);
+
+    // Third page
+    const cursor2 = secondPage.body.replies[1]._id;
+    const thirdPage = await request(app)
+      .get(`/api/answers/${root._id}/replies?limit=2&cursor=${cursor2}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(thirdPage.body.replies).toHaveLength(1);
+    expect(thirdPage.body.hasMore).toBe(false);
+
+    // Ensure no duplicates across pages
+    const allIds = [
+      ...firstPage.body.replies.map((r: { _id: string }) => r._id),
+      ...secondPage.body.replies.map((r: { _id: string }) => r._id),
+      ...thirdPage.body.replies.map((r: { _id: string }) => r._id),
+    ];
+    expect(new Set(allIds).size).toBe(5);
+  });
+
+  it('should return replies sorted by _id (chronological)', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    // Create replies sequentially to ensure _id ordering
+    const reply1 = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+    );
+    const reply2 = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id, parentId: root._id })
+    );
+
+    const response = await request(app)
+      .get(`/api/answers/${root._id}/replies`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.replies[0]._id).toBe(reply1._id.toString());
+    expect(response.body.replies[1]._id).toBe(reply2._id.toString());
   });
 });

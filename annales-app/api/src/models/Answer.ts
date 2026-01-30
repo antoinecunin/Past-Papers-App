@@ -15,6 +15,7 @@ export interface Answer {
   yTop: number; // [0,1] position Y du commentaire
   content?: AnswerContent;
   authorId?: Types.ObjectId; // Référence utilisateur
+  parentId?: Types.ObjectId; // Référence vers le commentaire parent (thread)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +36,7 @@ const AnswerSchema = new Schema<Answer>(
     yTop: { type: Number, required: true, min: 0, max: 1 },
     content: { type: AnswerContentSchema },
     authorId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    parentId: { type: Schema.Types.ObjectId, ref: 'Answer', default: null, index: true },
   },
   { timestamps: true }
 );
