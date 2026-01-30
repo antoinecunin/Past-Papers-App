@@ -713,6 +713,19 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     };
   }, []);
 
+  // Helper : trouver le parentId d'une réponse dans loadedReplies
+  const findReplyParent = useCallback(
+    (answerId: string): string | null => {
+      for (const [parentId, data] of Object.entries(loadedReplies)) {
+        if (data.replies.some(r => r._id === answerId)) {
+          return parentId;
+        }
+      }
+      return null;
+    },
+    [loadedReplies]
+  );
+
   // Fonction pour éditer un commentaire
   const editAnswer = useCallback(
     async (answerId: string, newContent: AnswerContent) => {
@@ -735,14 +748,33 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           throw new Error('Erreur lors de la modification du commentaire');
         }
 
-        // Recharger les commentaires
-        await loadAllAnswers();
+        // Mettre à jour l'UI : vérifier si c'est une réponse dans un thread
+        const parentId = findReplyParent(answerId);
+        if (parentId) {
+          // Mise à jour optimiste du state loadedReplies
+          setLoadedReplies(prev => {
+            const entry = prev[parentId];
+            if (!entry) return prev;
+            return {
+              ...prev,
+              [parentId]: {
+                ...entry,
+                replies: entry.replies.map(r =>
+                  r._id === answerId ? { ...r, content: newContent } : r
+                ),
+              },
+            };
+          });
+        } else {
+          // Commentaire racine : recharger normalement
+          await loadAllAnswers();
+        }
       } catch (error) {
         console.error('Erreur lors de la modification:', error);
         throw error;
       }
     },
-    [loadAllAnswers, token]
+    [loadAllAnswers, token, findReplyParent]
   );
 
   // Fonction pour supprimer un commentaire
@@ -760,14 +792,31 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           throw new Error('Erreur lors de la suppression du commentaire');
         }
 
-        // Recharger les commentaires
+        // Mettre à jour l'UI : vérifier si c'est une réponse dans un thread
+        const parentId = findReplyParent(answerId);
+        if (parentId) {
+          // Retirer la réponse du state loadedReplies
+          setLoadedReplies(prev => {
+            const entry = prev[parentId];
+            if (!entry) return prev;
+            return {
+              ...prev,
+              [parentId]: {
+                ...entry,
+                replies: entry.replies.filter(r => r._id !== answerId),
+              },
+            };
+          });
+        }
+
+        // Toujours recharger les racines (met à jour replyCount)
         await loadAllAnswers();
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
         throw error;
       }
     },
-    [loadAllAnswers, token]
+    [loadAllAnswers, token, findReplyParent]
   );
 
   // Fonction pour signaler un commentaire
