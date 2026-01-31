@@ -116,6 +116,15 @@ const getRepliesQuerySchema = z.object({
  *                   authorId:
  *                     type: string
  *                     description: ID de l'auteur du commentaire
+ *                   author:
+ *                     type: object
+ *                     nullable: true
+ *                     description: Informations de l'auteur (prénom et nom)
+ *                     properties:
+ *                       firstName:
+ *                         type: string
+ *                       lastName:
+ *                         type: string
  *                   parentId:
  *                     type: string
  *                     nullable: true
@@ -266,6 +275,15 @@ const getRepliesQuerySchema = z.object({
  *                             type: string
  *                       authorId:
  *                         type: string
+ *                       author:
+ *                         type: object
+ *                         nullable: true
+ *                         description: Informations de l'auteur (prénom et nom)
+ *                         properties:
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
+ *                             type: string
  *                       parentId:
  *                         type: string
  *                       createdAt:

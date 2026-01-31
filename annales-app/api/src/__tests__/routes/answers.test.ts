@@ -148,6 +148,26 @@ describe('GET /api/answers', () => {
     expect(response.body[0].replyCount).toBe(3);
   });
 
+  it('should return author firstName and lastName for root answers', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    const response = await request(app)
+      .get(`/api/answers?examId=${exam._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].author).toEqual({
+      firstName: 'Test',
+      lastName: 'User',
+    });
+  });
+
   it('should not include replies in root answers list', async () => {
     const { user, token } = await createAuthenticatedUser();
     const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
@@ -858,5 +878,35 @@ describe('GET /api/answers/:id/replies', () => {
     expect(response.status).toBe(200);
     expect(response.body.replies[0]._id).toBe(reply1._id.toString());
     expect(response.body.replies[1]._id).toBe(reply2._id.toString());
+  });
+
+  it('should return author firstName and lastName for replies', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    await AnswerModel.create(
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
+    );
+
+    const response = await request(app)
+      .get(`/api/answers/${root._id}/replies`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.replies).toHaveLength(1);
+    expect(response.body.replies[0].author).toEqual({
+      firstName: 'Test',
+      lastName: 'User',
+    });
   });
 });

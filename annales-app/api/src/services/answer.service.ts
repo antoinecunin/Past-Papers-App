@@ -1,6 +1,15 @@
 import { Types } from 'mongoose';
 import { AnswerModel, Answer, AnswerContent } from '../models/Answer.js';
+import { UserModel } from '../models/User.js';
 import { ServiceError } from './ServiceError.js';
+
+export interface AuthorInfo {
+  firstName: string;
+  lastName: string;
+}
+
+export type AnswerWithAuthor = Answer & { replyCount: number; author: AuthorInfo | null };
+export type ReplyWithAuthor = Answer & { author: AuthorInfo | null };
 
 export interface CreateAnswerData {
   examId: string;
@@ -20,7 +29,7 @@ class AnswerService {
    * Liste les commentaires racines d'un examen (optionnellement filtrés par page)
    * Retourne uniquement les commentaires sans parentId, avec un replyCount
    */
-  async findByExam(examId: string, page?: number): Promise<(Answer & { replyCount: number })[]> {
+  async findByExam(examId: string, page?: number): Promise<AnswerWithAuthor[]> {
     const filter: Record<string, unknown> = { examId, parentId: null };
     if (page) {
       filter.page = page;
@@ -40,10 +49,14 @@ class AnswerService {
       replyCountMap.set(rc._id.toString(), rc.count);
     }
 
+    // Batch lookup des auteurs
+    const authorMap = await this.buildAuthorMap(answers);
+
     return answers.map(a => ({
       ...a,
       replyCount: replyCountMap.get(a._id.toString()) || 0,
-    })) as (Answer & { replyCount: number })[];
+      author: a.authorId ? authorMap.get(a.authorId.toString()) ?? null : null,
+    })) as AnswerWithAuthor[];
   }
 
   /**
@@ -53,7 +66,7 @@ class AnswerService {
     parentId: string,
     cursor?: string,
     limit = 10
-  ): Promise<{ replies: Answer[]; hasMore: boolean }> {
+  ): Promise<{ replies: ReplyWithAuthor[]; hasMore: boolean }> {
     if (!Types.ObjectId.isValid(parentId)) {
       throw ServiceError.badRequest('ID invalide');
     }
@@ -78,7 +91,16 @@ class AnswerService {
       replies.pop();
     }
 
-    return { replies: replies as Answer[], hasMore };
+    // Batch lookup des auteurs
+    const authorMap = await this.buildAuthorMap(replies);
+
+    return {
+      replies: replies.map(r => ({
+        ...r,
+        author: r.authorId ? authorMap.get(r.authorId.toString()) ?? null : null,
+      })) as ReplyWithAuthor[],
+      hasMore,
+    };
   }
 
   /**
@@ -196,6 +218,27 @@ class AnswerService {
   async deleteByExamId(examId: Types.ObjectId): Promise<number> {
     const result = await AnswerModel.deleteMany({ examId });
     return result.deletedCount;
+  }
+
+  /**
+   * Construit une map authorId → { firstName, lastName } à partir d'une liste de documents
+   */
+  private async buildAuthorMap(
+    docs: Array<{ authorId?: Types.ObjectId | null }>
+  ): Promise<Map<string, AuthorInfo>> {
+    const authorIds = [
+      ...new Set(docs.map(d => d.authorId?.toString()).filter(Boolean)),
+    ] as string[];
+
+    if (!authorIds.length) return new Map();
+
+    const authors = await UserModel.find({ _id: { $in: authorIds } })
+      .select('firstName lastName')
+      .lean();
+
+    return new Map(
+      authors.map(u => [u._id.toString(), { firstName: u.firstName, lastName: u.lastName }])
+    );
   }
 }
 

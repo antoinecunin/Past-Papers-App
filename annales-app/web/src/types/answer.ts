@@ -15,6 +15,7 @@ export interface Answer {
   authorId?: string; // ID utilisateur
   parentId?: string; // ID du commentaire parent (thread)
   replyCount?: number; // Nombre de réponses (uniquement sur les racines)
+  author?: { firstName: string; lastName: string } | null; // Auteur du commentaire
   createdAt: string;
   updatedAt: string;
 }

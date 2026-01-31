@@ -1076,7 +1076,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               }}
             >
               <div style={commentMetaStyle}>
-                y={a.yTop.toFixed(2)} • Page {a.page} • {a.content.type.toUpperCase()}
+                {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonyme'} • Page {a.page}
               </div>
               <AnswerContentDisplay
                 answer={a}
@@ -1107,7 +1107,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                       style={replyItemStyle}
                     >
                       <div style={commentMetaStyle}>
-                        {reply.content.type.toUpperCase()}
+                        {reply.author ? `${reply.author.firstName} ${reply.author.lastName[0]}.` : 'Anonyme'}
                       </div>
                       <AnswerContentDisplay
                         answer={reply}
