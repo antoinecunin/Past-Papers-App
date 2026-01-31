@@ -51,6 +51,7 @@ const createAnswerSchema = z.object({
     .max(1, 'yTop doit être <= 1'),
   content: contentSchema,
   parentId: objectIdSchema('parentId').optional(),
+  mentionedUserId: objectIdSchema('mentionedUserId').optional(),
 });
 
 const updateAnswerSchema = z.object({
@@ -191,6 +192,9 @@ const getRepliesQuerySchema = z.object({
  *               parentId:
  *                 type: string
  *                 description: ID du commentaire parent (pour créer une réponse dans un thread)
+ *               mentionedUserId:
+ *                 type: string
+ *                 description: ID de l'utilisateur mentionné (uniquement pour les réponses)
  *     responses:
  *       200:
  *         description: Commentaire créé
@@ -286,6 +290,17 @@ const getRepliesQuerySchema = z.object({
  *                             type: string
  *                       parentId:
  *                         type: string
+ *                       mentionedUserId:
+ *                         type: string
+ *                         nullable: true
+ *                       mentionedAuthor:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
+ *                             type: string
  *                       createdAt:
  *                         type: string
  *                         format: date-time
@@ -330,7 +345,7 @@ router.post(
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { examId, page, yTop, content, parentId } = result.data;
+    const { examId, page, yTop, content, parentId, mentionedUserId } = result.data;
     const { id } = await answerService.create({
       examId,
       page,
@@ -338,6 +353,7 @@ router.post(
       content: content as { type: 'text' | 'image' | 'latex'; data: string; rendered?: string },
       authorId: req.user!.id,
       parentId,
+      mentionedUserId,
     });
 
     return res.json({ id });

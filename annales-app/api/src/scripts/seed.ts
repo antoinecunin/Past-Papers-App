@@ -293,6 +293,7 @@ async function createAnswers(
   // Créer des réponses sur certains commentaires
   // - Le premier commentaire racine reçoit 15 réponses (pour tester l'infinite scroll, limit=10)
   // - Quelques autres reçoivent 1-3 réponses
+  // - Certaines réponses mentionnent un utilisateur précédent (style YouTube)
   for (let i = 0; i < rootAnswers.length; i++) {
     const root = rootAnswers[i];
     let numReplies: number;
@@ -307,10 +308,26 @@ async function createAnswers(
       continue; // Pas de réponses
     }
 
+    // Tracker les auteurs du thread pour les mentions
+    const threadAuthorIds: mongoose.Types.ObjectId[] = [
+      // L'auteur du commentaire racine est un candidat à la mention
+      userIdArray.find(id => rootAnswers[i] && id) || userIdArray[0],
+    ];
+
     for (let j = 0; j < numReplies; j++) {
       try {
         const authorId = userIdArray[Math.floor(Math.random() * userIdArray.length)];
         const replyText = sampleReplies[Math.floor(Math.random() * sampleReplies.length)];
+
+        // Décider si cette réponse mentionne quelqu'un
+        // ~40% des réponses mentionnent un auteur précédent (pas soi-même)
+        let mentionedUserId: mongoose.Types.ObjectId | null = null;
+        if (Math.random() < 0.4) {
+          const candidates = threadAuthorIds.filter(id => id.toString() !== authorId.toString());
+          if (candidates.length > 0) {
+            mentionedUserId = candidates[Math.floor(Math.random() * candidates.length)];
+          }
+        }
 
         await AnswerModel.create({
           examId: root.examId,
@@ -322,8 +339,10 @@ async function createAnswers(
           },
           authorId,
           parentId: root.id,
+          mentionedUserId,
         });
 
+        threadAuthorIds.push(authorId);
         replyCount++;
       } catch {
         // Ignore les erreurs

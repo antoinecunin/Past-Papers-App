@@ -9,7 +9,7 @@ export interface AuthorInfo {
 }
 
 export type AnswerWithAuthor = Answer & { replyCount: number; author: AuthorInfo | null };
-export type ReplyWithAuthor = Answer & { author: AuthorInfo | null };
+export type ReplyWithAuthor = Answer & { author: AuthorInfo | null; mentionedAuthor: AuthorInfo | null };
 
 export interface CreateAnswerData {
   examId: string;
@@ -18,6 +18,7 @@ export interface CreateAnswerData {
   content: AnswerContent;
   authorId: string;
   parentId?: string;
+  mentionedUserId?: string;
 }
 
 export interface UpdateAnswerData {
@@ -91,13 +92,18 @@ class AnswerService {
       replies.pop();
     }
 
-    // Batch lookup des auteurs
-    const authorMap = await this.buildAuthorMap(replies);
+    // Batch lookup des auteurs + mentionedUserIds
+    const mentionedUserIds = replies
+      .map(r => r.mentionedUserId)
+      .filter((id): id is Types.ObjectId => id != null);
+    const allUserDocs = [...replies, ...mentionedUserIds.map(id => ({ authorId: id }))];
+    const authorMap = await this.buildAuthorMap(allUserDocs);
 
     return {
       replies: replies.map(r => ({
         ...r,
         author: r.authorId ? authorMap.get(r.authorId.toString()) ?? null : null,
+        mentionedAuthor: r.mentionedUserId ? authorMap.get(r.mentionedUserId.toString()) ?? null : null,
       })) as ReplyWithAuthor[],
       hasMore,
     };
@@ -107,7 +113,7 @@ class AnswerService {
    * Crée un nouveau commentaire ou une réponse
    */
   async create(data: CreateAnswerData): Promise<{ id: string }> {
-    const { examId, page, yTop, content, authorId, parentId } = data;
+    const { examId, page, yTop, content, authorId, parentId, mentionedUserId } = data;
 
     // Validation du parent si c'est une réponse
     if (parentId) {
@@ -129,12 +135,18 @@ class AnswerService {
       }
     }
 
+    // Validation de mentionedUserId
+    if (mentionedUserId && !parentId) {
+      throw ServiceError.badRequest('mentionedUserId ne peut être utilisé que pour les réponses');
+    }
+
     const docData = {
       examId,
       page,
       yTop,
       authorId,
       parentId: parentId || null,
+      mentionedUserId: mentionedUserId || null,
       content: {
         type: content.type,
         data: content.data.trim(),

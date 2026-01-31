@@ -40,7 +40,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const currentHighlightedMarkerRef = useRef<HTMLElement | null>(null); // Référence vers le marqueur actuellement mis en valeur
 
   // Thread state
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  interface ReplyTarget {
+    rootId: string;
+    mentionUserId?: string;
+    mentionLabel?: string;
+  }
+  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [openThreads, setOpenThreads] = useState<Record<string, boolean>>({});
   const [loadedReplies, setLoadedReplies] = useState<Record<string, { replies: Answer[]; hasMore: boolean; cursor?: string }>>({});
 
@@ -909,7 +914,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
   // Créer une réponse dans un thread
   const replyToAnswer = useCallback(
-    async (parentId: string, content: AnswerContent) => {
+    async (parentId: string, content: AnswerContent, mentionedUserId?: string) => {
       if (!token) return;
       // Trouver le parent pour hériter de page/yTop
       const parent = allAnswers.find(a => a._id === parentId);
@@ -920,24 +925,29 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         content.rendered = renderLatex(content.data);
       }
 
+      const body: Record<string, unknown> = {
+        examId,
+        page: parent.page,
+        yTop: parent.yTop,
+        content,
+        parentId,
+      };
+      if (mentionedUserId) {
+        body.mentionedUserId = mentionedUserId;
+      }
+
       const res = await fetch('/api/answers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          examId,
-          page: parent.page,
-          yTop: parent.yTop,
-          content,
-          parentId,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) throw new Error('Failed to create reply');
 
-      setReplyingTo(null);
+      setReplyTarget(null);
       // Recharger les réponses du thread et les commentaires racines (pour mettre à jour replyCount)
       await Promise.all([
         loadReplies(parentId),
@@ -1083,7 +1093,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 onEdit={PermissionUtils.canEdit(user, a.authorId || '') ? editAnswer : undefined}
                 onDelete={PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined}
                 onReport={reportAnswer}
-                onReply={!a.parentId ? (id) => setReplyingTo(replyingTo === id ? null : id) : undefined}
+                onReply={!a.parentId ? (id) => setReplyTarget(replyTarget?.rootId === id ? null : { rootId: id }) : undefined}
               />
 
               {/* Thread: bouton pour voir les réponses */}
@@ -1107,6 +1117,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                       style={replyItemStyle}
                     >
                       <div style={commentMetaStyle}>
+                        {reply.mentionedAuthor && (
+                          <span style={mentionDisplayStyle}>
+                            @{reply.mentionedAuthor.firstName} {reply.mentionedAuthor.lastName[0]}.
+                          </span>
+                        )}
                         {reply.author ? `${reply.author.firstName} ${reply.author.lastName[0]}.` : 'Anonyme'}
                       </div>
                       <AnswerContentDisplay
@@ -1114,6 +1129,16 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                         onEdit={PermissionUtils.canEdit(user, reply.authorId || '') ? editAnswer : undefined}
                         onDelete={PermissionUtils.canDelete(user, reply.authorId || '') ? deleteAnswer : undefined}
                         onReport={reportAnswer}
+                        onReply={() => {
+                          const label = reply.author
+                            ? `@${reply.author.firstName} ${reply.author.lastName[0]}.`
+                            : undefined;
+                          setReplyTarget({
+                            rootId: a._id,
+                            mentionUserId: reply.authorId,
+                            mentionLabel: label,
+                          });
+                        }}
                       />
                     </div>
                   ))}
@@ -1132,10 +1157,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               )}
 
               {/* Thread: formulaire de réponse */}
-              {replyingTo === a._id && (
+              {replyTarget?.rootId === a._id && (
                 <ReplyForm
-                  onSubmit={content => replyToAnswer(a._id, content)}
-                  onCancel={() => setReplyingTo(null)}
+                  onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
+                  onCancel={() => setReplyTarget(null)}
+                  mentionLabel={replyTarget.mentionLabel}
+                  onClearMention={() => setReplyTarget({ rootId: a._id })}
                 />
               )}
             </li>
@@ -1249,4 +1276,14 @@ const loadMoreStyle: React.CSSProperties = {
   fontSize: '11px',
   padding: '4px 0',
   textDecoration: 'underline',
+};
+const mentionDisplayStyle: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '1px 6px',
+  background: '#dbeafe',
+  color: '#1d4ed8',
+  borderRadius: '10px',
+  fontSize: '11px',
+  fontWeight: 600,
+  marginRight: '4px',
 };

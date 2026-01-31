@@ -469,6 +469,76 @@ describe('POST /api/answers', () => {
       expect(response.status).toBe(400);
     });
 
+    it('should create a reply with mentionedUserId', async () => {
+      const { user, token } = await createAuthenticatedUser();
+      const { user: mentionedUser } = await createAuthenticatedUser({ email: 'mentioned@etu.unistra.fr' });
+      const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+      const root = await AnswerModel.create(
+        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+      );
+
+      const response = await request(app)
+        .post('/api/answers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          examId: exam._id.toString(),
+          page: 1,
+          yTop: 0.5,
+          content: { type: 'text', data: 'Reply with mention' },
+          parentId: root._id.toString(),
+          mentionedUserId: mentionedUser._id.toString(),
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('id');
+
+      const reply = await AnswerModel.findById(response.body.id);
+      expect(reply?.mentionedUserId?.toString()).toBe(mentionedUser._id.toString());
+    });
+
+    it('should reject mentionedUserId without parentId (400)', async () => {
+      const { user, token } = await createAuthenticatedUser();
+      const { user: mentionedUser } = await createAuthenticatedUser({ email: 'mentioned2@etu.unistra.fr' });
+      const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+      const response = await request(app)
+        .post('/api/answers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          examId: exam._id.toString(),
+          page: 1,
+          yTop: 0.5,
+          content: { type: 'text', data: 'Root with mention' },
+          mentionedUserId: mentionedUser._id.toString(),
+        });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should reject invalid mentionedUserId (400)', async () => {
+      const { user, token } = await createAuthenticatedUser();
+      const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+      const root = await AnswerModel.create(
+        createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+      );
+
+      const response = await request(app)
+        .post('/api/answers')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          examId: exam._id.toString(),
+          page: 1,
+          yTop: 0.5,
+          content: { type: 'text', data: 'Reply with bad mention' },
+          parentId: root._id.toString(),
+          mentionedUserId: 'invalid-id',
+        });
+
+      expect(response.status).toBe(400);
+    });
+
     it('should reject cross-exam reply (400)', async () => {
       const { user, token } = await createAuthenticatedUser();
       const exam1 = await ExamModel.create(createExamData({ uploadedBy: user._id }));
@@ -908,5 +978,68 @@ describe('GET /api/answers/:id/replies', () => {
       firstName: 'Test',
       lastName: 'User',
     });
+  });
+
+  it('should return mentionedAuthor for reply with mention', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const { user: mentionedUser } = await createAuthenticatedUser({
+      email: 'mentioned-reply@etu.unistra.fr',
+      firstName: 'Alice',
+      lastName: 'Dupont',
+    });
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    await AnswerModel.create({
+      ...createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      }),
+      mentionedUserId: mentionedUser._id,
+    });
+
+    const response = await request(app)
+      .get(`/api/answers/${root._id}/replies`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.replies).toHaveLength(1);
+    expect(response.body.replies[0].mentionedAuthor).toEqual({
+      firstName: 'Alice',
+      lastName: 'Dupont',
+    });
+  });
+
+  it('should return mentionedAuthor as null for reply without mention', async () => {
+    const { user, token } = await createAuthenticatedUser();
+    const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
+
+    const root = await AnswerModel.create(
+      createAnswerData({ examId: exam._id, page: 1, yTop: 0.5, authorId: user._id })
+    );
+
+    await AnswerModel.create(
+      createAnswerData({
+        examId: exam._id,
+        page: 1,
+        yTop: 0.5,
+        authorId: user._id,
+        parentId: root._id,
+      })
+    );
+
+    const response = await request(app)
+      .get(`/api/answers/${root._id}/replies`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.replies).toHaveLength(1);
+    expect(response.body.replies[0].mentionedAuthor).toBeNull();
   });
 });

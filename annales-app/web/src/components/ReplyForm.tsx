@@ -6,9 +6,11 @@ import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor, isAllowedImageU
 interface ReplyFormProps {
   onSubmit: (content: AnswerContent) => Promise<void>;
   onCancel: () => void;
+  mentionLabel?: string;
+  onClearMention?: () => void;
 }
 
-export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel }) => {
+export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentionLabel, onClearMention }) => {
   const [contentType, setContentType] = useState<ContentType>('text');
   const [data, setData] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +49,21 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel }) => {
       onClick={e => e.stopPropagation()}
       style={formStyle}
     >
+      {mentionLabel && (
+        <div style={mentionBadgeContainerStyle}>
+          <span style={mentionTagStyle}>{mentionLabel}</span>
+          {onClearMention && (
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onClearMention(); }}
+              style={mentionClearButtonStyle}
+              title="Retirer la mention"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
       <select
         value={contentType}
         onChange={e => setContentType(e.target.value as ContentType)}
@@ -175,4 +192,30 @@ const cancelButtonStyle: React.CSSProperties = {
   borderRadius: '4px',
   fontSize: '11px',
   cursor: 'pointer',
+};
+
+const mentionBadgeContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
+};
+
+const mentionTagStyle: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '1px 8px',
+  background: '#dbeafe',
+  color: '#1d4ed8',
+  borderRadius: '10px',
+  fontSize: '11px',
+  fontWeight: 600,
+};
+
+const mentionClearButtonStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: '#6b7280',
+  cursor: 'pointer',
+  fontSize: '14px',
+  padding: '0 2px',
+  lineHeight: 1,
 };

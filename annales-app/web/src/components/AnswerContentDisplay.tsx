@@ -373,8 +373,8 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
             </button>
           )}
 
-          {/* Bouton répondre (uniquement sur les commentaires racines) */}
-          {onReply && !answer.parentId && (
+          {/* Bouton répondre */}
+          {onReply && (
             <button
               onClick={e => {
                 e.stopPropagation();

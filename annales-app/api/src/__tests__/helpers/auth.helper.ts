@@ -12,13 +12,15 @@ export async function createAuthenticatedUser(
     email?: string;
     role?: 'user' | 'admin';
     isVerified?: boolean;
+    firstName?: string;
+    lastName?: string;
   } = {}
 ) {
   const user = await UserModel.create({
     email: overrides.email || 'test@etu.unistra.fr',
     password: 'hashedpassword123',
-    firstName: 'Test',
-    lastName: 'User',
+    firstName: overrides.firstName || 'Test',
+    lastName: overrides.lastName || 'User',
     role: overrides.role || 'user',
     isVerified: overrides.isVerified !== undefined ? overrides.isVerified : true,
     verificationToken: null,
