@@ -1096,6 +1096,16 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 onReply={!a.parentId ? (id) => setReplyTarget(replyTarget?.rootId === id ? null : { rootId: id }) : undefined}
               />
 
+              {/* Thread: formulaire de réponse (juste sous le commentaire racine) */}
+              {replyTarget?.rootId === a._id && (
+                <ReplyForm
+                  onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
+                  onCancel={() => setReplyTarget(null)}
+                  mentionLabel={replyTarget.mentionLabel}
+                  onClearMention={() => setReplyTarget({ rootId: a._id })}
+                />
+              )}
+
               {/* Thread: bouton pour voir les réponses */}
               {!a.parentId && (a.replyCount || 0) > 0 && (
                 <button
@@ -1154,16 +1164,6 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                     </button>
                   )}
                 </div>
-              )}
-
-              {/* Thread: formulaire de réponse */}
-              {replyTarget?.rootId === a._id && (
-                <ReplyForm
-                  onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
-                  onCancel={() => setReplyTarget(null)}
-                  mentionLabel={replyTarget.mentionLabel}
-                  onClearMention={() => setReplyTarget({ rootId: a._id })}
-                />
               )}
             </li>
           ))}
