@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Key, Mail, Shield, Save, AlertCircle, X, Trash2 } from 'lucide-react';
+import { User, Key, Mail, Shield, Save, AlertCircle, X, Trash2, Download, FileJson } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
@@ -22,6 +22,11 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+
+  // Email form state
+  const [newEmail, setNewEmail] = useState('');
+  const [emailPassword, setEmailPassword] = useState('');
+  const [emailErrors, setEmailErrors] = useState<string[]>([]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -106,6 +111,135 @@ export default function ProfilePage() {
         setPasswordErrors([]);
       }
     };
+
+  // Email validation
+  const validateEmail = () => {
+    const errors: string[] = [];
+
+    if (!newEmail.trim()) {
+      errors.push('La nouvelle adresse email est requise');
+    } else if (!newEmail.endsWith('@etu.unistra.fr')) {
+      errors.push('L\'email doit se terminer par @etu.unistra.fr');
+    }
+
+    if (!emailPassword) {
+      errors.push('Le mot de passe est requis pour confirmer le changement');
+    }
+
+    setEmailErrors(errors);
+    return errors.length === 0;
+  };
+
+  // Email form handlers
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateEmail()) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/email', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          newEmail: newEmail.trim().toLowerCase(),
+          password: emailPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setEmailErrors([data.error || 'Erreur lors du changement d\'email']);
+        return;
+      }
+
+      // Reset form
+      setNewEmail('');
+      setEmailPassword('');
+      setEmailErrors([]);
+
+      await Swal.fire({
+        title: 'Email modifié',
+        text: data.message || 'Un email de vérification a été envoyé à votre nouvelle adresse.',
+        icon: 'success',
+        confirmButtonColor: '#10b981',
+      });
+
+      // Déconnecter l'utilisateur pour qu'il vérifie son nouvel email
+      await Swal.fire({
+        title: 'Vérification requise',
+        text: 'Vous allez être déconnecté. Veuillez vérifier votre nouvelle adresse email avant de vous reconnecter.',
+        icon: 'info',
+        confirmButtonColor: '#3b82f6',
+      });
+
+      logout();
+      navigate('login');
+    } catch {
+      setEmailErrors(['Erreur de connexion au serveur']);
+    }
+  };
+
+  const handleEmailInputChange =
+    (setter: (value: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value);
+      if (emailErrors.length > 0) {
+        setEmailErrors([]);
+      }
+    };
+
+  // Export data handler (RGPD)
+  const handleExportData = async () => {
+    try {
+      const response = await fetch('/api/auth/data-export', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Échec de l\'export');
+      }
+
+      const data = await response.json();
+
+      // Créer un blob JSON et déclencher le téléchargement
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const filename = `mes-donnees-${new Date().toISOString().split('T')[0]}.json`;
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      window.URL.revokeObjectURL(url);
+
+      await Swal.fire({
+        title: 'Export réussi',
+        text: 'Vos données ont été exportées avec succès.',
+        icon: 'success',
+        confirmButtonColor: '#10b981',
+      });
+    } catch {
+      await Swal.fire({
+        title: 'Erreur',
+        text: 'Impossible d\'exporter vos données.',
+        icon: 'error',
+        confirmButtonColor: '#ef4444',
+      });
+    }
+  };
 
   // Delete account handler
   const handleDeleteAccount = async () => {
@@ -281,6 +415,89 @@ export default function ProfilePage() {
               </Button>
             </form>
           </div>
+
+          {/* Change Email Card */}
+          <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
+            <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
+              <Mail className="w-5 h-5 text-primary" />
+              Changer l&apos;adresse email
+            </h2>
+
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              {emailErrors.length > 0 && (
+                <div className="bg-error-bg border border-error/20 rounded-xl p-4 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-error flex-shrink-0" />
+                  <div className="flex-1">
+                    {emailErrors.map((err, i) => (
+                      <p key={i} className="text-sm text-error">
+                        {err}
+                      </p>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEmailErrors([])}
+                    className="text-error hover:text-error/80 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
+                <p className="font-medium mb-1">⚠️ Important</p>
+                <p className="text-xs leading-relaxed">
+                  Après changement, vous devrez vérifier votre nouvelle adresse email avant de
+                  pouvoir vous reconnecter. Vous serez automatiquement déconnecté.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-3">
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Email actuel
+                </label>
+                <p className="text-sm text-secondary-dark">{user?.email}</p>
+              </div>
+
+              <Input
+                label="Nouvelle adresse email"
+                type="email"
+                value={newEmail}
+                onChange={handleEmailInputChange(setNewEmail)}
+                placeholder="nouvelle.adresse@etu.unistra.fr"
+                helperText="Seuls les emails @etu.unistra.fr sont acceptés"
+                autoComplete="email"
+              />
+
+              <Input
+                label="Mot de passe actuel (confirmation)"
+                type="password"
+                value={emailPassword}
+                onChange={handleEmailInputChange(setEmailPassword)}
+                placeholder="Votre mot de passe actuel"
+                autoComplete="current-password"
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isLoading || !newEmail || !emailPassword}
+                className="gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Modification...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    Changer l&apos;email
+                  </>
+                )}
+              </Button>
+            </form>
+          </div>
         </div>
 
         {/* Colonne droite */}
@@ -363,6 +580,43 @@ export default function ProfilePage() {
                 )}
               </Button>
             </form>
+          </div>
+
+          {/* RGPD - Données personnelles */}
+          <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
+            <h2 className="text-lg font-semibold text-secondary-dark mb-2 flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              Données personnelles (RGPD)
+            </h2>
+            <p className="text-sm text-secondary mb-4">
+              Conformément au RGPD, vous pouvez exporter toutes vos données au format JSON.
+            </p>
+            <div className="space-y-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleExportData}
+                className="gap-2 w-full sm:w-auto"
+              >
+                <Download className="w-4 h-4" />
+                Exporter mes données
+              </Button>
+              <div className="flex items-start gap-2 text-xs text-secondary">
+                <FileJson className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p>
+                  L&apos;export inclut : profil, examens uploadés, commentaires, signalements.
+                  Consultez notre{' '}
+                  <button
+                    type="button"
+                    onClick={() => navigate('privacy')}
+                    className="text-primary hover:underline cursor-pointer"
+                  >
+                    Politique de Confidentialité
+                  </button>
+                  {' '}pour plus d&apos;informations.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Danger Zone */}

@@ -466,3 +466,280 @@ describe('DELETE /api/auth/account', () => {
     expect(response.status).toBe(401);
   });
 });
+
+describe('GET /api/auth/data-export', () => {
+  let app: express.Application;
+  let testUser: { _id: string; email: string; token: string };
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/api/auth', authRouter);
+    app.use(errorHandler);
+  });
+
+  beforeEach(async () => {
+    const hashedPassword = await bcrypt.hash('export123', 10);
+    const user = await UserModel.create({
+      email: 'export@etu.unistra.fr',
+      password: hashedPassword,
+      firstName: 'Export',
+      lastName: 'User',
+      role: 'user',
+      isVerified: true,
+    });
+
+    testUser = {
+      _id: user._id.toString(),
+      email: user.email,
+      token: generateToken(user._id.toString(), user.email),
+    };
+  });
+
+  it('should export user data with valid token', async () => {
+    // Créer des données associées à l'utilisateur
+    const exam = await Exam.create({
+      title: 'Export Test Exam',
+      year: 2024,
+      module: 'Test',
+      fileKey: 'test/key.pdf',
+      uploadedBy: testUser._id,
+    });
+
+    await AnswerModel.create({
+      examId: exam._id,
+      authorId: testUser._id,
+      page: 1,
+      yTop: 0.5,
+      content: { type: 'text', data: 'Test comment' },
+    });
+
+    await ReportModel.create({
+      type: ReportType.EXAM,
+      targetId: exam._id,
+      reason: ReportReason.SPAM,
+      reportedBy: testUser._id,
+    });
+
+    const response = await request(app)
+      .get('/api/auth/data-export')
+      .set('Authorization', `Bearer ${testUser.token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('exportDate');
+    expect(response.body).toHaveProperty('profile');
+    expect(response.body).toHaveProperty('statistics');
+    expect(response.body).toHaveProperty('data');
+
+    // Vérifier le profil
+    expect(response.body.profile).toMatchObject({
+      email: 'export@etu.unistra.fr',
+      firstName: 'Export',
+      lastName: 'User',
+      role: 'user',
+      isVerified: true,
+    });
+
+    // Vérifier les statistiques
+    expect(response.body.statistics).toMatchObject({
+      examsUploaded: 1,
+      commentsPosted: 1,
+      reportsSubmitted: 1,
+    });
+
+    // Vérifier les données
+    expect(response.body.data.exams).toHaveLength(1);
+    expect(response.body.data.exams[0].title).toBe('Export Test Exam');
+    expect(response.body.data.comments).toHaveLength(1);
+    expect(response.body.data.comments[0].content.type).toBe('text');
+    expect(response.body.data.comments[0].content.data).toBe('Test comment');
+    expect(response.body.data.reports).toHaveLength(1);
+  });
+
+  it('should export empty data for user without content', async () => {
+    const response = await request(app)
+      .get('/api/auth/data-export')
+      .set('Authorization', `Bearer ${testUser.token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.statistics).toMatchObject({
+      examsUploaded: 0,
+      commentsPosted: 0,
+      reportsSubmitted: 0,
+    });
+    expect(response.body.data.exams).toHaveLength(0);
+    expect(response.body.data.comments).toHaveLength(0);
+    expect(response.body.data.reports).toHaveLength(0);
+  });
+
+  it('should return 401 without token', async () => {
+    const response = await request(app).get('/api/auth/data-export');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('should return 401 with invalid token', async () => {
+    const response = await request(app)
+      .get('/api/auth/data-export')
+      .set('Authorization', 'Bearer invalid-token');
+
+    expect(response.status).toBe(401);
+  });
+});
+
+describe('PUT /api/auth/email', () => {
+  let app: express.Application;
+  let testUser: { _id: string; email: string; token: string };
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/api/auth', authRouter);
+    app.use(errorHandler);
+  });
+
+  beforeEach(async () => {
+    const hashedPassword = await bcrypt.hash('changemail123', 10);
+    const user = await UserModel.create({
+      email: 'old@etu.unistra.fr',
+      password: hashedPassword,
+      firstName: 'Change',
+      lastName: 'Email',
+      role: 'user',
+      isVerified: true,
+    });
+
+    testUser = {
+      _id: user._id.toString(),
+      email: user.email,
+      token: generateToken(user._id.toString(), user.email),
+    };
+  });
+
+  it('should change email with valid data', async () => {
+    const response = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({
+        newEmail: 'new@etu.unistra.fr',
+        password: 'changemail123',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toContain('Email modifié');
+
+    // Vérifier que l'email a été changé
+    const user = await UserModel.findById(testUser._id);
+    expect(user?.email).toBe('new@etu.unistra.fr');
+    expect(user?.isVerified).toBe(false);
+    expect(user?.verificationToken).toBeTruthy();
+    expect(user?.verificationExpires).toBeTruthy();
+  });
+
+  it('should normalize email to lowercase', async () => {
+    const response = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({
+        newEmail: 'NEW@etu.unistra.fr',
+        password: 'changemail123',
+      });
+
+    expect(response.status).toBe(200);
+
+    const user = await UserModel.findById(testUser._id);
+    expect(user?.email).toBe('new@etu.unistra.fr');
+  });
+
+  it('should reject invalid email format', async () => {
+    const response = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({
+        newEmail: 'invalid-email',
+        password: 'changemail123',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain('invalide');
+  });
+
+  it('should reject non-unistra.fr email', async () => {
+    const response = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({
+        newEmail: 'test@gmail.com',
+        password: 'changemail123',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain('@etu.unistra.fr');
+  });
+
+  it('should reject wrong password', async () => {
+    const response = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({
+        newEmail: 'new@etu.unistra.fr',
+        password: 'wrongpassword',
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toContain('incorrect');
+
+    // Vérifier que l'email n'a pas changé
+    const user = await UserModel.findById(testUser._id);
+    expect(user?.email).toBe('old@etu.unistra.fr');
+  });
+
+  it('should reject email already in use', async () => {
+    // Créer un autre utilisateur avec l'email cible
+    await UserModel.create({
+      email: 'existing@etu.unistra.fr',
+      password: 'hashedpwd',
+      firstName: 'Existing',
+      lastName: 'User',
+      isVerified: true,
+    });
+
+    const response = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({
+        newEmail: 'existing@etu.unistra.fr',
+        password: 'changemail123',
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toContain('déjà utilisée');
+  });
+
+  it('should return 400 for missing fields', async () => {
+    const response1 = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({ password: 'changemail123' });
+
+    expect(response1.status).toBe(400);
+
+    const response2 = await request(app)
+      .put('/api/auth/email')
+      .set('Authorization', `Bearer ${testUser.token}`)
+      .send({ newEmail: 'new@etu.unistra.fr' });
+
+    expect(response2.status).toBe(400);
+  });
+
+  it('should return 401 without token', async () => {
+    const response = await request(app)
+      .put('/api/auth/email')
+      .send({
+        newEmail: 'new@etu.unistra.fr',
+        password: 'changemail123',
+      });
+
+    expect(response.status).toBe(401);
+  });
+});

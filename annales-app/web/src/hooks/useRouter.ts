@@ -17,7 +17,9 @@ export interface Route {
     | 'forgot-password'
     | 'reset-password'
     | 'verify-email'
-    | 'profile';
+    | 'profile'
+    | 'privacy'
+    | 'terms';
   params: RouteParams;
 }
 
@@ -52,6 +54,10 @@ export function useRouter() {
         return `/reset-password${params.token ? `?token=${params.token}` : ''}`;
       case 'verify-email':
         return `/verify-email${params.token ? `?token=${params.token}` : ''}`;
+      case 'privacy':
+        return '/privacy';
+      case 'terms':
+        return '/terms';
       case 'viewer':
         if (!params.examId) {
           console.error('examId requis pour la route viewer');
@@ -114,6 +120,14 @@ export function useRouter() {
       return { path, page: 'verify-email', params: { token: token || undefined } };
     }
 
+    if (path === '/privacy') {
+      return { path, page: 'privacy', params: {} };
+    }
+
+    if (path === '/terms') {
+      return { path, page: 'terms', params: {} };
+    }
+
     const examMatch = path.match(/^\/exam\/([^/]+)$/);
     if (examMatch) {
       return {
@@ -169,6 +183,12 @@ export function useRouter() {
         break;
       case 'profile':
         title = "Mon Profil - Plateforme d'Annales";
+        break;
+      case 'privacy':
+        title = "Politique de Confidentialité - Plateforme d'Annales";
+        break;
+      case 'terms':
+        title = "Conditions Générales d'Utilisation - Plateforme d'Annales";
         break;
       case 'viewer':
         title = "Examen - Plateforme d'Annales";

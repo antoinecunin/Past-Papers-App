@@ -291,6 +291,93 @@ class AuthService {
   }
 
   /**
+   * Modifier l'adresse email
+   */
+  async changeEmail(userId: string, newEmail: string, password: string): Promise<void> {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw ServiceError.notFound('Utilisateur non trouvé');
+    }
+
+    // Vérifier le mot de passe
+    const isValid = await AuthUtils.comparePassword(password, user.password);
+    if (!isValid) {
+      throw ServiceError.unauthorized('Mot de passe incorrect');
+    }
+
+    // Vérifier que le nouvel email n'est pas déjà utilisé
+    const normalizedEmail = newEmail.toLowerCase().trim();
+    const existingUser = await UserModel.findOne({ email: normalizedEmail });
+    if (existingUser && existingUser._id.toString() !== userId) {
+      throw ServiceError.conflict('Cette adresse email est déjà utilisée');
+    }
+
+    // Mettre à jour l'email et réinitialiser la vérification
+    user.email = normalizedEmail;
+    user.isVerified = false;
+    user.verificationToken = AuthUtils.generateRandomToken();
+    user.verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+    await user.save();
+
+    // Envoyer un nouvel email de vérification
+    await emailService.sendVerificationEmail(normalizedEmail, user.verificationToken);
+  }
+
+  /**
+   * Exporter toutes les données utilisateur (RGPD - droit d'accès et portabilité)
+   * Retourne toutes les données personnelles et le contenu créé par l'utilisateur
+   */
+  async exportUserData(userId: string): Promise<object> {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw ServiceError.notFound('Utilisateur non trouvé');
+    }
+
+    // 1. Données du profil
+    const profile = {
+      id: user._id.toString(),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      isVerified: user.isVerified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    // 2. Examens uploadés
+    const exams = await Exam.find({ uploadedBy: userId })
+      .select('title year module fileKey pages createdAt updatedAt')
+      .lean();
+
+    // 3. Commentaires et réponses
+    const answers = await AnswerModel.find({ authorId: userId })
+      .select('examId page yTop content parentId createdAt updatedAt')
+      .lean();
+
+    // 4. Signalements créés
+    const reports = await ReportModel.find({ reportedBy: userId })
+      .select('type targetId reason description status createdAt')
+      .lean();
+
+    return {
+      exportDate: new Date().toISOString(),
+      profile,
+      statistics: {
+        examsUploaded: exams.length,
+        commentsPosted: answers.length,
+        reportsSubmitted: reports.length,
+      },
+      data: {
+        exams,
+        comments: answers,
+        reports,
+      },
+    };
+  }
+
+  /**
    * Supprimer le compte utilisateur (RGPD - droit à l'effacement)
    * Anonymise le contenu (examens, réponses) et supprime les données personnelles
    */

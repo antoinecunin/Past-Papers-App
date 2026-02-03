@@ -78,6 +78,16 @@ const deleteAccountSchema = z.object({
   password: z.string().min(1, 'Mot de passe requis'),
 });
 
+const changeEmailSchema = z.object({
+  newEmail: z
+    .string()
+    .email('Email invalide')
+    .refine(val => val.endsWith(ALLOWED_EMAIL_DOMAIN), {
+      message: `L'email doit se terminer par ${ALLOWED_EMAIL_DOMAIN}`,
+    }),
+  password: z.string().min(1, 'Mot de passe requis'),
+});
+
 /**
  * @swagger
  * /auth/register:
@@ -546,6 +556,105 @@ router.post(
     await authService.changePassword(req.user!.id, currentPassword, newPassword);
 
     res.json({ message: 'Mot de passe modifié avec succès' });
+  })
+);
+
+/**
+ * @swagger
+ * /auth/email:
+ *   put:
+ *     summary: Modifier l'adresse email
+ *     description: >
+ *       Change l'adresse email de l'utilisateur. Requiert le mot de passe actuel
+ *       pour confirmation. L'email sera réinitialisé comme non vérifié et un nouvel
+ *       email de vérification sera envoyé.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newEmail
+ *               - password
+ *             properties:
+ *               newEmail:
+ *                 type: string
+ *                 format: email
+ *                 description: Nouvelle adresse email (@etu.unistra.fr)
+ *               password:
+ *                 type: string
+ *                 description: Mot de passe actuel pour confirmation
+ *     responses:
+ *       200:
+ *         description: Email modifié, vérification requise
+ *       400:
+ *         description: Données invalides
+ *       401:
+ *         description: Mot de passe incorrect
+ *       409:
+ *         description: Email déjà utilisé
+ */
+router.put(
+  '/email',
+  authMiddleware,
+  authLimiter,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const result = changeEmailSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const { newEmail, password } = result.data;
+    await authService.changeEmail(req.user!.id, newEmail, password);
+
+    res.json({
+      message: 'Email modifié avec succès. Veuillez vérifier votre nouvelle adresse email.',
+    });
+  })
+);
+
+/**
+ * @swagger
+ * /auth/data-export:
+ *   get:
+ *     summary: Exporter toutes les données utilisateur (RGPD)
+ *     description: >
+ *       Retourne toutes les données personnelles et le contenu créé par l'utilisateur
+ *       au format JSON (droit d'accès et droit à la portabilité).
+ *       Inclut: profil, examens uploadés, commentaires, signalements.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Données exportées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 exportDate:
+ *                   type: string
+ *                   format: date-time
+ *                 profile:
+ *                   type: object
+ *                 statistics:
+ *                   type: object
+ *                 data:
+ *                   type: object
+ *       401:
+ *         description: Non authentifié
+ */
+router.get(
+  '/data-export',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const exportData = await authService.exportUserData(req.user!.id);
+    res.json(exportData);
   })
 );
 

@@ -7,6 +7,8 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import ExamList from './components/ExamList';
 import PdfAnnotator from './components/PdfAnnotator';
 import { ArrowLeft, Download, AlertTriangle, Trash2 } from 'lucide-react';
@@ -189,7 +191,7 @@ function App() {
   }, [currentRoute, selectedExam, isPage, getExamId, navigate, loadExamById]);
 
   const renderCurrentPage = () => {
-    // Pages d'authentification - toujours accessibles
+    // Pages d'authentification et pages légales - toujours accessibles
     switch (currentRoute.page) {
       case 'login':
         return <LoginPage />;
@@ -201,6 +203,10 @@ function App() {
         return <ResetPasswordPage />;
       case 'verify-email':
         return <VerifyEmailPage />;
+      case 'privacy':
+        return <PrivacyPage />;
+      case 'terms':
+        return <TermsPage />;
     }
 
     // Pages protégées - nécessitent une authentification
@@ -314,10 +320,10 @@ function App() {
     }
   };
 
-  // Masquer la navigation pour les pages d'authentification
+  // Masquer la navigation pour les pages d'authentification et légales
   const shouldShowNavigation =
     user &&
-    !['login', 'register', 'forgot-password', 'reset-password', 'verify-email'].includes(
+    !['login', 'register', 'forgot-password', 'reset-password', 'verify-email', 'privacy', 'terms'].includes(
       currentRoute.page
     );
 

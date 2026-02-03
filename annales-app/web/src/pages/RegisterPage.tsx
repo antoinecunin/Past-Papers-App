@@ -16,6 +16,7 @@ export default function RegisterPage() {
   });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const { register, isLoading, error, clearError } = useAuthStore();
   const { navigate } = useRouter();
@@ -55,6 +56,10 @@ export default function RegisterPage() {
 
     if (formData.password !== formData.confirmPassword) {
       errors.push('Les mots de passe ne correspondent pas');
+    }
+
+    if (!acceptedTerms) {
+      errors.push('Vous devez accepter les conditions d\'utilisation et la politique de confidentialité');
     }
 
     setValidationErrors(errors);
@@ -233,6 +238,40 @@ export default function RegisterPage() {
               placeholder="••••••••"
             />
 
+            {/* Checkbox consentement RGPD */}
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <input
+                type="checkbox"
+                id="acceptTerms"
+                checked={acceptedTerms}
+                onChange={(e) => {
+                  setAcceptedTerms(e.target.checked);
+                  if (validationErrors.length > 0) {
+                    setValidationErrors([]);
+                  }
+                }}
+                className="mt-0.5 w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2 cursor-pointer"
+              />
+              <label htmlFor="acceptTerms" className="text-sm text-secondary leading-relaxed cursor-pointer">
+                J&apos;accepte les{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('terms')}
+                  className="text-primary hover:text-primary-hover underline font-medium cursor-pointer"
+                >
+                  Conditions Générales d&apos;Utilisation
+                </button>{' '}
+                et la{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('privacy')}
+                  className="text-primary hover:text-primary-hover underline font-medium cursor-pointer"
+                >
+                  Politique de Confidentialité
+                </button>
+              </label>
+            </div>
+
             {/* Bouton inscription */}
             <Button
               type="submit"
@@ -245,7 +284,8 @@ export default function RegisterPage() {
                 !formData.lastName ||
                 !formData.email ||
                 !formData.password ||
-                !formData.confirmPassword
+                !formData.confirmPassword ||
+                !acceptedTerms
               }
             >
               {isLoading ? (
@@ -261,11 +301,6 @@ export default function RegisterPage() {
               )}
             </Button>
           </form>
-
-          {/* Footer CGU */}
-          <p className="text-center text-xs text-secondary mt-6">
-            En créant un compte, vous acceptez nos conditions d&apos;utilisation
-          </p>
 
           {/* Séparateur */}
           <div className="relative my-8">
