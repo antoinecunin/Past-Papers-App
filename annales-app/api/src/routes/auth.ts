@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
-import { ALLOWED_EMAIL_DOMAIN } from '../constants/auth.js';
+import { instanceConfigService } from '../services/instance-config.service.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -38,9 +38,14 @@ const registerSchema = z.object({
   email: z
     .string()
     .email('Email invalide')
-    .refine(val => val.endsWith(ALLOWED_EMAIL_DOMAIN), {
-      message: `L'email doit se terminer par ${ALLOWED_EMAIL_DOMAIN}`,
-    }),
+    .refine(
+      (val) => instanceConfigService.isEmailDomainAllowed(val),
+      (val) => {
+        const config = instanceConfigService.getConfig();
+        const domains = config.email.allowedDomains.join(', ');
+        return { message: `L'email doit se terminer par un des domaines autorisés: ${domains}` };
+      }
+    ),
   password: passwordSchema,
   firstName: z.string().trim().min(1, 'Prénom requis').max(50, 'Prénom trop long'),
   lastName: z.string().trim().min(1, 'Nom requis').max(50, 'Nom trop long'),
@@ -82,9 +87,14 @@ const changeEmailSchema = z.object({
   newEmail: z
     .string()
     .email('Email invalide')
-    .refine(val => val.endsWith(ALLOWED_EMAIL_DOMAIN), {
-      message: `L'email doit se terminer par ${ALLOWED_EMAIL_DOMAIN}`,
-    }),
+    .refine(
+      (val) => instanceConfigService.isEmailDomainAllowed(val),
+      (val) => {
+        const config = instanceConfigService.getConfig();
+        const domains = config.email.allowedDomains.join(', ');
+        return { message: `L'email doit se terminer par un des domaines autorisés: ${domains}` };
+      }
+    ),
   password: z.string().min(1, 'Mot de passe requis'),
 });
 

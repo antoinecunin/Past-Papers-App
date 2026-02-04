@@ -7,3 +7,4 @@ node_modules/
 dist/
 *.zip
 AUDIT_TODO.md
+instance.config.json

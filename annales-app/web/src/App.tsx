@@ -15,6 +15,7 @@ import { ArrowLeft, Download, AlertTriangle, Trash2 } from 'lucide-react';
 import { Button } from './components/ui/Button';
 import { useRouter } from './hooks/useRouter';
 import { useAuthStore } from './stores/authStore';
+import { InstanceProvider } from './contexts/InstanceContext';
 import { PermissionUtils } from './utils/permissions';
 import { showReportModal, showReportSuccess, showReportError } from './utils/reportModal';
 import { showError, showSuccess, showConfirm } from './utils/swal';
@@ -418,4 +419,11 @@ function App() {
   );
 }
 
-export default App;
+// Wrap App with InstanceProvider to provide instance config throughout the app
+export default function AppWithProviders() {
+  return (
+    <InstanceProvider>
+      <App />
+    </InstanceProvider>
+  );
+}

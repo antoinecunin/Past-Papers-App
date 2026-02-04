@@ -80,6 +80,8 @@ services:
     volumes:
       - ./api:/app
       - /app/node_modules
+      - ./instance.config.json:/app/instance.config.json:ro
+      - ./instance.config.example.json:/app/instance.config.example.json:ro
     networks:
       - backend-dev
     ports:

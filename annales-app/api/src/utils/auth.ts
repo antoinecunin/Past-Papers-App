@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { ALLOWED_EMAIL_DOMAIN, BCRYPT_SALT_ROUNDS } from '../constants/auth.js';
+import { BCRYPT_SALT_ROUNDS } from '../constants/auth.js';
+import { instanceConfigService } from '../services/instance-config.service.js';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
@@ -44,7 +45,10 @@ export class AuthUtils {
 
   static isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) && email.endsWith(ALLOWED_EMAIL_DOMAIN);
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+    return instanceConfigService.isEmailDomainAllowed(email);
   }
 
   static isValidPassword(password: string): boolean {

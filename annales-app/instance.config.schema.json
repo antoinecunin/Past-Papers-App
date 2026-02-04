@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Instance Configuration",
+  "description": "Minimal configuration for instance customization (KISS principle)",
+  "type": "object",
+  "required": ["instance", "email", "branding"],
+  "properties": {
+    "instance": {
+      "type": "object",
+      "description": "Instance information and GDPR required fields",
+      "required": ["name", "organizationName", "contactEmail"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full instance name displayed in the app",
+          "minLength": 1,
+          "examples": ["Annales - Université de Strasbourg"]
+        },
+        "organizationName": {
+          "type": "string",
+          "description": "Name of the organization managing this instance (GDPR required)",
+          "minLength": 1,
+          "examples": ["Université de Strasbourg"]
+        },
+        "contactEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email for GDPR requests and support",
+          "examples": ["contact@example.com"]
+        }
+      }
+    },
+    "email": {
+      "type": "object",
+      "description": "Email validation settings",
+      "required": ["allowedDomains"],
+      "properties": {
+        "allowedDomains": {
+          "type": "array",
+          "description": "Email domains allowed for registration (e.g., @etu.unistra.fr)",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^@[\\w.-]+\\.\\w+$",
+            "examples": ["@etu.unistra.fr", "@etudiant.univ-paris.fr"]
+          }
+        }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "description": "Visual branding customization",
+      "required": ["primaryColor"],
+      "properties": {
+        "primaryColor": {
+          "type": "string",
+          "description": "Primary brand color (6-digit hex code)",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "examples": ["#0EA5E9", "#3B82F6", "#10B981"]
+        }
+      }
+    }
+  }
+}

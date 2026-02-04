@@ -1,5 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
+import { instanceConfigService } from '../services/instance-config.service.js';
 
 let mongoServer: MongoMemoryServer;
 
@@ -13,6 +14,9 @@ beforeAll(async () => {
 
   // Se connecter à MongoDB
   await mongoose.connect(mongoUri);
+
+  // Charger la configuration d'instance (nécessaire pour valider les emails)
+  instanceConfigService.loadConfig();
 });
 
 // Nettoyage après chaque test

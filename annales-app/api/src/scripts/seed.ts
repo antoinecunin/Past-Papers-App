@@ -19,6 +19,7 @@ import { Exam } from '../models/Exam.js';
 import { AnswerModel } from '../models/Answer.js';
 import { ReportModel, ReportType, ReportReason, ReportStatus } from '../models/Report.js';
 import { uploadBuffer, objectKey } from '../services/s3.js';
+import { instanceConfigService } from '../services/instance-config.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -556,6 +557,11 @@ async function main() {
   try {
     // Connexion à la base de données
     await connectToDatabase();
+
+    // Charger la configuration d'instance (nécessaire pour valider les emails)
+    log('⚙️', 'Chargement de la configuration d\'instance...');
+    instanceConfigService.loadConfig();
+    logSuccess('Configuration d\'instance chargée');
 
     // Créer les utilisateurs
     const userIds = await createUsers(config.users, verbose);

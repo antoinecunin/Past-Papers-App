@@ -1,5 +1,5 @@
 import { Schema, model, Types } from 'mongoose';
-import { ALLOWED_EMAIL_DOMAIN } from '../constants/auth.js';
+import { instanceConfigService } from '../services/instance-config.service.js';
 
 export enum UserRole {
   USER = 'user',
@@ -32,9 +32,13 @@ const UserSchema = new Schema<User>(
       trim: true,
       validate: {
         validator: (email: string) => {
-          return email.endsWith(ALLOWED_EMAIL_DOMAIN);
+          return instanceConfigService.isEmailDomainAllowed(email);
         },
-        message: `L'email doit se terminer par ${ALLOWED_EMAIL_DOMAIN}`,
+        message: (props: { value: string }) => {
+          const config = instanceConfigService.getConfig();
+          const domains = config.email.allowedDomains.join(', ');
+          return `L'email doit se terminer par un des domaines autorisés: ${domains}`;
+        },
       },
     },
     password: {

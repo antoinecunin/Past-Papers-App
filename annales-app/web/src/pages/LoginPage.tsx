@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const { login, isLoading, error, clearError } = useAuthStore();
   const { navigate } = useRouter();
-  const { name } = useInstance();
+  const { name, allowedDomains } = useInstance();
 
   // Nettoyer les erreurs au démontage
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="votre.email@etu.unistra.fr"
+              placeholder={`votre.email${allowedDomains[0] || '@example.com'}`}
             />
 
             {/* Mot de passe */}

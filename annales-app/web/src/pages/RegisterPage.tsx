@@ -20,7 +20,7 @@ export default function RegisterPage() {
 
   const { register, isLoading, error, clearError } = useAuthStore();
   const { navigate } = useRouter();
-  const { name } = useInstance();
+  const { name, allowedDomains } = useInstance();
 
   // Note: Pas de redirection automatique - permet à un utilisateur connecté de voir la page d'inscription
 
@@ -42,8 +42,9 @@ export default function RegisterPage() {
 
     if (!formData.email.trim()) {
       errors.push("L'email est requis");
-    } else if (!formData.email.endsWith('@etu.unistra.fr')) {
-      errors.push("L'email doit se terminer par @etu.unistra.fr");
+    } else if (!allowedDomains.some((domain) => formData.email.toLowerCase().endsWith(domain.toLowerCase()))) {
+      const domains = allowedDomains.join(', ');
+      errors.push(`L'email doit se terminer par un des domaines autorisés: ${domains}`);
     }
 
     if (!formData.password) {
@@ -207,8 +208,8 @@ export default function RegisterPage() {
               required
               value={formData.email}
               onChange={handleInputChange('email')}
-              placeholder="votre.email@etu.unistra.fr"
-              helperText="Seuls les emails @etu.unistra.fr sont acceptés"
+              placeholder={`votre.email${allowedDomains[0] || '@example.com'}`}
+              helperText={`Seuls les emails ${allowedDomains.join(', ')} sont acceptés`}
             />
 
             {/* Mot de passe */}

@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
 
   const { forgotPassword, isLoading, error, clearError } = useAuthStore();
   const { navigate } = useRouter();
-  const { name } = useInstance();
+  const { name, allowedDomains } = useInstance();
 
   // Note: Pas de redirection automatique - permet à un utilisateur connecté d'accéder à cette page
 
@@ -132,7 +132,7 @@ export default function ForgotPasswordPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="votre.email@etu.unistra.fr"
+              placeholder={`votre.email${allowedDomains[0] || '@example.com'}`}
             />
 
             {/* Submit button */}

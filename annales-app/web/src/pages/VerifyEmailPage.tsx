@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, X, CheckCircle, LogIn, UserPlus, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
+import { useInstance } from '../hooks/useInstance';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -13,6 +14,7 @@ export default function VerifyEmailPage() {
 
   const { verifyEmail, resendVerification, isLoading, error, clearError } = useAuthStore();
   const { navigate, currentRoute } = useRouter();
+  const { allowedDomains } = useInstance();
 
   const token = currentRoute.params.token;
 
@@ -162,7 +164,7 @@ export default function VerifyEmailPage() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="votre.email@etu.unistra.fr"
+              placeholder={`votre.email${allowedDomains[0] || '@example.com'}`}
             />
 
             {/* Submit button */}

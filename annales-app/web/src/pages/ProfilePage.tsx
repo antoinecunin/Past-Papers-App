@@ -3,15 +3,17 @@ import { User, Key, Mail, Shield, Save, AlertCircle, X, Trash2, Download, FileJs
 import Swal from 'sweetalert2';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
+import { useInstance } from '../hooks/useInstance';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PermissionUtils } from '../utils/permissions';
 import { showSuccessToast } from '../utils/swal';
 
 export default function ProfilePage() {
-  const { user, token, updateProfile, changePassword, deleteAccount, isLoading, error, clearError } =
+  const { user, token, updateProfile, changePassword, deleteAccount, logout, isLoading, error, clearError } =
     useAuthStore();
   const { navigate } = useRouter();
+  const { allowedDomains } = useInstance();
 
   // Profile form state
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -118,8 +120,9 @@ export default function ProfilePage() {
 
     if (!newEmail.trim()) {
       errors.push('La nouvelle adresse email est requise');
-    } else if (!newEmail.endsWith('@etu.unistra.fr')) {
-      errors.push('L\'email doit se terminer par @etu.unistra.fr');
+    } else if (!allowedDomains.some((domain) => newEmail.toLowerCase().endsWith(domain.toLowerCase()))) {
+      const domains = allowedDomains.join(', ');
+      errors.push(`L'email doit se terminer par un des domaines autorisés: ${domains}`);
     }
 
     if (!emailPassword) {
@@ -464,8 +467,8 @@ export default function ProfilePage() {
                 type="email"
                 value={newEmail}
                 onChange={handleEmailInputChange(setNewEmail)}
-                placeholder="nouvelle.adresse@etu.unistra.fr"
-                helperText="Seuls les emails @etu.unistra.fr sont acceptés"
+                placeholder={`nouvelle.adresse${allowedDomains[0] || '@example.com'}`}
+                helperText={`Seuls les emails ${allowedDomains.join(', ')} sont acceptés`}
                 autoComplete="email"
               />
 

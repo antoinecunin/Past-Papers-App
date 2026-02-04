@@ -10,8 +10,10 @@ import { router as files } from './routes/files.js';
 import { router as answers } from './routes/answers.js';
 import { router as auth } from './routes/auth.js';
 import { router as reports } from './routes/reports.js';
+import config from './routes/config.js';
 import { setupSwagger } from './swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { instanceConfigService } from './services/instance-config.service.js';
 
 const app = express();
 app.use(helmet());
@@ -37,6 +39,7 @@ app.use('/api', cors(corsOptions));
 app.options('/api/*', cors(corsOptions));
 
 app.use('/api/health', health);
+app.use('/api/config', config);
 app.use('/api/auth', auth);
 app.use('/api/exams', exams);
 app.use('/api/files', files);
@@ -75,6 +78,14 @@ async function connectMongoWithRetry() {
 }
 
 connectMongoWithRetry().then(() => {
+  // Load and validate instance configuration
+  try {
+    instanceConfigService.loadConfig();
+  } catch (error) {
+    console.error('[api] Failed to load instance config:', error);
+    process.exit(1);
+  }
+
   const server = app.listen(port, host, () => {
     console.log(`[api] listening on http://${host}:${port}`);
   });
