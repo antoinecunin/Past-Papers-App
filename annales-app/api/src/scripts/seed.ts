@@ -410,32 +410,37 @@ async function createReports(
   let examReportsCreated = 0;
   let commentReportsCreated = 0;
 
+  // Track all used combinations to avoid duplicates
+  const usedExamCombinations = new Set<string>();
+
   // Créer les signalements explicitement définis (sur examens)
   for (const item of items) {
     if (examReportsCreated >= examReportCount) break;
 
-    try {
-      const examIndex = examReportsCreated % examIds.length;
-      const userIndex = examReportsCreated % userIdArray.length;
+    const examIndex = examReportsCreated % examIds.length;
+    const userIndex = examReportsCreated % userIdArray.length;
+    const comboKey = `exam-${userIndex}-${examIndex}`;
 
-      await ReportModel.create({
-        type: ReportType.EXAM,
-        targetId: examIds[examIndex],
-        reason: (item.reason as ReportReason) || ReportReason.OTHER,
-        description: item.description,
-        reportedBy: userIdArray[userIndex],
-        status: (item.status as ReportStatus) || ReportStatus.PENDING,
-      });
-
-      examReportsCreated++;
-      if (verbose) logSuccess(`Signalement exam: ${item.reason}`);
-    } catch {
-      if (verbose) logWarning(`Signalement ignoré (doublon probable)`);
+    // Skip if combination already used
+    if (usedExamCombinations.has(comboKey)) {
+      continue;
     }
+
+    await ReportModel.create({
+      type: ReportType.EXAM,
+      targetId: examIds[examIndex],
+      reason: (item.reason as ReportReason) || ReportReason.OTHER,
+      description: item.description,
+      reportedBy: userIdArray[userIndex],
+      status: (item.status as ReportStatus) || ReportStatus.PENDING,
+    });
+
+    usedExamCombinations.add(comboKey);
+    examReportsCreated++;
+    if (verbose) logSuccess(`Signalement exam: ${item.reason}`);
   }
 
   // Signalements aléatoires sur examens
-  const usedExamCombinations = new Set<string>();
   while (examReportsCreated < examReportCount && examIds.length > 0) {
     const examIndex = Math.floor(Math.random() * examIds.length);
     const userIndex = Math.floor(Math.random() * userIdArray.length);
@@ -472,8 +477,8 @@ async function createReports(
 
       examReportsCreated++;
       if (verbose) logSuccess(`Signalement exam #${examReportsCreated}: ${reason} (${status})`);
-    } catch {
-      // Ignore
+    } catch (error) {
+      if (verbose) logWarning(`Erreur création signalement exam: ${error}`);
     }
   }
 
@@ -519,8 +524,8 @@ async function createReports(
       commentReportsCreated++;
       if (verbose)
         logSuccess(`Signalement comment #${commentReportsCreated}: ${reason} (${status})`);
-    } catch {
-      // Ignore
+    } catch (error) {
+      if (verbose) logWarning(`Erreur création signalement comment: ${error}`);
     }
   }
 

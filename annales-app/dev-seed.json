@@ -100,8 +100,8 @@
     "items": [
       { "reason": "inappropriate_content", "description": "Contenu offensant dans les commentaires" },
       { "reason": "spam", "description": "Publicité pour un site externe" },
-      { "reason": "wrong_subject", "description": "Ce n'est pas un examen de M12-ALGO" },
-      { "reason": "copyright_violation", "description": "Document protégé par droits d'auteur" },
+      { "reason": "wrong_exam", "description": "Ce n'est pas un examen de M12-ALGO" },
+      { "reason": "duplicate", "description": "Document déjà uploadé" },
       { "reason": "other", "description": "Fichier corrompu, impossible à ouvrir" }
     ]
   },
