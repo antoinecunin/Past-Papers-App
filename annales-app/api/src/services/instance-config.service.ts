@@ -1,4 +1,6 @@
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { InstanceConfig, instanceConfigSchema, PublicInstanceConfig } from '../types/instance-config.js';
 
 /**
@@ -9,8 +11,19 @@ class InstanceConfigService {
   private configPath: string;
 
   constructor() {
-    // Config file is mounted at /config/instance.config.json in container (outside /app to avoid bind mount conflicts)
-    this.configPath = '/config/instance.config.json';
+    // Try multiple locations for config file (in order of priority)
+    const possiblePaths = [
+      // 1. Environment variable (if set)
+      process.env.INSTANCE_CONFIG_PATH,
+      // 2. Docker mount location (production)
+      '/config/instance.config.json',
+      // 3. Project root (tests, local dev)
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../instance.config.json'),
+    ].filter(Boolean) as string[];
+
+    // Use first path that exists
+    this.configPath =
+      possiblePaths.find((p) => fs.existsSync(p)) || possiblePaths[possiblePaths.length - 1];
   }
 
   /**
@@ -28,9 +41,20 @@ class InstanceConfigService {
     // If instance.config.json doesn't exist, try to use the example
     if (!fs.existsSync(configFile)) {
       console.warn(`Instance config not found at ${configFile}, using example config`);
-      configFile = '/config/instance.config.example.json';
 
-      if (!fs.existsSync(configFile)) {
+      // Try multiple locations for example config
+      const examplePaths = [
+        process.env.INSTANCE_CONFIG_PATH?.replace('.json', '.example.json'),
+        '/config/instance.config.example.json',
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../instance.config.example.json',
+        ),
+      ].filter(Boolean) as string[];
+
+      configFile = examplePaths.find((p) => fs.existsSync(p)) || '';
+
+      if (!configFile || !fs.existsSync(configFile)) {
         throw new Error('Neither instance.config.json nor instance.config.example.json found');
       }
     }
