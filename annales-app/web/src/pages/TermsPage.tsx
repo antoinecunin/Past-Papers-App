@@ -1,8 +1,10 @@
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from '../hooks/useRouter';
+import { useInstance } from '../hooks/useInstance';
 
 export default function TermsPage() {
   const { navigate } = useRouter();
+  const { contactEmail } = useInstance();
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -335,8 +337,8 @@ export default function TermsPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm">
                   <strong>Email :</strong>{' '}
-                  <a href="mailto:support@annales.example.com" className="text-primary hover:underline">
-                    support@annales.example.com
+                  <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
+                    {contactEmail}
                   </a>
                 </p>
               </div>

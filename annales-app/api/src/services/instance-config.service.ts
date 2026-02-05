@@ -1,10 +1,5 @@
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { InstanceConfig, instanceConfigSchema, PublicInstanceConfig } from '../types/instance-config.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 /**
  * Service for loading and validating instance configuration
@@ -14,8 +9,8 @@ class InstanceConfigService {
   private configPath: string;
 
   constructor() {
-    // Config file is at /app root (two levels up from src/services)
-    this.configPath = path.resolve(__dirname, '../..', 'instance.config.json');
+    // Config file is mounted at /config/instance.config.json in container (outside /app to avoid bind mount conflicts)
+    this.configPath = '/config/instance.config.json';
   }
 
   /**
@@ -33,7 +28,7 @@ class InstanceConfigService {
     // If instance.config.json doesn't exist, try to use the example
     if (!fs.existsSync(configFile)) {
       console.warn(`Instance config not found at ${configFile}, using example config`);
-      configFile = path.resolve(__dirname, '../..', 'instance.config.example.json');
+      configFile = '/config/instance.config.example.json';
 
       if (!fs.existsSync(configFile)) {
         throw new Error('Neither instance.config.json nor instance.config.example.json found');

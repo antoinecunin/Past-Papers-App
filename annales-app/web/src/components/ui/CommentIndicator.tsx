@@ -23,8 +23,8 @@ export function CommentIndicator({
     <div
       className={`absolute right-2 w-6 h-6 rounded-full cursor-pointer transition-all duration-200 flex items-center justify-center text-xs font-bold z-10 ${
         isActive
-          ? 'bg-blue-600 text-white shadow-lg scale-110'
-          : 'bg-blue-500 text-white hover:bg-blue-600 hover:scale-105 shadow-md'
+          ? 'bg-primary-hover text-white shadow-lg scale-110'
+          : 'bg-primary text-white hover:bg-primary-hover hover:scale-105 shadow-md'
       }`}
       style={{ top: `${topPercent}%`, transform: 'translateY(-50%)' }}
       onClick={onClick}
@@ -66,7 +66,7 @@ export function NewCommentIndicator({ yPosition, onConfirm, onCancel }: NewComme
           value={text}
           onChange={e => setText(e.target.value)}
           placeholder="Votre commentaire..."
-          className="w-full p-2 text-sm border border-gray-200 rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full p-2 text-sm border border-gray-200 rounded resize-none focus:ring-2 focus:ring-primary focus:border-primary"
           rows={3}
           autoFocus
         />
@@ -74,7 +74,7 @@ export function NewCommentIndicator({ yPosition, onConfirm, onCancel }: NewComme
           <button
             type="submit"
             disabled={!text.trim()}
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1 text-sm bg-primary-hover text-white rounded hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Ajouter
           </button>

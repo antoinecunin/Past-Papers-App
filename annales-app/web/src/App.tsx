@@ -340,7 +340,7 @@ function App() {
                   onClick={() => navigate('exams')}
                   className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                     isPage('exams')
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-primary text-white hover:bg-primary-hover'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -350,7 +350,7 @@ function App() {
                   onClick={() => navigate('upload')}
                   className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                     isPage('upload')
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-primary text-white hover:bg-primary-hover'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >

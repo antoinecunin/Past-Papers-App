@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
+import { useInstance } from '../hooks/useInstance';
 import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor, isAllowedImageUrl } from '../constants/content';
 
 interface ReplyFormProps {
@@ -11,6 +12,7 @@ interface ReplyFormProps {
 }
 
 export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentionLabel, onClearMention }) => {
+  const { primaryHoverColor } = useInstance();
   const [contentType, setContentType] = useState<ContentType>('text');
   const [data, setData] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -51,7 +53,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
     >
       {mentionLabel && (
         <div style={mentionBadgeContainerStyle}>
-          <span style={mentionTagStyle}>{mentionLabel}</span>
+          <span style={getMentionTagStyle(primaryHoverColor)}>{mentionLabel}</span>
           {onClearMention && (
             <button
               type="button"
@@ -200,14 +202,31 @@ const mentionBadgeContainerStyle: React.CSSProperties = {
   gap: '4px',
 };
 
-const mentionTagStyle: React.CSSProperties = {
-  display: 'inline-block',
-  padding: '1px 8px',
-  background: '#dbeafe',
-  color: '#1d4ed8',
-  borderRadius: '10px',
-  fontSize: '11px',
-  fontWeight: 600,
+const getMentionTagStyle = (primaryHoverColor: string): React.CSSProperties => {
+  // Calculate lighter background based on primary hover color
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : { r: 29, g: 78, b: 216 };
+  };
+
+  const rgb = hexToRgb(primaryHoverColor);
+  const lightBg = `rgb(${Math.min(255, rgb.r + (255 - rgb.r) * 0.9)}, ${Math.min(255, rgb.g + (255 - rgb.g) * 0.9)}, ${Math.min(255, rgb.b + (255 - rgb.b) * 0.9)})`;
+
+  return {
+    display: 'inline-block',
+    padding: '1px 8px',
+    background: lightBg,
+    color: primaryHoverColor,
+    borderRadius: '10px',
+    fontSize: '11px',
+    fontWeight: 600,
+  };
 };
 
 const mentionClearButtonStyle: React.CSSProperties = {

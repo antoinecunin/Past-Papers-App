@@ -1,6 +1,8 @@
 import { ArrowLeft } from 'lucide-react';
+import { useInstance } from '../hooks/useInstance';
 
 export default function PrivacyPage() {
+  const { organizationName, contactEmail } = useInstance();
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -38,9 +40,9 @@ export default function PrivacyPage() {
               <h2 className="text-2xl font-semibold mb-4">2. Responsable du Traitement</h2>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <p>
-                  <strong>Plateforme d&apos;Annales Étudiantes</strong>
+                  <strong>{organizationName}</strong>
                 </p>
-                <p>Contact : privacy@annales.example.com</p>
+                <p>Contact : {contactEmail}</p>
                 <p className="text-sm text-secondary mt-2">
                   Pour toute question concernant vos données personnelles, vous pouvez nous contacter
                   à l&apos;adresse ci-dessus.
@@ -241,8 +243,8 @@ export default function PrivacyPage() {
 
               <p className="mt-4 text-sm text-secondary">
                 Pour exercer vos droits, contactez-nous à{' '}
-                <a href="mailto:privacy@annales.example.com" className="text-primary hover:underline">
-                  privacy@annales.example.com
+                <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
+                  {contactEmail}
                 </a>
               </p>
             </section>
@@ -352,10 +354,10 @@ export default function PrivacyPage() {
                 <p className="text-sm">
                   <strong>Email :</strong>{' '}
                   <a
-                    href="mailto:privacy@annales.example.com"
+                    href={`mailto:${contactEmail}`}
                     className="text-primary hover:underline"
                   >
-                    privacy@annales.example.com
+                    {contactEmail}
                   </a>
                 </p>
                 <p className="text-sm mt-2 text-secondary">
