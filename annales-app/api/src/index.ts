@@ -16,6 +16,10 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { instanceConfigService } from './services/instance-config.service.js';
 
 const app = express();
+
+// Trust proxy headers from Nginx reverse proxy (1 hop)
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(morgan(process.env.API_LOG_LEVEL || 'dev'));
 app.use(express.json({ limit: '10mb' }));
