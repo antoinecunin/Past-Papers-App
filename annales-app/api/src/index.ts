@@ -22,7 +22,11 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet());
-app.use(morgan(process.env.API_LOG_LEVEL || 'dev'));
+// Morgan logging with valid presets
+// Use 'dev' for development (colorful, detailed), 'combined' for production (Apache-style),
+// 'tiny' for minimal logs, 'common' for standard Apache format
+const morganFormat = process.env.API_LOG_LEVEL || 'dev';
+app.use(morgan(morganFormat));
 app.use(express.json({ limit: '10mb' }));
 
 // --- CORS strict, uniquement sur /api ---
