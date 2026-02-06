@@ -34,7 +34,7 @@ const UserSchema = new Schema<User>(
         validator: (email: string) => {
           return instanceConfigService.isEmailDomainAllowed(email);
         },
-        message: (props: { value: string }) => {
+        message: (_props: { value: string }) => {
           const config = instanceConfigService.getConfig();
           const domains = config.email.allowedDomains.join(', ');
           return `L'email doit se terminer par un des domaines autorisés: ${domains}`;

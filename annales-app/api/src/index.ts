@@ -14,6 +14,7 @@ import config from './routes/config.js';
 import { setupSwagger } from './swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { instanceConfigService } from './services/instance-config.service.js';
+import { AdminInitService } from './services/admin-init.service.js';
 
 const app = express();
 
@@ -81,7 +82,7 @@ async function connectMongoWithRetry() {
   }
 }
 
-connectMongoWithRetry().then(() => {
+connectMongoWithRetry().then(async () => {
   // Load and validate instance configuration
   try {
     instanceConfigService.loadConfig();
@@ -89,6 +90,9 @@ connectMongoWithRetry().then(() => {
     console.error('[api] Failed to load instance config:', error);
     process.exit(1);
   }
+
+  // Initialize first admin user if none exists
+  await AdminInitService.initializeFirstAdmin();
 
   const server = app.listen(port, host, () => {
     console.log(`[api] listening on http://${host}:${port}`);

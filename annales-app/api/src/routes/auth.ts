@@ -40,7 +40,7 @@ const registerSchema = z.object({
     .email('Email invalide')
     .refine(
       (val) => instanceConfigService.isEmailDomainAllowed(val),
-      (val) => {
+      (_val) => {
         const config = instanceConfigService.getConfig();
         const domains = config.email.allowedDomains.join(', ');
         return { message: `L'email doit se terminer par un des domaines autorisés: ${domains}` };
@@ -89,7 +89,7 @@ const changeEmailSchema = z.object({
     .email('Email invalide')
     .refine(
       (val) => instanceConfigService.isEmailDomainAllowed(val),
-      (val) => {
+      (_val) => {
         const config = instanceConfigService.getConfig();
         const domains = config.email.allowedDomains.join(', ');
         return { message: `L'email doit se terminer par un des domaines autorisés: ${domains}` };

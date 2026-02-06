@@ -71,6 +71,10 @@ services:
       - SMTP_PASS=${SMTP_PASS}
       - EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
       - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS}
+      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD}
+      - INITIAL_ADMIN_FIRSTNAME=${INITIAL_ADMIN_FIRSTNAME}
+      - INITIAL_ADMIN_LASTNAME=${INITIAL_ADMIN_LASTNAME}
     volumes:
       - ./instance.config.json:/config/instance.config.json:ro
       - ./instance.config.example.json:/config/instance.config.example.json:ro
