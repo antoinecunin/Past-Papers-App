@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 import { router as answersRouter } from '../../routes/answers.js';
 import { Exam as ExamModel } from '../../models/Exam.js';
 import { AnswerModel } from '../../models/Answer.js';
-import { createAuthenticatedUser } from '../helpers/auth.helper.js';
+import { createAuthenticatedUser, testEmail } from '../helpers/auth.helper.js';
 import { createExamData } from '../fixtures/exam.fixture.js';
 import { createAnswerData } from '../fixtures/answer.fixture.js';
 import { errorHandler } from '../../middleware/errorHandler.js';
@@ -471,7 +471,7 @@ describe('POST /api/answers', () => {
 
     it('should create a reply with mentionedUserId', async () => {
       const { user, token } = await createAuthenticatedUser();
-      const { user: mentionedUser } = await createAuthenticatedUser({ email: 'mentioned@etu.unistra.fr' });
+      const { user: mentionedUser } = await createAuthenticatedUser({ email: testEmail('mentioned') });
       const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
 
       const root = await AnswerModel.create(
@@ -499,7 +499,7 @@ describe('POST /api/answers', () => {
 
     it('should reject mentionedUserId without parentId (400)', async () => {
       const { user, token } = await createAuthenticatedUser();
-      const { user: mentionedUser } = await createAuthenticatedUser({ email: 'mentioned2@etu.unistra.fr' });
+      const { user: mentionedUser } = await createAuthenticatedUser({ email: testEmail('mentioned2') });
       const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
 
       const response = await request(app)
@@ -606,8 +606,8 @@ describe('PUT /api/answers/:id', () => {
   });
 
   it('should forbid non-owner from updating answer', async () => {
-    const { user } = await createAuthenticatedUser({ email: 'owner@etu.unistra.fr' });
-    const { token: otherToken } = await createAuthenticatedUser({ email: 'other@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('owner') });
+    const { token: otherToken } = await createAuthenticatedUser({ email: testEmail('other') });
 
     const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
     const answer = await AnswerModel.create(
@@ -657,8 +657,8 @@ describe('DELETE /api/answers/:id', () => {
   });
 
   it('should forbid non-owner non-admin from deleting answer', async () => {
-    const { user } = await createAuthenticatedUser({ email: 'owner@etu.unistra.fr' });
-    const { token: otherToken } = await createAuthenticatedUser({ email: 'other@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('owner') });
+    const { token: otherToken } = await createAuthenticatedUser({ email: testEmail('other') });
 
     const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
     const answer = await AnswerModel.create(
@@ -678,7 +678,7 @@ describe('DELETE /api/answers/:id', () => {
   it('should allow admin to delete any answer', async () => {
     const { user } = await createAuthenticatedUser();
     const { token: adminToken } = await createAuthenticatedUser({
-      email: 'admin@etu.unistra.fr',
+      email: testEmail('admin'),
       role: 'admin',
     });
 
@@ -983,7 +983,7 @@ describe('GET /api/answers/:id/replies', () => {
   it('should return mentionedAuthor for reply with mention', async () => {
     const { user, token } = await createAuthenticatedUser();
     const { user: mentionedUser } = await createAuthenticatedUser({
-      email: 'mentioned-reply@etu.unistra.fr',
+      email: testEmail('mentioned-reply'),
       firstName: 'Alice',
       lastName: 'Dupont',
     });

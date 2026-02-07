@@ -8,6 +8,7 @@ import { ReportModel, ReportType, ReportReason } from '../../models/Report.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { errorHandler } from '../../middleware/errorHandler.js';
+import { testEmail, getAllowedDomain } from '../helpers/auth.helper.js';
 
 /**
  * Tests pour les routes de profil utilisateur
@@ -37,7 +38,7 @@ describe('GET /api/auth/profile', () => {
   beforeEach(async () => {
     const hashedPassword = await bcrypt.hash('password123', 10);
     const user = await UserModel.create({
-      email: 'profile@etu.unistra.fr',
+      email: testEmail('profile'),
       password: hashedPassword,
       firstName: 'Profile',
       lastName: 'User',
@@ -59,7 +60,7 @@ describe('GET /api/auth/profile', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('id');
-    expect(response.body).toHaveProperty('email', 'profile@etu.unistra.fr');
+    expect(response.body).toHaveProperty('email', testEmail('profile'));
     expect(response.body).toHaveProperty('firstName', 'Profile');
     expect(response.body).toHaveProperty('lastName', 'User');
     expect(response.body).toHaveProperty('role', 'user');
@@ -97,7 +98,7 @@ describe('PATCH /api/auth/profile', () => {
   beforeEach(async () => {
     const hashedPassword = await bcrypt.hash('password123', 10);
     const user = await UserModel.create({
-      email: 'update@etu.unistra.fr',
+      email: testEmail('update'),
       password: hashedPassword,
       firstName: 'Before',
       lastName: 'Update',
@@ -210,7 +211,7 @@ describe('POST /api/auth/change-password', () => {
   beforeEach(async () => {
     const hashedPassword = await bcrypt.hash('currentPassword123', 10);
     const user = await UserModel.create({
-      email: 'changepwd@etu.unistra.fr',
+      email: testEmail('changepwd'),
       password: hashedPassword,
       firstName: 'Change',
       lastName: 'Password',
@@ -239,7 +240,7 @@ describe('POST /api/auth/change-password', () => {
 
     // Vérifier qu'on peut se connecter avec le nouveau mot de passe
     const loginResponse = await request(app).post('/api/auth/login').send({
-      email: 'changepwd@etu.unistra.fr',
+      email: testEmail('changepwd'),
       password: 'newPassword456',
     });
 
@@ -331,7 +332,7 @@ describe('DELETE /api/auth/account', () => {
   beforeEach(async () => {
     const hashedPassword = await bcrypt.hash('deleteMe123', 10);
     const user = await UserModel.create({
-      email: 'todelete@etu.unistra.fr',
+      email: testEmail('todelete'),
       password: hashedPassword,
       firstName: 'To',
       lastName: 'Delete',
@@ -400,7 +401,7 @@ describe('DELETE /api/auth/account', () => {
   it('should delete user reports', async () => {
     // Créer un autre utilisateur pour avoir une cible de signalement
     const otherUser = await UserModel.create({
-      email: 'other@etu.unistra.fr',
+      email: testEmail('other'),
       password: 'hashedpwd',
       firstName: 'Other',
       lastName: 'User',
@@ -481,7 +482,7 @@ describe('GET /api/auth/data-export', () => {
   beforeEach(async () => {
     const hashedPassword = await bcrypt.hash('export123', 10);
     const user = await UserModel.create({
-      email: 'export@etu.unistra.fr',
+      email: testEmail('export'),
       password: hashedPassword,
       firstName: 'Export',
       lastName: 'User',
@@ -533,7 +534,7 @@ describe('GET /api/auth/data-export', () => {
 
     // Vérifier le profil
     expect(response.body.profile).toMatchObject({
-      email: 'export@etu.unistra.fr',
+      email: testEmail('export'),
       firstName: 'Export',
       lastName: 'User',
       role: 'user',
@@ -601,7 +602,7 @@ describe('PUT /api/auth/email', () => {
   beforeEach(async () => {
     const hashedPassword = await bcrypt.hash('changemail123', 10);
     const user = await UserModel.create({
-      email: 'old@etu.unistra.fr',
+      email: testEmail('old'),
       password: hashedPassword,
       firstName: 'Change',
       lastName: 'Email',
@@ -621,7 +622,7 @@ describe('PUT /api/auth/email', () => {
       .put('/api/auth/email')
       .set('Authorization', `Bearer ${testUser.token}`)
       .send({
-        newEmail: 'new@etu.unistra.fr',
+        newEmail: testEmail('new'),
         password: 'changemail123',
       });
 
@@ -630,7 +631,7 @@ describe('PUT /api/auth/email', () => {
 
     // Vérifier que l'email a été changé
     const user = await UserModel.findById(testUser._id);
-    expect(user?.email).toBe('new@etu.unistra.fr');
+    expect(user?.email).toBe(testEmail('new'));
     expect(user?.isVerified).toBe(false);
     expect(user?.verificationToken).toBeTruthy();
     expect(user?.verificationExpires).toBeTruthy();
@@ -641,14 +642,14 @@ describe('PUT /api/auth/email', () => {
       .put('/api/auth/email')
       .set('Authorization', `Bearer ${testUser.token}`)
       .send({
-        newEmail: 'NEW@etu.unistra.fr',
+        newEmail: testEmail('NEW'),
         password: 'changemail123',
       });
 
     expect(response.status).toBe(200);
 
     const user = await UserModel.findById(testUser._id);
-    expect(user?.email).toBe('new@etu.unistra.fr');
+    expect(user?.email).toBe(testEmail('new'));
   });
 
   it('should reject invalid email format', async () => {
@@ -664,7 +665,7 @@ describe('PUT /api/auth/email', () => {
     expect(response.body.error).toContain('invalide');
   });
 
-  it('should reject non-unistra.fr email', async () => {
+  it('should reject email from unauthorized domain', async () => {
     const response = await request(app)
       .put('/api/auth/email')
       .set('Authorization', `Bearer ${testUser.token}`)
@@ -674,7 +675,7 @@ describe('PUT /api/auth/email', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('@etu.unistra.fr');
+    expect(response.body.error).toContain(getAllowedDomain());
   });
 
   it('should reject wrong password', async () => {
@@ -682,7 +683,7 @@ describe('PUT /api/auth/email', () => {
       .put('/api/auth/email')
       .set('Authorization', `Bearer ${testUser.token}`)
       .send({
-        newEmail: 'new@etu.unistra.fr',
+        newEmail: testEmail('new'),
         password: 'wrongpassword',
       });
 
@@ -691,13 +692,13 @@ describe('PUT /api/auth/email', () => {
 
     // Vérifier que l'email n'a pas changé
     const user = await UserModel.findById(testUser._id);
-    expect(user?.email).toBe('old@etu.unistra.fr');
+    expect(user?.email).toBe(testEmail('old'));
   });
 
   it('should reject email already in use', async () => {
     // Créer un autre utilisateur avec l'email cible
     await UserModel.create({
-      email: 'existing@etu.unistra.fr',
+      email: testEmail('existing'),
       password: 'hashedpwd',
       firstName: 'Existing',
       lastName: 'User',
@@ -708,7 +709,7 @@ describe('PUT /api/auth/email', () => {
       .put('/api/auth/email')
       .set('Authorization', `Bearer ${testUser.token}`)
       .send({
-        newEmail: 'existing@etu.unistra.fr',
+        newEmail: testEmail('existing'),
         password: 'changemail123',
       });
 
@@ -727,7 +728,7 @@ describe('PUT /api/auth/email', () => {
     const response2 = await request(app)
       .put('/api/auth/email')
       .set('Authorization', `Bearer ${testUser.token}`)
-      .send({ newEmail: 'new@etu.unistra.fr' });
+      .send({ newEmail: testEmail('new') });
 
     expect(response2.status).toBe(400);
   });
@@ -736,7 +737,7 @@ describe('PUT /api/auth/email', () => {
     const response = await request(app)
       .put('/api/auth/email')
       .send({
-        newEmail: 'new@etu.unistra.fr',
+        newEmail: testEmail('new'),
         password: 'changemail123',
       });
 

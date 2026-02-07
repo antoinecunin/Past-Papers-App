@@ -19,6 +19,7 @@ export default {
       },
     ],
   },
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',

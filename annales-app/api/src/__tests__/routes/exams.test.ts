@@ -3,7 +3,7 @@ import express from 'express';
 import { router as examsRouter } from '../../routes/exams.js';
 import { Exam as ExamModel } from '../../models/Exam.js';
 import { AnswerModel } from '../../models/Answer.js';
-import { createAuthenticatedUser } from '../helpers/auth.helper.js';
+import { createAuthenticatedUser, testEmail } from '../helpers/auth.helper.js';
 import { createExamData } from '../fixtures/exam.fixture.js';
 import { Types } from 'mongoose';
 import { errorHandler } from '../../middleware/errorHandler.js';
@@ -165,7 +165,7 @@ describe('DELETE /api/exams/:id', () => {
   it('should allow admin to delete any exam', async () => {
     const { user } = await createAuthenticatedUser();
     const { token: adminToken } = await createAuthenticatedUser({
-      email: 'admin@etu.unistra.fr',
+      email: testEmail('admin'),
       role: 'admin',
     });
 
@@ -182,8 +182,8 @@ describe('DELETE /api/exams/:id', () => {
   });
 
   it('should forbid non-owner non-admin from deleting exam', async () => {
-    const { user } = await createAuthenticatedUser({ email: 'owner@etu.unistra.fr' });
-    const { token: otherToken } = await createAuthenticatedUser({ email: 'other@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('owner') });
+    const { token: otherToken } = await createAuthenticatedUser({ email: testEmail('other') });
 
     const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
 

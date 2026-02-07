@@ -4,6 +4,7 @@ import { router as authRouter } from '../../routes/auth.js';
 import { UserModel } from '../../models/User.js';
 import bcrypt from 'bcryptjs';
 import { errorHandler } from '../../middleware/errorHandler.js';
+import { testEmail, getAllowedDomain } from '../helpers/auth.helper.js';
 
 /**
  * Tests pour /api/auth
@@ -33,7 +34,7 @@ describe('POST /api/auth/register', () => {
       expect(response.body).toHaveProperty('error');
     });
 
-    it('should reject non-unistra.fr email', async () => {
+    it('should reject email from unauthorized domain', async () => {
       const response = await request(app).post('/api/auth/register').send({
         email: 'test@gmail.com',
         password: 'password123',
@@ -42,12 +43,12 @@ describe('POST /api/auth/register', () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toContain('@etu.unistra.fr');
+      expect(response.body.error).toContain(getAllowedDomain());
     });
 
     it('should reject short password', async () => {
       const response = await request(app).post('/api/auth/register').send({
-        email: 'test@etu.unistra.fr',
+        email: testEmail('test'),
         password: '123',
         firstName: 'John',
         lastName: 'Doe',
@@ -59,7 +60,7 @@ describe('POST /api/auth/register', () => {
 
     it('should reject missing fields', async () => {
       const response = await request(app).post('/api/auth/register').send({
-        email: 'test@etu.unistra.fr',
+        email: testEmail('test'),
         password: 'password123',
       });
 
@@ -70,7 +71,7 @@ describe('POST /api/auth/register', () => {
   describe('Inscription réussie', () => {
     it('should create user with valid data', async () => {
       const userData = {
-        email: 'newuser@etu.unistra.fr',
+        email: testEmail('newuser'),
         password: 'password123',
         firstName: 'John',
         lastName: 'Doe',
@@ -92,20 +93,20 @@ describe('POST /api/auth/register', () => {
     it('should hash password', async () => {
       const password = 'password123';
       await request(app).post('/api/auth/register').send({
-        email: 'hashtest@etu.unistra.fr',
+        email: testEmail('hashtest'),
         password,
         firstName: 'Hash',
         lastName: 'Test',
       });
 
-      const user = await UserModel.findOne({ email: 'hashtest@etu.unistra.fr' });
+      const user = await UserModel.findOne({ email: testEmail('hashtest') });
       expect(user?.password).not.toBe(password);
       expect(user?.password.length).toBeGreaterThan(20);
     });
 
     it('should reject duplicate email', async () => {
       const userData = {
-        email: 'duplicate@etu.unistra.fr',
+        email: testEmail('duplicate'),
         password: 'password123',
         firstName: 'John',
         lastName: 'Doe',
@@ -134,7 +135,7 @@ describe('POST /api/auth/login', () => {
     // Créer un utilisateur vérifié pour les tests
     const hashedPassword = await bcrypt.hash('password123', 10);
     await UserModel.create({
-      email: 'verified@etu.unistra.fr',
+      email: testEmail('verified'),
       password: hashedPassword,
       firstName: 'Verified',
       lastName: 'User',
@@ -146,20 +147,20 @@ describe('POST /api/auth/login', () => {
 
   it('should login with valid credentials', async () => {
     const response = await request(app).post('/api/auth/login').send({
-      email: 'verified@etu.unistra.fr',
+      email: testEmail('verified'),
       password: 'password123',
     });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('token');
     expect(response.body).toHaveProperty('user');
-    expect(response.body.user.email).toBe('verified@etu.unistra.fr');
+    expect(response.body.user.email).toBe(testEmail('verified'));
     expect(response.body.user).not.toHaveProperty('password');
   });
 
   it('should reject invalid password', async () => {
     const response = await request(app).post('/api/auth/login').send({
-      email: 'verified@etu.unistra.fr',
+      email: testEmail('verified'),
       password: 'wrongpassword',
     });
 
@@ -169,7 +170,7 @@ describe('POST /api/auth/login', () => {
 
   it('should reject non-existent user', async () => {
     const response = await request(app).post('/api/auth/login').send({
-      email: 'nonexistent@etu.unistra.fr',
+      email: testEmail('nonexistent'),
       password: 'password123',
     });
 
@@ -179,7 +180,7 @@ describe('POST /api/auth/login', () => {
   it('should reject unverified user', async () => {
     const hashedPassword = await bcrypt.hash('password123', 10);
     await UserModel.create({
-      email: 'unverified@etu.unistra.fr',
+      email: testEmail('unverified'),
       password: hashedPassword,
       firstName: 'Unverified',
       lastName: 'User',
@@ -189,7 +190,7 @@ describe('POST /api/auth/login', () => {
     });
 
     const response = await request(app).post('/api/auth/login').send({
-      email: 'unverified@etu.unistra.fr',
+      email: testEmail('unverified'),
       password: 'password123',
     });
 
@@ -199,7 +200,7 @@ describe('POST /api/auth/login', () => {
 
   it('should return user data without sensitive fields', async () => {
     const response = await request(app).post('/api/auth/login').send({
-      email: 'verified@etu.unistra.fr',
+      email: testEmail('verified'),
       password: 'password123',
     });
 
@@ -225,7 +226,7 @@ describe('POST /api/auth/verify-email', () => {
     const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24h
 
     await UserModel.create({
-      email: 'toverify@etu.unistra.fr',
+      email: testEmail('toverify'),
       password: hashedPassword,
       firstName: 'To',
       lastName: 'Verify',
@@ -240,7 +241,7 @@ describe('POST /api/auth/verify-email', () => {
     expect(response.status).toBe(200);
     expect(response.body.message).toContain('vérifié');
 
-    const user = await UserModel.findOne({ email: 'toverify@etu.unistra.fr' });
+    const user = await UserModel.findOne({ email: testEmail('toverify') });
     expect(user?.isVerified).toBe(true);
     expect(user?.verificationToken).toBeUndefined();
   });
@@ -259,7 +260,7 @@ describe('POST /api/auth/verify-email', () => {
     const hashedPassword = await bcrypt.hash('password123', 10);
 
     await UserModel.create({
-      email: 'alreadyverified@etu.unistra.fr',
+      email: testEmail('alreadyverified'),
       password: hashedPassword,
       firstName: 'Already',
       lastName: 'Verified',
@@ -301,7 +302,7 @@ describe('POST /api/auth/forgot-password', () => {
   it('should send reset email for existing user', async () => {
     const hashedPassword = await bcrypt.hash('password123', 10);
     await UserModel.create({
-      email: 'resetme@etu.unistra.fr',
+      email: testEmail('resetme'),
       password: hashedPassword,
       firstName: 'Reset',
       lastName: 'Me',
@@ -310,21 +311,21 @@ describe('POST /api/auth/forgot-password', () => {
     });
 
     const response = await request(app).post('/api/auth/forgot-password').send({
-      email: 'resetme@etu.unistra.fr',
+      email: testEmail('resetme'),
     });
 
     expect(response.status).toBe(200);
     expect(response.body.message).toBeTruthy();
 
     // Vérifier que le token a été enregistré
-    const user = await UserModel.findOne({ email: 'resetme@etu.unistra.fr' });
+    const user = await UserModel.findOne({ email: testEmail('resetme') });
     expect(user?.resetPasswordToken).toBeTruthy();
     expect(user?.resetPasswordExpires).toBeTruthy();
   });
 
   it('should not reveal if email does not exist', async () => {
     const response = await request(app).post('/api/auth/forgot-password').send({
-      email: 'nonexistent@etu.unistra.fr',
+      email: testEmail('nonexistent'),
     });
 
     // Même message pour ne pas révéler si l'email existe
@@ -366,7 +367,7 @@ describe('POST /api/auth/reset-password', () => {
     const expiredDate = new Date(Date.now() - 60 * 60 * 1000); // -1h
 
     await UserModel.create({
-      email: 'expired@etu.unistra.fr',
+      email: testEmail('expired-reset'),
       password: hashedPassword,
       firstName: 'Expired',
       lastName: 'Token',
@@ -390,7 +391,7 @@ describe('POST /api/auth/reset-password', () => {
     const futureDate = new Date(Date.now() + 60 * 60 * 1000); // +1h
 
     await UserModel.create({
-      email: 'resetvalid@etu.unistra.fr',
+      email: testEmail('resetvalid'),
       password: hashedPassword,
       firstName: 'Reset',
       lastName: 'Valid',
@@ -409,14 +410,14 @@ describe('POST /api/auth/reset-password', () => {
     expect(response.body.message).toContain('réinitialisé');
 
     // Vérifier que le mot de passe a été changé et les tokens supprimés
-    const user = await UserModel.findOne({ email: 'resetvalid@etu.unistra.fr' });
+    const user = await UserModel.findOne({ email: testEmail('resetvalid') });
     expect(user?.password).not.toBe(hashedPassword);
     expect(user?.resetPasswordToken).toBeUndefined();
     expect(user?.resetPasswordExpires).toBeUndefined();
 
     // Vérifier qu'on peut se connecter avec le nouveau mot de passe
     const loginResponse = await request(app).post('/api/auth/login').send({
-      email: 'resetvalid@etu.unistra.fr',
+      email: testEmail('resetvalid'),
       password: 'newPassword123',
     });
 

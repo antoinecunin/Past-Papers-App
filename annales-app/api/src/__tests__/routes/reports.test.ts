@@ -4,7 +4,7 @@ import { router as reportsRouter } from '../../routes/reports.js';
 import { ReportModel } from '../../models/Report.js';
 import { Exam } from '../../models/Exam.js';
 import { AnswerModel } from '../../models/Answer.js';
-import { createAuthenticatedUser } from '../helpers/auth.helper.js';
+import { createAuthenticatedUser, testEmail } from '../helpers/auth.helper.js';
 import { Types } from 'mongoose';
 import { errorHandler } from '../../middleware/errorHandler.js';
 
@@ -325,11 +325,11 @@ describe('GET /api/reports', () => {
 
   it('should return reports list for admin', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
-      email: 'admin@etu.unistra.fr',
+      email: testEmail('admin'),
       role: 'admin',
     });
 
-    const { user } = await createAuthenticatedUser({ email: 'user@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('user') });
 
     // Créer un examen et des signalements
     const exam = await Exam.create({
@@ -389,11 +389,11 @@ describe('GET /api/reports', () => {
 
   it('should filter reports by status', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
-      email: 'admin2@etu.unistra.fr',
+      email: testEmail('admin2'),
       role: 'admin',
     });
 
-    const { user } = await createAuthenticatedUser({ email: 'user2@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('user2') });
 
     const exam = await Exam.create({
       title: 'Test',
@@ -425,7 +425,7 @@ describe('GET /api/reports', () => {
 
   it('should paginate results', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
-      email: 'admin3@etu.unistra.fr',
+      email: testEmail('admin3'),
       role: 'admin',
     });
 
@@ -471,11 +471,11 @@ describe('PUT /api/reports/:id/review', () => {
 
   it('should return 400 for invalid action', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
-      email: 'admin4@etu.unistra.fr',
+      email: testEmail('admin4'),
       role: 'admin',
     });
 
-    const { user } = await createAuthenticatedUser({ email: 'user4@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('user4') });
 
     const exam = await Exam.create({
       title: 'Test',
@@ -504,11 +504,11 @@ describe('PUT /api/reports/:id/review', () => {
 
   it('should approve and delete content', async () => {
     const { token: adminToken, user: _admin } = await createAuthenticatedUser({
-      email: 'admin5@etu.unistra.fr',
+      email: testEmail('admin5'),
       role: 'admin',
     });
 
-    const { user } = await createAuthenticatedUser({ email: 'user5@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('user5') });
 
     const exam = await Exam.create({
       title: 'Test',
@@ -546,11 +546,11 @@ describe('PUT /api/reports/:id/review', () => {
 
   it('should reject report', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
-      email: 'admin6@etu.unistra.fr',
+      email: testEmail('admin6'),
       role: 'admin',
     });
 
-    const { user } = await createAuthenticatedUser({ email: 'user6@etu.unistra.fr' });
+    const { user } = await createAuthenticatedUser({ email: testEmail('user6') });
 
     const exam = await Exam.create({
       title: 'Test',
