@@ -1,117 +1,225 @@
-# Plateforme d'Annales Étudiantes
+# Past Papers App
 
-Une plateforme containerisée pour le partage et l'annotation d'annales d'examens, accessible uniquement depuis certaines IP autorisées.
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/Node.js-20-green.svg)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg)](https://docs.docker.com/compose/)
+
+A self-hosted platform for sharing and annotating past exam papers (annales). Built for universities and student organizations, easy to deploy as your own instance.
+
+## Table of Contents
+
+- [Features](#features)
+  - [Quick Start](#quick-start)
+    - [Prerequisites](#prerequisites)
+    - [1. Clone and configure](#1-clone-and-configure)
+    - [2. Start](#2-start)
+  - [Development](#development)
+    - [Tests](#tests)
+    - [Linting](#linting)
+  - [Architecture](#architecture)
+    - [Project Structure](#project-structure)
+  - [Production Deployment](#production-deployment)
+    - [HTTPS](#https)
+    - [Security Checklist](#security-checklist)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+## Features
+
+- **PDF upload & viewer** — Upload exam papers with metadata (module, year), view them in-browser
+- **Annotations** — Add comments on any page at any position, with support for text, images, and LaTeX
+- **Threaded discussions** — Reply to comments with @mentions
+- **Content moderation** — Report system with admin moderation panel
+- **Multi-instance ready** — Each deployment configures its own branding, email domains, legal info, etc.
+
+## Quick Start
+
+### Prerequisites
+
+- Docker and Docker Compose
+- An SMTP service for email verification (e.g., Brevo, Mailgun)
+
+### 1. Clone and configure
+
+```bash
+git clone https://github.com/antoinecunin/Past-Papers-App
+cd Past-Papers-App
+
+# Environment
+cp .env.example .env
+
+# Instance configuration
+cp instance.config.example.json instance.config.json
+```
+
+Edit `.env` — required variables:
+
+| Variable | Description |
+|----------|-------------|
+| `JWT_SECRET` | A long, random secret key |
+| `FRONTEND_URL` | Public URL of your instance |
+| `CORS_ORIGIN` | Allowed origins (comma-separated) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | SMTP credentials |
+| `EMAIL_FROM_ADDRESS` | Sender email address |
+| `S3_ACCESS_KEY`, `S3_SECRET_KEY` | MinIO access keys (change defaults in production) |
+| `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | First admin account (auto-created on startup) |
+
+Edit `instance.config.json` (see `instance.config.schema.json` for full schema):
+
+```json
+{
+  "instance": {
+    "name": "Past Papers - Example University",
+    "organizationName": "Example University",
+    "contactEmail": "contact@example.com"
+  },
+  "email": {
+    "allowedDomains": ["@students.example.com"]
+  },
+  "branding": {
+    "primaryColor": "#2563eb"
+  }
+}
+```
+
+### 2. Start
+
+```bash
+./start.sh prod
+```
+
+or to start with a clean database:
+
+```bash
+./start.sh prod --clean
+```
+
+The application will be available at `http://localhost:8080`.
+
+## Development
+
+```bash
+# Start with hot reload and test data
+./start.sh dev --clean --seed
+```
+
+| URL | Description |
+|-----|-------------|
+| `http://localhost:8080` | App (via reverse proxy) |
+| `http://localhost:5173` | Vite dev server (direct) |
+| `http://localhost:3000` | API (direct) |
+| `http://localhost:8080/api/docs` | Swagger API docs |
+| `http://localhost:9001` | MinIO console |
+
+Default test accounts (customize in `dev-seed.json`):
+
+| Email | Password | Role |
+|-------|----------|------|
+| `test@etu.unistra.fr` | `azerty24` | user |
+| `admin@etu.unistra.fr` | `admin123` | admin |
+
+### Tests
+
+```bash
+cd api
+npm test              # 156 tests (Jest + mongodb-memory-server)
+npm run test:coverage # Coverage report
+```
+
+### Linting
+
+```bash
+cd api && npm run lint && npm run format:check
+cd web && npm run lint && npm run format:check
+```
 
 ## Architecture
 
-- **reverse-proxy**: Nginx (filtrage IP + redirections)
-- **web**: React (build statique servi par Nginx)
-- **api**: Node.js/Express (TypeScript), Multer (upload), S3 SDK v3 pour MinIO, Swagger UI
-- **minio**: stockage S3-compatible (privé, réseau interne uniquement)
-- **mongo**: métadonnées (exams, commentaires, etc.)
-- **minio-setup**: job one-shot pour créer le bucket
-
-## Fonctionnalités
-
-- Upload de PDFs d'annales avec métadonnées
-- Ajout de commentaires sur les PDFs par position
-- Commentaires multi-formats (texte, image, LaTeX)
-- Export de PDFs avec réponses intégrées
-- API REST documentée avec Swagger
-- Accès restreint par IP
-
-## Installation et Démarrage
-
-### Prérequis
-- Docker & Docker Compose
-- Node 20+ (optionnel, pour dev local)
-
-### Configuration
-1. Copiez et éditez le fichier de configuration :
-```bash
-cp .env.example .env
-# Éditez .env avec vos IP autorisées et autres paramètres
+```
+                    ┌─────────┐
+                    │  Nginx  │  ← Rate limiting, IP filtering
+                    │  :80    │
+                    └────┬────┘
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+        ┌─────┴─────┐        ┌─────┴─────┐
+        │    Web     │        │    API     │
+        │  (React)   │        │ (Express)  │
+        └────────────┘        └─────┬─────┘
+                                    │
+                           ┌────────┴────────┐
+                           │                 │
+                     ┌─────┴─────┐     ┌─────┴─────┐
+                     │  MongoDB  │     │   MinIO    │
+                     │ (metadata)│     │  (PDFs)    │
+                     └───────────┘     └───────────┘
 ```
 
-2. Construisez et démarrez les services :
-```bash
-docker compose build
-docker compose up -d
-```
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, Zustand |
+| Backend | Node.js 20, Express, TypeScript, Mongoose |
+| Database | MongoDB 7 |
+| Storage | MinIO (S3-compatible, internal network only) |
+| Reverse Proxy | Nginx |
+| Infrastructure | Docker Compose |
 
-3. Accédez à l'application :
-- Interface web : http://localhost:8080
-- Documentation API : http://localhost:8080/api/docs
-- Health check : http://localhost:8080/api/health
-
-### Développement Local
-
-Pour le développement du frontend :
-```bash
-cd web
-npm install
-npm run dev
-```
-
-Pour le développement du backend :
-```bash
-cd api
-npm install
-npm run dev
-```
-
-## Structure du Projet
+### Project Structure
 
 ```
-annales-app/
-├── docker/                 # Dockerfiles et configurations
-│   ├── nginx/
-│   ├── api/
-│   ├── web/
-│   └── minio/
-├── api/                     # Backend Node.js
-│   ├── src/
-│   │   ├── routes/         # Routes API
-│   │   ├── models/         # Modèles MongoDB
-│   │   └── services/       # Services (S3, PDF)
-│   └── package.json
-├── web/                     # Frontend React
-│   ├── src/
-│   │   ├── pages/          # Pages React
-│   │   └── components/     # Composants réutilisables
-│   └── package.json
-├── docker-compose.yml
-└── .env.example
+├── api/                          # Backend (Node.js / Express / TypeScript)
+│   └── src/
+│       ├── routes/               # REST endpoints
+│       ├── models/               # Mongoose models (User, Exam, Answer, Report)
+│       ├── services/             # Business logic (S3, email, admin-init)
+│       ├── middleware/           # Auth & role-based access control
+│       └── __tests__/            # Jest test suites
+├── web/                          # Frontend (React / Vite / Tailwind)
+│   └── src/
+│       ├── pages/                # Page components
+│       ├── components/           # Reusable UI components
+│       ├── stores/               # Zustand state management
+│       └── hooks/                # Custom hooks
+├── docker/                       # Dockerfiles and Nginx configs
+├── start.sh                      # Startup script (dev/prod, --clean, --seed)
+├── docker-compose.yml            # Production
+├── docker-compose.dev.yml        # Development (hot reload)
+├── instance.config.example.json  # Instance configuration template
+├── instance.config.schema.json   # JSON Schema for validation
+├── .env.example                  # Environment variables template
+└── dev-seed.json                 # Test data (users, exams, reports)
 ```
 
-## API Endpoints
+## Production Deployment
 
-- `GET /api/health` - Health check
-- `GET /api/docs` - Documentation Swagger (liste complète des endpoints)
-- `/api/auth/*` - Authentification (register, login, verify-email, forgot-password, reset-password)
-- `/api/exams/*` - Gestion des examens (CRUD)
-- `/api/files/*` - Upload et téléchargement de PDFs
-- `/api/answers/*` - Annotations sur les examens
-- `/api/reports/*` - Signalements et modération (admin)
+### HTTPS
 
-## Sécurité
+The application serves HTTP internally. Terminate TLS in front of the containers.
 
-- Authentification JWT avec vérification email
-- Filtrage IP au niveau Nginx
-- MinIO non exposé publiquement
-- CORS configuré
-- Helmet.js pour les en-têtes de sécurité
-- Limitation de taille des uploads (50MB)
-- Hachage des mots de passe (bcrypt)
+**With [Caddy](https://caddyserver.com/)** (automatic HTTPS):
+```
+example.com {
+    reverse_proxy localhost:8080
+}
+```
 
-## Configuration IP
+### Security Checklist
 
-Éditez la variable `ALLOWED_CIDR` dans `.env` et ajustez le fichier `docker/nginx/nginx.conf` pour vos plages IP autorisées.
+- [ ] Change `JWT_SECRET` to a strong random value
+- [ ] Configure SMTP credentials
+- [ ] Set `FRONTEND_URL` and `CORS_ORIGIN` to your domain
+- [ ] Set `INITIAL_ADMIN_PASSWORD` to a strong password
+- [ ] Set up HTTPS (see above)
+- [ ] Change default MinIO access keys (`S3_ACCESS_KEY`, `S3_SECRET_KEY`)
 
-## Fonctionnalités Implémentées
+## Contributing
 
-- Authentification JWT avec vérification email et reset de mot de passe
-- Rôles utilisateurs (user/admin) avec contrôle d'accès
-- Système de signalement et modération (admin)
-- Tests automatisés (Jest + mongodb-memory-server)
-- Filtrage des examens par année et module
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Make sure tests pass and code is formatted
+4. Open a Pull Request
+
+## License
+
+This project is free software, licensed under the [GNU Affero General Public License v3.0](LICENSE).
