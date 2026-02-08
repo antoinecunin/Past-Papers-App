@@ -8,101 +8,101 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 
 const router = Router();
 
-// Rate limiting pour les routes sensibles
+// Rate limiting for sensitive routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.NODE_ENV === 'test' ? 1000 : process.env.NODE_ENV === 'development' ? 100 : 5,
-  message: { error: 'Trop de tentatives, réessayez dans 15 minutes' },
+  message: { error: 'Too many attempts, please try again in 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 heure
-  max: process.env.NODE_ENV === 'test' ? 100 : 3, // Permissif en test
-  message: { error: "Limite d'inscriptions atteinte, réessayez dans 1 heure" },
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: process.env.NODE_ENV === 'test' ? 100 : 3,
+  message: { error: 'Registration limit reached, please try again in 1 hour' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Schémas de validation Zod
+// Zod validation schemas
 const passwordSchema = z
   .string()
-  .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+  .min(8, 'Password must contain at least 8 characters')
   .regex(
     /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-    'Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre'
+    'Password must contain at least 8 characters, one letter and one number'
   );
 
 const registerSchema = z.object({
   email: z
     .string()
-    .email('Email invalide')
+    .email('Invalid email')
     .refine(
       (val) => instanceConfigService.isEmailDomainAllowed(val),
       (_val) => {
         const config = instanceConfigService.getConfig();
         const domains = config.email.allowedDomains.join(', ');
-        return { message: `L'email doit se terminer par un des domaines autorisés: ${domains}` };
+        return { message: `Email must end with one of the allowed domains: ${domains}` };
       }
     ),
   password: passwordSchema,
-  firstName: z.string().trim().min(1, 'Prénom requis').max(50, 'Prénom trop long'),
-  lastName: z.string().trim().min(1, 'Nom requis').max(50, 'Nom trop long'),
+  firstName: z.string().trim().min(1, 'First name is required').max(50, 'First name is too long'),
+  lastName: z.string().trim().min(1, 'Last name is required').max(50, 'Last name is too long'),
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(1, 'Mot de passe requis'),
+  email: z.string().email('Invalid email'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Email invalide'),
+  email: z.string().email('Invalid email'),
 });
 
 const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Token requis'),
+  token: z.string().min(1, 'Token is required'),
   password: passwordSchema,
 });
 
 const updateProfileSchema = z
   .object({
-    firstName: z.string().trim().min(1, 'Prénom requis').max(50, 'Prénom trop long').optional(),
-    lastName: z.string().trim().min(1, 'Nom requis').max(50, 'Nom trop long').optional(),
+    firstName: z.string().trim().min(1, 'First name is required').max(50, 'First name is too long').optional(),
+    lastName: z.string().trim().min(1, 'Last name is required').max(50, 'Last name is too long').optional(),
   })
   .refine(data => data.firstName || data.lastName, {
-    message: 'Au moins un champ doit être fourni',
+    message: 'At least one field must be provided',
   });
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
+  currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: passwordSchema,
 });
 
 const deleteAccountSchema = z.object({
-  password: z.string().min(1, 'Mot de passe requis'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 const changeEmailSchema = z.object({
   newEmail: z
     .string()
-    .email('Email invalide')
+    .email('Invalid email')
     .refine(
       (val) => instanceConfigService.isEmailDomainAllowed(val),
       (_val) => {
         const config = instanceConfigService.getConfig();
         const domains = config.email.allowedDomains.join(', ');
-        return { message: `L'email doit se terminer par un des domaines autorisés: ${domains}` };
+        return { message: `Email must end with one of the allowed domains: ${domains}` };
       }
     ),
-  password: z.string().min(1, 'Mot de passe requis'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 /**
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Inscription d'un nouvel utilisateur
+ *     summary: Register a new user
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -119,24 +119,24 @@ const changeEmailSchema = z.object({
  *               email:
  *                 type: string
  *                 format: email
- *                 description: Email universitaire (@etu.unistra.fr)
+ *                 description: University email (must match allowed domains)
  *               password:
  *                 type: string
  *                 minLength: 8
- *                 description: Mot de passe (8+ caractères, lettre + chiffre)
+ *                 description: Password (8+ characters, letter + number)
  *               firstName:
  *                 type: string
- *                 description: Prénom
+ *                 description: First name
  *               lastName:
  *                 type: string
- *                 description: Nom
+ *                 description: Last name
  *     responses:
  *       201:
- *         description: Inscription réussie, email de vérification envoyé
+ *         description: Registration successful, verification email sent
  *       400:
- *         description: Données invalides
+ *         description: Invalid data
  *       409:
- *         description: Email déjà utilisé
+ *         description: Email already in use
  */
 router.post(
   '/register',
@@ -151,7 +151,7 @@ router.post(
 
     res.status(201).json({
       id: userId,
-      message: 'Inscription réussie. Vérifiez votre email pour activer votre compte.',
+      message: 'Registration successful. Please check your email to activate your account.',
     });
   })
 );
@@ -160,7 +160,7 @@ router.post(
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Connexion d'un utilisateur
+ *     summary: Log in a user
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -179,7 +179,7 @@ router.post(
  *                 type: string
  *     responses:
  *       200:
- *         description: Connexion réussie
+ *         description: Login successful
  *         content:
  *           application/json:
  *             schema:
@@ -187,7 +187,7 @@ router.post(
  *               properties:
  *                 token:
  *                   type: string
- *                   description: JWT valide pour l'authentification
+ *                   description: Valid JWT for authentication
  *                 user:
  *                   type: object
  *                   properties:
@@ -205,9 +205,9 @@ router.post(
  *                     isVerified:
  *                       type: boolean
  *       400:
- *         description: Données invalides
+ *         description: Invalid data
  *       401:
- *         description: Identifiants incorrects ou email non vérifié
+ *         description: Incorrect credentials or unverified email
  */
 router.post(
   '/login',
@@ -229,7 +229,7 @@ router.post(
  * @swagger
  * /auth/verify-email:
  *   post:
- *     summary: Vérification de l'adresse email
+ *     summary: Verify email address
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -244,9 +244,9 @@ router.post(
  *                 type: string
  *     responses:
  *       200:
- *         description: Email vérifié avec succès
+ *         description: Email verified successfully
  *       400:
- *         description: Token invalide ou expiré
+ *         description: Invalid or expired token
  */
 router.post(
   '/verify-email',
@@ -267,7 +267,7 @@ router.post(
  * @swagger
  * /auth/forgot-password:
  *   post:
- *     summary: Demande de réinitialisation de mot de passe
+ *     summary: Request a password reset
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -283,9 +283,9 @@ router.post(
  *                 format: email
  *     responses:
  *       200:
- *         description: Email de réinitialisation envoyé
+ *         description: Reset email sent
  *       404:
- *         description: Utilisateur non trouvé
+ *         description: User not found
  */
 router.post(
   '/forgot-password',
@@ -299,7 +299,7 @@ router.post(
     const { email } = result.data;
     await authService.forgotPassword(email);
 
-    // Toujours retourner le même message (sécurité)
+    // Always return the same message (security)
     res.json({ message: 'Si cet email existe, un lien de réinitialisation a été envoyé' });
   })
 );
@@ -308,7 +308,7 @@ router.post(
  * @swagger
  * /auth/reset-password:
  *   post:
- *     summary: Réinitialisation du mot de passe
+ *     summary: Reset password
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -327,9 +327,9 @@ router.post(
  *                 minLength: 8
  *     responses:
  *       200:
- *         description: Mot de passe réinitialisé avec succès
+ *         description: Password reset successfully
  *       400:
- *         description: Token invalide ou expiré
+ *         description: Invalid or expired token
  */
 router.post(
   '/reset-password',
@@ -350,7 +350,7 @@ router.post(
  * @swagger
  * /auth/resend-verification:
  *   post:
- *     summary: Renvoyer l'email de vérification
+ *     summary: Resend verification email
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -366,9 +366,9 @@ router.post(
  *                 format: email
  *     responses:
  *       200:
- *         description: Email de vérification renvoyé
+ *         description: Verification email resent
  *       400:
- *         description: Utilisateur déjà vérifié ou non trouvé
+ *         description: User already verified or not found
  */
 router.post(
   '/resend-verification',
@@ -390,7 +390,7 @@ router.post(
  * @swagger
  * /auth/dev/verify-user:
  *   post:
- *     summary: Marquer un utilisateur comme vérifié (développement uniquement)
+ *     summary: Mark a user as verified (development only)
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -404,16 +404,16 @@ router.post(
  *               email:
  *                 type: string
  *                 format: email
- *                 example: test@etu.unistra.fr
+ *                 example: user@students.example.edu
  *     responses:
  *       200:
- *         description: Utilisateur marqué comme vérifié
+ *         description: User marked as verified
  *       400:
- *         description: Email non fourni
+ *         description: Email not provided
  *       404:
- *         description: Utilisateur non trouvé
+ *         description: User not found
  *       403:
- *         description: Disponible uniquement en développement
+ *         description: Only available in development
  */
 router.post(
   '/dev/verify-user',
@@ -438,13 +438,13 @@ router.post(
  * @swagger
  * /auth/profile:
  *   get:
- *     summary: Récupérer le profil de l'utilisateur connecté
+ *     summary: Get the authenticated user's profile
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Profil utilisateur
+ *         description: User profile
  *         content:
  *           application/json:
  *             schema:
@@ -466,7 +466,7 @@ router.post(
  *                   type: string
  *                   format: date-time
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  */
 router.get(
   '/profile',
@@ -481,7 +481,7 @@ router.get(
  * @swagger
  * /auth/profile:
  *   patch:
- *     summary: Mettre à jour le profil utilisateur
+ *     summary: Update user profile
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -499,11 +499,11 @@ router.get(
  *                 maxLength: 50
  *     responses:
  *       200:
- *         description: Profil mis à jour
+ *         description: Profile updated
  *       400:
- *         description: Données invalides
+ *         description: Invalid data
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  */
 router.patch(
   '/profile',
@@ -523,7 +523,7 @@ router.patch(
  * @swagger
  * /auth/change-password:
  *   post:
- *     summary: Changer le mot de passe (utilisateur authentifié)
+ *     summary: Change password (authenticated user)
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -539,18 +539,18 @@ router.patch(
  *             properties:
  *               currentPassword:
  *                 type: string
- *                 description: Mot de passe actuel
+ *                 description: Current password
  *               newPassword:
  *                 type: string
  *                 minLength: 8
- *                 description: Nouveau mot de passe (8+ caractères, lettre + chiffre)
+ *                 description: New password (8+ characters, letter + number)
  *     responses:
  *       200:
- *         description: Mot de passe modifié
+ *         description: Password changed
  *       400:
- *         description: Données invalides
+ *         description: Invalid data
  *       401:
- *         description: Mot de passe actuel incorrect
+ *         description: Incorrect current password
  */
 router.post(
   '/change-password',
@@ -573,11 +573,10 @@ router.post(
  * @swagger
  * /auth/email:
  *   put:
- *     summary: Modifier l'adresse email
+ *     summary: Change email address
  *     description: >
- *       Change l'adresse email de l'utilisateur. Requiert le mot de passe actuel
- *       pour confirmation. L'email sera réinitialisé comme non vérifié et un nouvel
- *       email de vérification sera envoyé.
+ *       Changes the user's email address. Requires current password for confirmation.
+ *       The email will be reset as unverified and a new verification email will be sent.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -594,19 +593,19 @@ router.post(
  *               newEmail:
  *                 type: string
  *                 format: email
- *                 description: Nouvelle adresse email (@etu.unistra.fr)
+ *                 description: New email address (must match allowed domains)
  *               password:
  *                 type: string
- *                 description: Mot de passe actuel pour confirmation
+ *                 description: Current password for confirmation
  *     responses:
  *       200:
- *         description: Email modifié, vérification requise
+ *         description: Email changed, verification required
  *       400:
- *         description: Données invalides
+ *         description: Invalid data
  *       401:
- *         description: Mot de passe incorrect
+ *         description: Incorrect password
  *       409:
- *         description: Email déjà utilisé
+ *         description: Email already in use
  */
 router.put(
   '/email',
@@ -631,17 +630,17 @@ router.put(
  * @swagger
  * /auth/data-export:
  *   get:
- *     summary: Exporter toutes les données utilisateur (RGPD)
+ *     summary: Export all user data (GDPR)
  *     description: >
- *       Retourne toutes les données personnelles et le contenu créé par l'utilisateur
- *       au format JSON (droit d'accès et droit à la portabilité).
- *       Inclut: profil, examens uploadés, commentaires, signalements.
+ *       Returns all personal data and content created by the user in JSON format
+ *       (right of access and right to data portability).
+ *       Includes: profile, uploaded exams, comments, reports.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Données exportées avec succès
+ *         description: Data exported successfully
  *         content:
  *           application/json:
  *             schema:
@@ -657,7 +656,7 @@ router.put(
  *                 data:
  *                   type: object
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  */
 router.get(
   '/data-export',
@@ -672,11 +671,11 @@ router.get(
  * @swagger
  * /auth/account:
  *   delete:
- *     summary: Supprimer le compte utilisateur (RGPD)
+ *     summary: Delete user account (GDPR)
  *     description: >
- *       Supprime les données personnelles de l'utilisateur.
- *       Les examens et réponses sont conservés mais anonymisés (auteur mis à null).
- *       Les signalements sont supprimés.
+ *       Deletes the user's personal data.
+ *       Exams and answers are kept but anonymized (author set to null).
+ *       Reports are deleted.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -691,14 +690,14 @@ router.get(
  *             properties:
  *               password:
  *                 type: string
- *                 description: Mot de passe pour confirmer la suppression
+ *                 description: Password to confirm deletion
  *     responses:
  *       200:
- *         description: Compte supprimé, contenu anonymisé
+ *         description: Account deleted, content anonymized
  *       400:
- *         description: Mot de passe manquant
+ *         description: Password missing
  *       401:
- *         description: Mot de passe incorrect
+ *         description: Incorrect password
  */
 router.delete(
   '/account',

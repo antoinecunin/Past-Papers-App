@@ -16,6 +16,7 @@ import { Button } from './components/ui/Button';
 import { useRouter } from './hooks/useRouter';
 import { useAuthStore } from './stores/authStore';
 import { InstanceProvider } from './contexts/InstanceContext';
+import { useInstance } from './hooks/useInstance';
 import { PermissionUtils } from './utils/permissions';
 import { showReportModal, showReportSuccess, showReportError } from './utils/reportModal';
 import { showError, showSuccess, showConfirm } from './utils/swal';
@@ -36,9 +37,10 @@ interface Exam {
 function App() {
   const { currentRoute, navigate, isPage, getExamId } = useRouter();
   const { user, token, logout } = useAuthStore();
+  const { name } = useInstance();
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
-  // Charger un examen depuis son ID (pour les URL directes)
+  // Load an exam by its ID (for direct URLs)
   const loadExamById = useCallback(async (examId: string): Promise<Exam | null> => {
     if (!token) return null;
 
@@ -52,29 +54,29 @@ function App() {
         return await response.json();
       }
     } catch (error) {
-      console.error("Erreur lors du chargement de l'examen:", error);
+      console.error("Error loading exam:", error);
     }
     return null;
   }, [token]);
 
-  // Gérer la sélection d'un examen
+  // Handle exam selection
   const handleExamSelect = (exam: Exam) => {
     setSelectedExam(exam);
     navigate('viewer', { examId: exam._id });
   };
 
-  // Navigation vers la liste des examens
+  // Navigate back to exams list
   const navigateBack = () => {
     setSelectedExam(null);
     navigate('exams');
   };
 
-  // Téléchargement du PDF de l'examen sélectionné
+  // Download the selected exam's PDF
   const handleDownloadPdf = async () => {
     if (!selectedExam || !token) return;
 
     try {
-      // Télécharger le fichier avec authentification
+      // Download file with authentication
       const response = await fetch(`/api/files/${selectedExam._id}/download`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -85,7 +87,7 @@ function App() {
         throw new Error('Failed to download file');
       }
 
-      // Créer un blob et déclencher le téléchargement
+      // Create a blob and trigger the download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const filename = `${selectedExam.title.replace(/[^a-zA-Z0-9]/g, '_')}${selectedExam.year ? `_${selectedExam.year}` : ''}.pdf`;
@@ -99,22 +101,22 @@ function App() {
       link.click();
       document.body.removeChild(link);
 
-      // Libérer la mémoire
+      // Free memory
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Erreur lors du téléchargement:', error);
-      await showError('Erreur', 'Impossible de télécharger le fichier');
+      console.error('Error downloading file:', error);
+      await showError('Error', 'Unable to download the file');
     }
   };
 
-  // Suppression de l'examen sélectionné
+  // Delete the selected exam
   const handleDeleteExam = async () => {
     if (!selectedExam || !user || !token) return;
 
     const confirmed = await showConfirm(
-      'Supprimer cet examen ?',
-      `"${selectedExam.title}" sera définitivement supprimé.`,
-      { confirmText: 'Supprimer', cancelText: 'Annuler' }
+      'Delete this exam?',
+      `"${selectedExam.title}" will be permanently deleted.`,
+      { confirmText: 'Delete', cancelText: 'Cancel' }
     );
     if (!confirmed) return;
 
@@ -127,24 +129,24 @@ function App() {
       });
 
       if (response.ok) {
-        await showSuccess('Examen supprimé', 'L\'examen a été supprimé avec succès.');
+        await showSuccess('Exam deleted', 'The exam has been successfully deleted.');
         navigate('exams');
         setSelectedExam(null);
       } else {
         const errorData = await response.json();
-        await showError('Erreur', errorData.error || 'Impossible de supprimer l\'examen');
+        await showError('Error', errorData.error || 'Unable to delete the exam');
       }
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
-      await showError('Erreur', 'Une erreur est survenue lors de la suppression');
+      console.error('Error deleting exam:', error);
+      await showError('Error', 'An error occurred while deleting');
     }
   };
 
-  // Signalement de l'examen sélectionné
+  // Report the selected exam
   const handleReportExam = async () => {
     if (!selectedExam || !user || !token) return;
 
-    const reportData = await showReportModal('Signaler cet examen', 'exam');
+    const reportData = await showReportModal('Report this exam', 'exam');
     if (!reportData) return;
 
     try {
@@ -169,22 +171,22 @@ function App() {
         await showReportError(errorData.error);
       }
     } catch (error) {
-      console.error('Erreur lors du signalement:', error);
+      console.error('Error reporting exam:', error);
       await showReportError();
     }
   };
 
-  // Effet pour synchroniser l'état avec l'URL au chargement
+  // Sync state with URL on load
   useEffect(() => {
     const examId = getExamId();
 
     if (isPage('viewer') && examId && !selectedExam) {
-      // URL directe vers un examen, charger l'examen
+      // Direct URL to an exam, load it
       loadExamById(examId).then(exam => {
         if (exam) {
           setSelectedExam(exam);
         } else {
-          // Examen non trouvé, rediriger vers la liste
+          // Exam not found, redirect to list
           navigate('exams');
         }
       });
@@ -192,7 +194,7 @@ function App() {
   }, [currentRoute, selectedExam, isPage, getExamId, navigate, loadExamById]);
 
   const renderCurrentPage = () => {
-    // Pages d'authentification et pages légales - toujours accessibles
+    // Authentication and legal pages - always accessible
     switch (currentRoute.page) {
       case 'login':
         return <LoginPage />;
@@ -210,7 +212,7 @@ function App() {
         return <TermsPage />;
     }
 
-    // Pages protégées - nécessitent une authentification
+    // Protected pages - require authentication
     if (!user) {
       navigate('login');
       return null;
@@ -231,14 +233,14 @@ function App() {
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                <span className="text-secondary">Chargement de l&apos;examen...</span>
+                <span className="text-secondary">Loading exam...</span>
               </div>
             </div>
           );
         }
         return (
           <div className="space-y-4 md:space-y-6">
-            {/* Header avec actions */}
+            {/* Header with actions */}
             <div className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 {/* Left: Back button + Title */}
@@ -246,7 +248,7 @@ function App() {
                   <button
                     onClick={navigateBack}
                     className="flex items-center gap-2 text-primary hover:text-primary-hover transition-colors cursor-pointer mt-1"
-                    title="Retour aux examens"
+                    title="Back to exams"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
@@ -270,39 +272,39 @@ function App() {
 
                 {/* Right: Action buttons */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Bouton de téléchargement */}
+                  {/* Download button */}
                   <Button
                     onClick={handleDownloadPdf}
                     variant="secondary"
                     size="md"
                     className="gap-2"
-                    title="Télécharger le PDF"
+                    title="Download PDF"
                   >
                     <Download className="w-4 h-4" />
-                    <span className="hidden md:inline">Télécharger</span>
+                    <span className="hidden md:inline">Download</span>
                   </Button>
 
-                  {/* Bouton de signalement */}
+                  {/* Report button */}
                   <button
                     onClick={handleReportExam}
                     className="flex items-center gap-2 px-3 md:px-4 h-10 bg-warning/10 hover:bg-warning/20 text-warning rounded-lg transition-colors cursor-pointer"
-                    title="Signaler cet examen"
+                    title="Report this exam"
                   >
                     <AlertTriangle className="w-4 h-4" />
-                    <span className="text-sm font-medium hidden md:inline">Signaler</span>
+                    <span className="text-sm font-medium hidden md:inline">Report</span>
                   </button>
 
-                  {/* Bouton de suppression (propriétaire ou admin) */}
+                  {/* Delete button (owner or admin) */}
                   {PermissionUtils.canDelete(user, selectedExam.uploadedBy) && (
                     <Button
                       onClick={handleDeleteExam}
                       variant="danger"
                       size="md"
                       className="gap-2"
-                      title="Supprimer cet examen"
+                      title="Delete this exam"
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span className="hidden md:inline">Supprimer</span>
+                      <span className="hidden md:inline">Delete</span>
                     </Button>
                   )}
                 </div>
@@ -321,7 +323,7 @@ function App() {
     }
   };
 
-  // Masquer la navigation pour les pages d'authentification et légales
+  // Hide navigation for authentication and legal pages
   const shouldShowNavigation =
     user &&
     !['login', 'register', 'forgot-password', 'reset-password', 'verify-email', 'privacy', 'terms'].includes(
@@ -334,7 +336,7 @@ function App() {
         <nav className="bg-white shadow-sm border-b p-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-6">
-              <h1 className="text-lg font-semibold text-gray-900">Plateforme d&apos;Annales</h1>
+              <h1 className="text-lg font-semibold text-gray-900">{name}</h1>
               <div className="flex space-x-2">
                 <button
                   onClick={() => navigate('exams')}
@@ -344,7 +346,7 @@ function App() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Examens
+                  Exams
                 </button>
                 <button
                   onClick={() => navigate('upload')}
@@ -365,7 +367,7 @@ function App() {
                         : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                     }`}
                   >
-                    Signalements
+                    Reports
                   </button>
                 )}
               </div>
@@ -384,7 +386,7 @@ function App() {
                   <button
                     onClick={() => navigate('profile')}
                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
-                    title="Mon profil"
+                    title="My profile"
                   >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-sm font-medium text-gray-900">
@@ -403,7 +405,7 @@ function App() {
                     }}
                     className="text-sm text-red-600 hover:text-red-700 font-medium cursor-pointer"
                   >
-                    Déconnexion
+                    Sign out
                   </button>
                 </div>
               )}

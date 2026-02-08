@@ -26,7 +26,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
   const [renderKey, setRenderKey] = useState(0);
   const content = answer.content;
 
-  // Forcer le re-rendu quand le contenu change ou quand on sort du mode édition
+  // Force re-render when content changes or when exiting edit mode
   useEffect(() => {
     setRenderKey(prev => prev + 1);
   }, [content.type, content.data, isEditing]);
@@ -43,7 +43,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
         setIsEditing(false);
         setEditContent(null);
       } catch (error) {
-        console.error('Erreur lors de la modification:', error);
+        console.error('Error editing:', error);
       }
     }
   };
@@ -55,11 +55,11 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
 
   const handleCopy = async () => {
     try {
-      // Pour LaTeX, copier le contenu brut (avant compilation)
+      // For LaTeX, copy the raw content (before compilation)
       const textToCopy = content.data;
       await navigator.clipboard.writeText(textToCopy);
     } catch {
-      // Fallback pour les navigateurs plus anciens
+      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = content.data;
       textArea.style.position = 'fixed';
@@ -70,7 +70,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
       try {
         document.execCommand('copy');
       } catch (fallbackError) {
-        console.error('Erreur lors de la copie:', fallbackError);
+        console.error('Error copying:', fallbackError);
       }
       document.body.removeChild(textArea);
     }
@@ -81,7 +81,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
       try {
         await onDelete(answer._id.toString());
       } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
+        console.error('Error deleting:', error);
       }
     }
     setShowConfirmDelete(false);
@@ -116,7 +116,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 }}
                 style={toggleButtonStyle}
               >
-                {truncated ? '...Plus' : ' Moins'}
+                {truncated ? '...More' : ' Less'}
               </button>
             )}
           </div>
@@ -128,13 +128,13 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
           <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
             <img
               src={contentToRender.data}
-              alt="Commentaire image"
+              alt="Comment image"
               style={imageStyle}
               onError={e => {
                 const img = e.target as HTMLImageElement;
                 const errorDiv = img.nextElementSibling as HTMLDivElement;
                 img.style.display = 'none';
-                errorDiv.textContent = `[Image non trouvée: ${contentToRender.data}]`;
+                errorDiv.textContent = `[Image not found: ${contentToRender.data}]`;
                 errorDiv.style.display = 'block';
               }}
             />
@@ -152,7 +152,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
             <div
               dangerouslySetInnerHTML={{ __html: renderedLatex }}
               style={latexRenderStyle}
-              onMouseDown={e => e.preventDefault()} // Empêche la sélection
+              onMouseDown={e => e.preventDefault()} // Prevent selection
             />
             {shouldShowLatexToggle && (
               <button
@@ -162,11 +162,11 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 }}
                 style={{ ...toggleButtonStyle, marginTop: '4px', pointerEvents: 'auto' }}
               >
-                {truncated ? '...Plus' : ' Moins'}
+                {truncated ? '...More' : ' Less'}
               </button>
             )}
             <details style={{ marginTop: '4px', pointerEvents: 'auto' }}>
-              <summary style={summaryStyle}>Code LaTeX</summary>
+              <summary style={summaryStyle}>LaTeX code</summary>
               <div style={latexCodeStyle}>{latexData}</div>
             </details>
           </div>
@@ -186,20 +186,20 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
     return (
       <div
         style={editContainerStyle}
-        onClick={e => e.stopPropagation()} // Empêcher la propagation vers le parent
+        onClick={e => e.stopPropagation()} // Prevent propagation to parent
       >
         <select
           value={editContent.type}
           onChange={e => {
             const newType = e.target.value as ContentType;
             const newContent = { ...editContent, type: newType };
-            // Supprimer le rendered quand on change de type
+            // Remove rendered when changing type
             delete newContent.rendered;
             setEditContent({ ...newContent });
           }}
           style={selectStyle}
         >
-          <option value="text">💬 Texte</option>
+          <option value="text">💬 Text</option>
           <option value="image">🖼️ Image</option>
           <option value="latex">📐 LaTeX</option>
         </select>
@@ -207,7 +207,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
           value={editContent.data}
           onChange={e => {
             const newContent = { ...editContent, data: e.target.value };
-            // Si c'est du LaTeX, supprimer le rendered existant pour forcer la régénération
+            // If it's LaTeX, remove existing rendered to force regeneration
             if (newContent.type === 'latex') {
               delete newContent.rendered;
             }
@@ -234,11 +234,11 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
             <strong
               style={{ fontSize: '10px', color: '#6b7280', display: 'block', marginBottom: '4px' }}
             >
-              Aperçu de l&apos;image :
+              Image preview:
             </strong>
             <img
               src={editContent.data.trim()}
-              alt="Aperçu"
+              alt="Preview"
               style={previewImageStyle}
               key={editContent.data.trim()}
               onError={e => {
@@ -246,7 +246,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 const errorDiv = img.nextElementSibling as HTMLDivElement;
                 img.style.display = 'none';
                 if (errorDiv) {
-                  errorDiv.textContent = `[Image non trouvée: ${editContent.data.trim()}]`;
+                  errorDiv.textContent = `[Image not found: ${editContent.data.trim()}]`;
                   errorDiv.style.display = 'block';
                 }
               }}
@@ -256,10 +256,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
         )}
         <div style={buttonContainerStyle}>
           <button onClick={saveEdit} style={saveButtonStyle}>
-            ✓ Sauver
+            ✓ Save
           </button>
           <button onClick={cancelEdit} style={cancelButtonStyle}>
-            ✕ Annuler
+            ✕ Cancel
           </button>
         </div>
       </div>
@@ -279,17 +279,17 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
     return (
       <div
         style={deleteConfirmStyle}
-        onClick={e => e.stopPropagation()} // Empêcher la propagation vers le parent
+        onClick={e => e.stopPropagation()} // Prevent propagation to parent
       >
         <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#dc2626' }}>
-          Êtes-vous sûr de vouloir supprimer ce commentaire ?
+          Are you sure you want to delete this comment?
         </p>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={handleDelete} style={deleteButtonStyle}>
-            Supprimer
+            Delete
           </button>
           <button onClick={cancelDelete} style={cancelButtonStyle}>
-            Annuler
+            Cancel
           </button>
         </div>
       </div>
@@ -300,7 +300,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
     <div
       style={{
         position: 'relative',
-        marginRight: '1rem', // Réserver un espace responsive pour les icônes
+        marginRight: '1rem', // Reserve responsive space for icons
       }}
       onMouseEnter={e => {
         const buttons = e.currentTarget.querySelector('[data-action-buttons]') as HTMLElement;
@@ -314,7 +314,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
       <div
         onClick={handleContentClick}
         style={{
-          cursor: 'inherit', // Hériter du curseur du parent (pointer)
+          cursor: 'inherit', // Inherit cursor from parent (pointer)
           userSelect: 'auto',
         }}
       >
@@ -323,44 +323,44 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
         </div>
       </div>
 
-      {/* Boutons d'actions */}
+      {/* Action buttons */}
       {!isEditing && (
         <div style={actionButtonsStyle} data-action-buttons>
-          {/* Bouton copier */}
+          {/* Copy button */}
           <button
             onClick={e => {
-              e.stopPropagation(); // Empêcher la propagation vers le parent
+              e.stopPropagation(); // Prevent propagation to parent
               handleCopy();
             }}
             style={actionButtonStyle}
-            title="Copier le contenu"
+            title="Copy content"
           >
             <CopyIcon className="text-gray-500 hover:text-gray-700" />
           </button>
 
-          {/* Bouton éditer */}
+          {/* Edit button */}
           {onEdit && (
             <button
               onClick={e => {
-                e.stopPropagation(); // Empêcher la propagation vers le parent
+                e.stopPropagation(); // Prevent propagation to parent
                 startEdit();
               }}
               style={actionButtonStyle}
-              title="Modifier"
+              title="Edit"
             >
               ✏️
             </button>
           )}
 
-          {/* Bouton signaler */}
+          {/* Report button */}
           {onReport && (
             <button
               onClick={e => {
-                e.stopPropagation(); // Empêcher la propagation vers le parent
+                e.stopPropagation(); // Prevent propagation to parent
                 onReport(answer._id.toString());
               }}
               style={actionButtonStyle}
-              title="Signaler ce commentaire"
+              title="Report this comment"
             >
               <svg className="w-3 h-3 text-orange-500 hover:text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -373,7 +373,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
             </button>
           )}
 
-          {/* Bouton répondre */}
+          {/* Reply button */}
           {onReply && (
             <button
               onClick={e => {
@@ -381,7 +381,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 onReply(answer._id.toString());
               }}
               style={actionButtonStyle}
-              title="Répondre"
+              title="Reply"
             >
               <svg className="w-3 h-3 text-blue-500 hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -394,15 +394,15 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
             </button>
           )}
 
-          {/* Bouton supprimer */}
+          {/* Delete button */}
           {onDelete && (
             <button
               onClick={e => {
-                e.stopPropagation(); // Empêcher la propagation vers le parent
+                e.stopPropagation(); // Prevent propagation to parent
                 confirmDelete();
               }}
               style={actionButtonStyle}
-              title="Supprimer"
+              title="Delete"
             >
               <TrashIcon className="text-red-500 hover:text-red-700" />
             </button>
@@ -444,7 +444,7 @@ const latexRenderStyle: React.CSSProperties = {
   overflowY: 'hidden',
   WebkitOverflowScrolling: 'touch',
   scrollbarWidth: 'thin',
-  userSelect: 'none', // Empêche la sélection sur le LaTeX rendu
+  userSelect: 'none', // Prevent selection on rendered LaTeX
 };
 
 const summaryStyle: React.CSSProperties = {

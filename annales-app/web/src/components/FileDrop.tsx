@@ -24,7 +24,7 @@ export default function FileDrop({ onFiles }: { onFiles: (files: File[]) => void
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
               <FileUp className="w-6 h-6 text-primary" />
             </div>
-            <p className="text-primary font-medium">Dépose le PDF ici</p>
+            <p className="text-primary font-medium">Drop the PDF here</p>
           </>
         ) : (
           <>
@@ -33,10 +33,10 @@ export default function FileDrop({ onFiles }: { onFiles: (files: File[]) => void
             </div>
             <div>
               <p className="text-secondary-dark font-medium mb-1">
-                Glisse un PDF ici ou clique pour sélectionner
+                Drag and drop a PDF here or click to select
               </p>
               <p className="text-xs md:text-sm text-secondary">
-                Formats acceptés: PDF • Taille max: 50MB
+                Accepted formats: PDF - Max size: 50MB
               </p>
             </div>
           </>

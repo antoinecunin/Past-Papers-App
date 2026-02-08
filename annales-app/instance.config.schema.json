@@ -14,13 +14,13 @@
           "type": "string",
           "description": "Full instance name displayed in the app",
           "minLength": 1,
-          "examples": ["Annales - Université de Strasbourg"]
+          "examples": ["Exam Archive - My University"]
         },
         "organizationName": {
           "type": "string",
           "description": "Name of the organization managing this instance (GDPR required)",
           "minLength": 1,
-          "examples": ["Université de Strasbourg"]
+          "examples": ["My University"]
         },
         "contactEmail": {
           "type": "string",
@@ -37,12 +37,12 @@
       "properties": {
         "allowedDomains": {
           "type": "array",
-          "description": "Email domains allowed for registration (e.g., @etu.unistra.fr)",
+          "description": "Email domains allowed for registration (e.g., @students.example.edu)",
           "minItems": 1,
           "items": {
             "type": "string",
             "pattern": "^@[\\w.-]+\\.\\w+$",
-            "examples": ["@etu.unistra.fr", "@etudiant.univ-paris.fr"]
+            "examples": ["@students.example.edu", "@university.edu"]
           }
         }
       }

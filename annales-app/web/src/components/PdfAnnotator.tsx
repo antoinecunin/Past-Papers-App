@@ -15,17 +15,17 @@ import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor, isAllowedImageU
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 type Props = {
-  /** URL du PDF à afficher (servi par l'API) */
+  /** URL of the PDF to display (served by the API) */
   pdfUrl: string;
-  /** Id de l'examen (ObjectId) */
+  /** Exam ID (ObjectId) */
   examId: string;
 };
 
 /**
- * Composant unique : lecteur PDF à gauche, commentaires (de la page visible) à droite.
- * - Les commentaires sont ancrés via (page, yTop) normalisés.
- * - Au scroll, on détecte la page majoritairement visible et on rafraîchit la liste.
- * - Ajout d'un commentaire : capture du yTop actuel (centre de la zone visible).
+ * Single component: PDF viewer on the left, comments (for the visible page) on the right.
+ * - Comments are anchored via normalized (page, yTop).
+ * - On scroll, we detect the mostly visible page and refresh the list.
+ * - Adding a comment: captures the current yTop (center of the visible area).
  */
 export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const { user, token } = useAuthStore();
@@ -35,11 +35,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const [numPages, setNumPages] = useState(0);
   const [visiblePage, setVisiblePage] = useState(1);
   const [answers, setAnswers] = useState<Answer[]>([]);
-  const [allAnswers, setAllAnswers] = useState<Answer[]>([]); // Tous les commentaires pour affichage visuel
-  const [selectedGroup, setSelectedGroup] = useState<Answer[] | null>(null); // Groupe de commentaires sélectionné
-  const [highlightedAnswers, setHighlightedAnswers] = useState<string[]>([]); // IDs des commentaires mis en valeur
-  const highlightTimeoutRef = useRef<number | null>(null); // Référence vers le timeout actuel
-  const currentHighlightedMarkerRef = useRef<HTMLElement | null>(null); // Référence vers le marqueur actuellement mis en valeur
+  const [allAnswers, setAllAnswers] = useState<Answer[]>([]); // All comments for visual display
+  const [selectedGroup, setSelectedGroup] = useState<Answer[] | null>(null); // Selected comment group
+  const [highlightedAnswers, setHighlightedAnswers] = useState<string[]>([]); // IDs of highlighted comments
+  const highlightTimeoutRef = useRef<number | null>(null); // Reference to current timeout
+  const currentHighlightedMarkerRef = useRef<HTMLElement | null>(null); // Reference to currently highlighted marker
 
   // Thread state
   interface ReplyTarget {
@@ -51,22 +51,22 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const [openThreads, setOpenThreads] = useState<Record<string, boolean>>({});
   const [loadedReplies, setLoadedReplies] = useState<Record<string, { replies: Answer[]; hasMore: boolean; cursor?: string }>>({});
 
-  // Hook pour le positionnement par clic
+  // Hook for click positioning
   const { pendingPosition, handlePageClick, confirmComment, cancelComment } = useCommentPositioning(
     examId,
     token,
     () => {
-      // Callback de rechargement après ajout de commentaire
+      // Reload callback after adding a comment
       loadAllAnswers();
     }
   );
 
-  // Ref pour tracker si on a déjà fait le focus initial
+  // Ref to track if we've already done the initial focus
   const hasFocusedRef = useRef(false);
-  // Ref pour tracker la position actuelle pour éviter le scroll lors des changements de page
+  // Ref to track current position to avoid scroll on page changes
   const currentPositionRef = useRef<{ pageIndex: number; yPosition: number } | null>(null);
 
-  // Wrappers pour remettre à zéro les refs
+  // Wrappers to reset refs
   const wrappedConfirmComment = useCallback(
     async (content: AnswerContent) => {
       hasFocusedRef.current = false;
@@ -82,13 +82,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     return cancelComment();
   }, [cancelComment]);
 
-  // Chargement du PDF
+  // Load PDF
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!token) return;
 
-      // Charger le PDF avec authentification
+      // Load PDF with authentication
       const response = await fetch(pdfUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -112,11 +112,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     };
   }, [pdfUrl, token]);
 
-  // Rendu des pages (canvas) dans le container
+  // Render pages (canvas) in the container
   useEffect(() => {
     if (!pdfDoc || !containerRef.current) return;
     const container = containerRef.current;
-    container.innerHTML = ''; // reset propre
+    container.innerHTML = ''; // clean reset
 
     (async () => {
       for (let i = 1; i <= pdfDoc.numPages; i++) {
@@ -137,7 +137,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         canvas.height = Math.floor(viewport.height);
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
-        canvas.style.pointerEvents = 'none'; // Permettre les clics sur le wrapper
+        canvas.style.pointerEvents = 'none'; // Allow clicks on the wrapper
 
         pageWrapper.appendChild(canvas);
         container.appendChild(pageWrapper);
@@ -147,7 +147,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     })().catch(console.error);
   }, [pdfDoc]);
 
-  // Détection de page visible basée sur scroll (plus simple et fiable)
+  // Visible page detection based on scroll (simpler and more reliable)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -160,7 +160,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       const containerHeight = container.clientHeight;
       const viewportCenter = scrollTop + containerHeight / 2;
 
-      // Trouver la page qui contient le centre du viewport
+      // Find the page that contains the viewport center
       let currentPage = 1;
       let accumulatedHeight = 0;
 
@@ -184,7 +184,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       }
     };
 
-    // Attendre que les pages soient rendues
+    // Wait for pages to be rendered
     const checkAndSetup = () => {
       const pages = Array.from(container.querySelectorAll<HTMLDivElement>('.pdf-page'));
       if (!pages.length) {
@@ -192,10 +192,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         return;
       }
 
-      // Setup initial
+      // Initial setup
       updateVisiblePage();
 
-      // Écouter le scroll
+      // Listen for scroll
       container.addEventListener('scroll', updateVisiblePage, { passive: true });
 
       return () => {
@@ -206,7 +206,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     return checkAndSetup();
   }, [pdfDoc, visiblePage]);
 
-  // Gestion des clics sur les pages pour ajouter des commentaires
+  // Handle clicks on pages to add comments
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -214,7 +214,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
 
-      // Ignorer les clics sur les indicateurs et formulaires
+      // Ignore clicks on indicators and forms
       if (
         target.closest('.comment-indicator') ||
         target.closest('.new-comment-indicator') ||
@@ -228,12 +228,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       const pageWrapper = target.closest('.pdf-page') as HTMLElement;
 
       if (pageWrapper && pageWrapper.dataset.pageIndex) {
-        // Désélectionner le groupe si on clique sur la page
+        // Deselect group if clicking on the page
         if (selectedGroup) {
           setSelectedGroup(null);
         }
 
-        // Reset la mise en valeur des commentaires et des marqueurs
+        // Reset comment and marker highlighting
         if (highlightedAnswers.length > 0) {
           setHighlightedAnswers([]);
         }
@@ -255,25 +255,25 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     return () => container.removeEventListener('click', handleClick);
   }, [handlePageClick, selectedGroup, highlightedAnswers.length]);
 
-  // Fonction pour grouper les commentaires proches (dans un rayon de 5% de la hauteur)
+  // Function to group nearby comments (within 5% of page height)
   const groupCommentsByPosition = (comments: Answer[]) => {
     const groups: { answers: Answer[]; avgPosition: number }[] = [];
     const tolerance = 0.05; // 5% de la hauteur de la page
 
     comments.forEach(comment => {
-      // Chercher un groupe existant proche (distance depuis le premier élément du groupe)
+      // Find a nearby existing group (distance from first element of group)
       const existingGroup = groups.find(
         group => Math.abs(group.answers[0].yTop - comment.yTop) <= tolerance
       );
 
       if (existingGroup) {
-        // Ajouter au groupe existant
+        // Add to existing group
         existingGroup.answers.push(comment);
-        // Recalculer la position moyenne
+        // Recalculate average position
         existingGroup.avgPosition =
           existingGroup.answers.reduce((sum, a) => sum + a.yTop, 0) / existingGroup.answers.length;
       } else {
-        // Créer un nouveau groupe
+        // Create a new group
         groups.push({
           answers: [comment],
           avgPosition: comment.yTop,
@@ -284,18 +284,18 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     return groups;
   };
 
-  // Mise à jour des indicateurs visuels avec groupement
+  // Update visual indicators with grouping
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Nettoyer les anciens indicateurs
+    // Clean up old indicators
     const existingIndicators = container.querySelectorAll('.comment-indicator');
     existingIndicators.forEach(indicator => indicator.remove());
 
     if (!allAnswers.length || !pdfDoc) return;
 
-    // Vérifier que les pages PDF sont rendues, avec retry
+    // Verify PDF pages are rendered, with retry
     const checkAndCreateIndicators = () => {
       const pages = Array.from(container.querySelectorAll('.pdf-page'));
       if (!pages.length) {
@@ -303,7 +303,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         return;
       }
 
-      // Grouper par page puis par position
+      // Group by page then by position
       const commentsByPage = allAnswers.reduce(
         (acc, comment) => {
           if (!acc[comment.page]) acc[comment.page] = [];
@@ -320,13 +320,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         if (!targetPage) return;
 
-        // Grouper les commentaires proches sur cette page
+        // Group nearby comments on this page
         const groups = groupCommentsByPosition(pageComments);
 
         groups.forEach(group => {
           const indicator = document.createElement('div');
           indicator.className = 'comment-indicator';
-          // Ajouter les IDs des commentaires associés pour pouvoir les mettre en valeur
+          // Add associated comment IDs to enable highlighting
           indicator.setAttribute('data-answer-ids', group.answers.map(a => a._id).join(','));
           indicator.style.position = 'absolute';
           indicator.style.right = '8px';
@@ -334,7 +334,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           indicator.style.transform = 'translateY(-50%)';
           indicator.style.width = '24px';
           indicator.style.height = '24px';
-          // Déterminer si ce groupe est sélectionné
+          // Determine if this group is selected
           const isSelected =
             selectedGroup &&
             selectedGroup.length === group.answers.length &&
@@ -343,7 +343,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             );
 
           indicator.style.backgroundColor = isSelected
-            ? '#dc2626' // Rouge pour sélectionné
+            ? '#dc2626' // Red for selected
             : pageNum === visiblePage
               ? '#2563eb'
               : '#3b82f6';
@@ -366,10 +366,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             e.preventDefault();
             e.stopPropagation();
 
-            // Sélectionner ce groupe de commentaires (filtrage déjà existant)
+            // Select this comment group
             setSelectedGroup(group.answers);
 
-            // Scroll vers cette position
+            // Scroll to this position
             const targetY = targetPage.offsetTop + targetPage.offsetHeight * group.avgPosition;
             container.scrollTo({ top: targetY - container.clientHeight / 2, behavior: 'smooth' });
           });
@@ -379,31 +379,31 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       });
     };
 
-    // Démarrer la vérification
+    // Start verification
     checkAndCreateIndicators();
   }, [allAnswers, visiblePage, selectedGroup, pdfDoc]);
 
-  // Gestion de l'indicateur de nouveau commentaire
+  // Handle new comment indicator
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Nettoyer l'ancien indicateur de nouveau commentaire
+    // Clean up old new comment indicator
     const existingNewIndicator = container.querySelector('.new-comment-indicator');
     if (existingNewIndicator) {
       existingNewIndicator.remove();
     }
 
-    // Ajouter le nouvel indicateur si nécessaire
+    // Add new indicator if needed
     if (pendingPosition) {
-      // Vérifier si c'est vraiment un nouveau commentaire ou juste un changement de page
+      // Check if this is really a new comment or just a page change
       const isSamePosition =
         currentPositionRef.current &&
         currentPositionRef.current.pageIndex === pendingPosition.pageIndex &&
         currentPositionRef.current.yPosition === pendingPosition.yPosition;
 
       if (!isSamePosition) {
-        // Nouveau commentaire - remettre à zéro le flag pour permettre le focus/scroll
+        // New comment - reset flag to allow focus/scroll
         hasFocusedRef.current = false;
         currentPositionRef.current = pendingPosition;
       }
@@ -417,10 +417,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         indicator.style.position = 'absolute';
         indicator.style.right = '8px';
 
-        // Ajuster le positionnement selon la position Y
-        // Si on clique en haut (< 15%), positionner en dessous du clic
-        // Si on clique en bas (> 85%), positionner au-dessus du clic
-        // Sinon, centrer sur le clic
+        // Adjust positioning based on Y position
+        // If clicking near the top (< 15%), position below the click
+        // If clicking near the bottom (> 85%), position above the click
+        // Otherwise, center on the click
         const yPos = pendingPosition.yPosition;
         if (yPos < 0.15) {
           indicator.style.top = `${yPos * 100}%`;
@@ -445,33 +445,33 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         indicator.style.overflow = 'auto';
         indicator.style.pointerEvents = 'auto';
 
-        // Empêcher la propagation sur tout l'indicateur
+        // Prevent propagation on the entire indicator
         indicator.addEventListener('click', e => {
           e.stopPropagation();
         });
 
-        // Contenu du formulaire
+        // Form content
         const defaultMaxLength = CONTENT_MAX_LENGTH.text;
         indicator.innerHTML = `
           <form class="new-comment-form" style="display: flex; flex-direction: column; gap: 8px;">
             <select class="content-type-select" style="padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-              <option value="text">💬 Texte</option>
+              <option value="text">💬 Text</option>
               <option value="image">🖼️ Image (URL)</option>
               <option value="latex">📐 LaTeX</option>
             </select>
             <textarea
               class="content-input"
-              placeholder="Votre commentaire..."
+              placeholder="Your comment..."
               style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; resize: none; font-size: 12px;"
               rows="3"
               maxlength="${defaultMaxLength}"
               required
             ></textarea>
             <div class="char-counter" style="font-size: 11px; text-align: right; color: #6b7280;">
-              0 / ${defaultMaxLength.toLocaleString('fr-FR')}
+              0 / ${defaultMaxLength.toLocaleString('en-US')}
             </div>
             <div class="image-host-warning" style="display: none; font-size: 11px; color: #dc2626; padding: 4px 8px; background: #fef2f2; border-radius: 4px; border: 1px solid #fecaca;">
-              ⚠️ Hébergeur non autorisé. Utilisez imgur.com, ibb.co ou postimg.cc
+              Unauthorized host. Use imgur.com, ibb.co, or postimg.cc
             </div>
             <div class="image-preview" style="display: none; max-width: 50%; max-height: 5rem; overflow: hidden;">
               <img style="width: 100%; height: auto; border-radius: 4px; object-fit: cover;" />
@@ -480,10 +480,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             </div>
             <div style="display: flex; gap: 8px;">
               <button type="submit" style="padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                Ajouter
+                Add
               </button>
               <button type="button" class="cancel-btn" style="padding: 4px 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                Annuler
+                Cancel
               </button>
             </div>
           </form>
@@ -501,7 +501,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         const imageHostWarning = indicator.querySelector('.image-host-warning') as HTMLDivElement;
         const submitBtn = indicator.querySelector('button[type="submit"]') as HTMLButtonElement;
 
-        // Fonction pour mettre à jour le compteur de caractères
+        // Function to update the character counter
         const updateCharCounter = () => {
           const currentType = typeSelect.value as ContentType;
           const maxLength = CONTENT_MAX_LENGTH[currentType];
@@ -510,17 +510,17 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           charCounter.style.color = getCharCountColor(currentLength, maxLength);
         };
 
-        // Gérer le changement de type
+        // Handle type change
         const updatePlaceholder = () => {
           const selectedType = typeSelect.value as ContentType;
           const content = textarea.value.trim();
           const maxLength = CONTENT_MAX_LENGTH[selectedType];
 
-          // Mettre à jour la limite du textarea
+          // Update textarea limit
           textarea.maxLength = maxLength;
           updateCharCounter();
 
-          // Reset l'état du bouton et du warning
+          // Reset button state and warning
           submitBtn.disabled = false;
           submitBtn.style.opacity = '1';
           submitBtn.style.cursor = 'pointer';
@@ -528,14 +528,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
           switch (selectedType) {
             case 'text':
-              textarea.placeholder = 'Votre commentaire...';
+              textarea.placeholder = 'Your comment...';
               imagePreview.style.display = 'none';
               latexPreview.style.display = 'none';
               break;
             case 'image':
-              textarea.placeholder = "URL de l'image (imgur.com, ibb.co, postimg.cc)";
+              textarea.placeholder = 'Image URL (imgur.com, ibb.co, postimg.cc)';
               latexPreview.style.display = 'none';
-              // Mettre à jour l'aperçu d'image avec le contenu existant
+              // Update image preview with existing content
               if (content && content.startsWith('http')) {
                 const isAllowed = isAllowedImageUrl(content);
                 imageHostWarning.style.display = isAllowed ? 'none' : 'block';
@@ -554,14 +554,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               }
               break;
             case 'latex':
-              textarea.placeholder = 'Code LaTeX (ex: \\int_0^1 x^2 dx = \\frac{1}{3})';
+              textarea.placeholder = 'LaTeX code (e.g.: \\int_0^1 x^2 dx = \\frac{1}{3})';
               imagePreview.style.display = 'none';
               latexPreview.style.display = 'block';
-              // Mettre à jour la preview avec le contenu existant
+              // Update preview with existing content
               if (content) {
                 latexPreview.innerHTML = renderLatex(content);
               } else {
-                latexPreview.innerHTML = '<em style="color: #9ca3af;">Aperçu LaTeX...</em>';
+                latexPreview.innerHTML = '<em style="color: #9ca3af;">LaTeX preview...</em>';
               }
               break;
           }
@@ -569,24 +569,24 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         typeSelect.addEventListener('change', updatePlaceholder);
 
-        // Prévisualisation en temps réel + compteur de caractères
+        // Real-time preview + character counter
         textarea.addEventListener('input', () => {
           const currentType = typeSelect.value as ContentType;
           const content = textarea.value.trim();
 
-          // Mettre à jour le compteur
+          // Update counter
           updateCharCounter();
 
           if (currentType === 'image') {
             if (content && content.startsWith('http')) {
-              // Vérifier si l'hébergeur est autorisé
+              // Check if the host is authorized
               const isAllowed = isAllowedImageUrl(content);
               imageHostWarning.style.display = isAllowed ? 'none' : 'block';
               submitBtn.disabled = !isAllowed;
               submitBtn.style.opacity = isAllowed ? '1' : '0.5';
               submitBtn.style.cursor = isAllowed ? 'pointer' : 'not-allowed';
 
-              // Afficher l'aperçu seulement si autorisé
+              // Show preview only if authorized
               if (isAllowed) {
                 previewImg.src = content;
                 imagePreview.style.display = 'block';
@@ -605,7 +605,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             if (content) {
               latexPreview.innerHTML = renderLatex(content);
             } else {
-              latexPreview.innerHTML = '<em style="color: #9ca3af;">Aperçu LaTeX...</em>';
+              latexPreview.innerHTML = '<em style="color: #9ca3af;">LaTeX preview...</em>';
             }
           }
         });
@@ -617,7 +617,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           const contentType = typeSelect.value as ContentType;
 
           if (content) {
-            // Créer l'objet AnswerContent selon le type sélectionné
+            // Create the AnswerContent object based on selected type
             const answerContent: AnswerContent = {
               type: contentType,
               data: content,
@@ -635,17 +635,17 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         targetPage.appendChild(indicator);
 
-        // Focus et scroll vers le textarea seulement lors de la création initiale
+        // Focus and scroll to textarea only on initial creation
         if (!hasFocusedRef.current) {
           hasFocusedRef.current = true;
           setTimeout(() => {
-            // Scroll doux vers l'élément pour le rendre bien visible
+            // Smooth scroll to make the element visible
             indicator.scrollIntoView({
               behavior: 'smooth',
               block: 'center',
               inline: 'nearest',
             });
-            // Focus après le scroll
+            // Focus after scroll
             setTimeout(() => textarea.focus(), 300);
           }, 10);
         }
@@ -653,7 +653,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     }
   }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment]);
 
-  // Fonction pour charger tous les commentaires
+  // Function to load all comments
   const loadAllAnswers = useCallback(async () => {
     if (!examId || !token) return;
     try {
@@ -671,12 +671,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     }
   }, [examId, token]);
 
-  // Charger tous les commentaires au montage et quand examId change
+  // Load all comments on mount and when examId changes
   useEffect(() => {
     loadAllAnswers();
   }, [loadAllAnswers, examId]);
 
-  // Filtrer les commentaires de la page visible (localement, sans appel API)
+  // Filter comments for the visible page (locally, no API call)
   useEffect(() => {
     const pageAnswers = allAnswers
       .filter((a) => a.page === visiblePage)
@@ -684,7 +684,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     setAnswers(pageAnswers);
   }, [allAnswers, visiblePage]);
 
-  // Injecter des styles CSS pour les indicateurs mis en valeur
+  // Inject CSS styles for highlighted indicators
   useEffect(() => {
     const styleId = 'highlighted-indicator-styles';
     let existingStyle = document.getElementById(styleId);
@@ -712,7 +712,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     `;
 
     return () => {
-      // Nettoyage lors du démontage du composant
+      // Cleanup on component unmount
       const style = document.getElementById(styleId);
       if (style) {
         style.remove();
@@ -720,7 +720,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     };
   }, []);
 
-  // Helper : trouver le parentId d'une réponse dans loadedReplies
+  // Helper: find the parentId of a reply in loadedReplies
   const findReplyParent = useCallback(
     (answerId: string): string | null => {
       for (const [parentId, data] of Object.entries(loadedReplies)) {
@@ -733,11 +733,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [loadedReplies]
   );
 
-  // Fonction pour éditer un commentaire
+  // Function to edit a comment
   const editAnswer = useCallback(
     async (answerId: string, newContent: AnswerContent) => {
       try {
-        // Pré-rendre le LaTeX si nécessaire
+        // Pre-render LaTeX if needed
         if (newContent.type === 'latex' && !newContent.rendered) {
           newContent.rendered = renderLatex(newContent.data);
         }
@@ -752,13 +752,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         });
 
         if (!response.ok) {
-          throw new Error('Erreur lors de la modification du commentaire');
+          throw new Error('Error editing comment');
         }
 
-        // Mettre à jour l'UI : vérifier si c'est une réponse dans un thread
+        // Update UI: check if it's a reply in a thread
         const parentId = findReplyParent(answerId);
         if (parentId) {
-          // Mise à jour optimiste du state loadedReplies
+          // Optimistic update of loadedReplies state
           setLoadedReplies(prev => {
             const entry = prev[parentId];
             if (!entry) return prev;
@@ -773,18 +773,18 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             };
           });
         } else {
-          // Commentaire racine : recharger normalement
+          // Root comment: reload normally
           await loadAllAnswers();
         }
       } catch (error) {
-        console.error('Erreur lors de la modification:', error);
+        console.error('Error editing comment:', error);
         throw error;
       }
     },
     [loadAllAnswers, token, findReplyParent]
   );
 
-  // Fonction pour supprimer un commentaire
+  // Function to delete a comment
   const deleteAnswer = useCallback(
     async (answerId: string) => {
       try {
@@ -796,13 +796,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         });
 
         if (!response.ok) {
-          throw new Error('Erreur lors de la suppression du commentaire');
+          throw new Error('Error deleting comment');
         }
 
-        // Mettre à jour l'UI : vérifier si c'est une réponse dans un thread
+        // Update UI: check if it's a reply in a thread
         const parentId = findReplyParent(answerId);
         if (parentId) {
-          // Retirer la réponse du state loadedReplies
+          // Remove reply from loadedReplies state
           setLoadedReplies(prev => {
             const entry = prev[parentId];
             if (!entry) return prev;
@@ -816,22 +816,22 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           });
         }
 
-        // Toujours recharger les racines (met à jour replyCount)
+        // Always reload root comments (updates replyCount)
         await loadAllAnswers();
       } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
+        console.error('Error deleting comment:', error);
         throw error;
       }
     },
     [loadAllAnswers, token, findReplyParent]
   );
 
-  // Fonction pour signaler un commentaire
+  // Function to report a comment
   const reportAnswer = useCallback(
     async (answerId: string) => {
       if (!token) return;
 
-      const reportData = await showReportModal('Signaler ce commentaire', 'comment');
+      const reportData = await showReportModal('Report this comment', 'comment');
       if (!reportData) return;
 
       try {
@@ -856,14 +856,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           await showReportError(errorData.error);
         }
       } catch (error) {
-        console.error('Erreur lors du signalement:', error);
+        console.error('Error reporting comment:', error);
         await showReportError();
       }
     },
     [token]
   );
 
-  // Charger les réponses d'un thread
+  // Load replies for a thread
   const loadReplies = useCallback(
     async (parentId: string, cursor?: string) => {
       if (!token) return;
@@ -914,15 +914,15 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [loadReplies, loadedReplies]
   );
 
-  // Créer une réponse dans un thread
+  // Create a reply in a thread
   const replyToAnswer = useCallback(
     async (parentId: string, content: AnswerContent, mentionedUserId?: string) => {
       if (!token) return;
-      // Trouver le parent pour hériter de page/yTop
+      // Find parent to inherit page/yTop
       const parent = allAnswers.find(a => a._id === parentId);
       if (!parent) return;
 
-      // Pré-rendre le LaTeX si nécessaire
+      // Pre-render LaTeX if needed
       if (content.type === 'latex' && !content.rendered) {
         content.rendered = renderLatex(content.data);
       }
@@ -950,12 +950,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       if (!res.ok) throw new Error('Failed to create reply');
 
       setReplyTarget(null);
-      // Recharger les réponses du thread et les commentaires racines (pour mettre à jour replyCount)
+      // Reload thread replies and root comments (to update replyCount)
       await Promise.all([
         loadReplies(parentId),
         loadAllAnswers(),
       ]);
-      // S'assurer que le thread est ouvert
+      // Make sure the thread is open
       setOpenThreads(prev => ({ ...prev, [parentId]: true }));
     },
     [token, examId, allAnswers, loadReplies, loadAllAnswers]
@@ -970,12 +970,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           aria-label="PDF viewer"
         ></div>
       </div>
-      <aside style={sidebarStyle} aria-label="Commentaires">
+      <aside style={sidebarStyle} aria-label="Comments">
         <div style={sidebarHeaderStyle}>
-          <strong>Commentaires</strong>
+          <strong>Comments</strong>
           <span style={{ opacity: 0.7 }}>
             {selectedGroup
-              ? `Groupe sélectionné (${selectedGroup.length})`
+              ? `Selected group (${selectedGroup.length})`
               : `Page ${visiblePage}/${numPages || '…'}`}
           </span>
         </div>
@@ -994,7 +994,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 color: '#374151',
               }}
             >
-              ← Retour à la page
+              Back to page
             </button>
           </div>
         )}
@@ -1004,14 +1004,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             <li
               key={a._id}
               onClick={() => {
-                // Mettre en valeur ce commentaire
+                // Highlight this comment
                 setHighlightedAnswers([a._id]);
 
-                // Scroll vers l'indicateur correspondant et le mettre en valeur
+                // Scroll to the corresponding indicator and highlight it
                 const container = containerRef.current;
                 if (!container) return;
 
-                // Trouver tous les indicateurs et chercher celui correspondant à ce commentaire
+                // Find all indicators and search for the one corresponding to this comment
                 const indicators = Array.from(container.querySelectorAll('.comment-indicator'));
                 let targetIndicator: HTMLElement | null = null;
 
@@ -1020,7 +1020,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                   const answerIds =
                     indicatorElement.getAttribute('data-answer-ids')?.split(',') || [];
 
-                  // Vérifier si cet indicateur contient notre commentaire
+                  // Check if this indicator contains our comment
                   if (answerIds.includes(a._id)) {
                     targetIndicator = indicatorElement;
                     break;
@@ -1028,14 +1028,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 }
 
                 if (targetIndicator) {
-                  // Si c'est le même marqueur que précédemment, reset le timer
+                  // If it's the same marker as before, reset the timer
                   if (currentHighlightedMarkerRef.current === targetIndicator) {
-                    // Même marqueur : reset le timer
+                    // Same marker: reset timer
                     if (highlightTimeoutRef.current) {
                       clearTimeout(highlightTimeoutRef.current);
                     }
                   } else {
-                    // Marqueur différent : arrêter l'effet précédent
+                    // Different marker: stop previous effect
                     if (currentHighlightedMarkerRef.current) {
                       currentHighlightedMarkerRef.current.classList.remove('highlighted-indicator');
                       if (highlightTimeoutRef.current) {
@@ -1044,12 +1044,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                     }
                   }
 
-                  // Appliquer le nouvel effet
+                  // Apply new effect
                   currentHighlightedMarkerRef.current = targetIndicator;
                   targetIndicator.classList.add('highlighted-indicator');
                   targetIndicator.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                  // Créer un nouveau timeout
+                  // Create a new timeout
                   highlightTimeoutRef.current = setTimeout(() => {
                     targetIndicator?.classList.remove('highlighted-indicator');
                     setHighlightedAnswers([]);
@@ -1059,7 +1059,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 }
               }}
               onMouseEnter={e => {
-                // Déclencher le hover sur les boutons d'action de l'AnswerContentDisplay
+                // Trigger hover on AnswerContentDisplay action buttons
                 const buttons = e.currentTarget.querySelector(
                   '[data-action-buttons]'
                 ) as HTMLElement;
@@ -1068,7 +1068,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 }
               }}
               onMouseLeave={e => {
-                // Retirer le hover des boutons d'action
+                // Remove hover from action buttons
                 const buttons = e.currentTarget.querySelector(
                   '[data-action-buttons]'
                 ) as HTMLElement;
@@ -1088,7 +1088,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               }}
             >
               <div style={commentMetaStyle}>
-                {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonyme'} • Page {a.page}
+                {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonymous'} • Page {a.page}
               </div>
               <AnswerContentDisplay
                 answer={a}
@@ -1098,7 +1098,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 onReply={!a.parentId ? (id) => setReplyTarget(replyTarget?.rootId === id ? null : { rootId: id }) : undefined}
               />
 
-              {/* Thread: formulaire de réponse (juste sous le commentaire racine) */}
+              {/* Thread: reply form (just below the root comment) */}
               {replyTarget?.rootId === a._id && (
                 <ReplyForm
                   onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
@@ -1108,19 +1108,19 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 />
               )}
 
-              {/* Thread: bouton pour voir les réponses */}
+              {/* Thread: button to view replies */}
               {!a.parentId && (a.replyCount || 0) > 0 && (
                 <button
                   onClick={e => { e.stopPropagation(); toggleThread(a._id); }}
                   style={threadToggleStyle}
                 >
                   {openThreads[a._id]
-                    ? 'Masquer les réponses'
-                    : `Voir les ${a.replyCount} réponse${(a.replyCount || 0) > 1 ? 's' : ''}`}
+                    ? 'Hide replies'
+                    : `View ${a.replyCount} repl${(a.replyCount || 0) > 1 ? 'ies' : 'y'}`}
                 </button>
               )}
 
-              {/* Thread: réponses chargées */}
+              {/* Thread: loaded replies */}
               {openThreads[a._id] && loadedReplies[a._id] && (
                 <div style={threadContainerStyle}>
                   {loadedReplies[a._id].replies.map(reply => (
@@ -1134,7 +1134,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                             @{reply.mentionedAuthor.firstName} {reply.mentionedAuthor.lastName[0]}.
                           </span>
                         )}
-                        {reply.author ? `${reply.author.firstName} ${reply.author.lastName[0]}.` : 'Anonyme'}
+                        {reply.author ? `${reply.author.firstName} ${reply.author.lastName[0]}.` : 'Anonymous'}
                       </div>
                       <AnswerContentDisplay
                         answer={reply}
@@ -1162,7 +1162,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                       }}
                       style={getLoadMoreStyle(primaryColor)}
                     >
-                      Charger plus de réponses
+                      Load more replies
                     </button>
                   )}
                 </div>
@@ -1172,8 +1172,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           {!(selectedGroup || answers).length && (
             <li style={{ opacity: 0.6, padding: '8px 0' }}>
               {selectedGroup
-                ? 'Aucun commentaire dans ce groupe.'
-                : 'Aucun commentaire sur cette page.'}
+                ? 'No comments in this group.'
+                : 'No comments on this page.'}
             </li>
           )}
         </ul>
@@ -1187,15 +1187,14 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             color: '#6b7280',
           }}
         >
-          💡 <strong>Astuce :</strong> Cliquez directement sur le PDF pour ajouter un commentaire à
-          l&apos;endroit précis
+          Tip: Click directly on the PDF to add a comment at the exact location
         </div>
       </aside>
     </div>
   );
 }
 
-// ---------- styles inline minimalistes (pas de dépendance CSS supplémentaire) ----------
+// ---------- minimal inline styles (no additional CSS dependencies) ----------
 const wrapperStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 360px)',
@@ -1227,7 +1226,7 @@ const sidebarHeaderStyle: React.CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   marginBottom: 12,
-  marginRight: '1rem', // Éviter que le texte soit masqué par la barre de scroll
+  marginRight: '1rem', // Prevent text from being hidden by the scrollbar
 };
 const commentListStyle: React.CSSProperties = {
   listStyle: 'none',

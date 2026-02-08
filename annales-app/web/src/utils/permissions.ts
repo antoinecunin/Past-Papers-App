@@ -1,19 +1,19 @@
 import type { User, UserRole } from '../stores/authStore';
 
 /**
- * Utilitaires de permissions côté frontend
+ * Frontend permission utilities
  */
 export class PermissionUtils {
   /**
-   * Vérifie si l'utilisateur est administrateur
+   * Checks if the user is an administrator
    */
   static isAdmin(user: User | null): boolean {
     return user?.role === 'admin';
   }
 
   /**
-   * Vérifie si l'utilisateur peut supprimer une ressource
-   * (propriétaire ou admin)
+   * Checks if the user can delete a resource
+   * (owner or admin)
    */
   static canDelete(user: User | null, resourceOwnerId: string): boolean {
     if (!user) return false;
@@ -21,8 +21,8 @@ export class PermissionUtils {
   }
 
   /**
-   * Vérifie si l'utilisateur peut modifier une ressource
-   * (propriétaire uniquement - admin ne peut pas modifier les commentaires d'autrui)
+   * Checks if the user can edit a resource
+   * (owner only - admin cannot edit others' comments)
    */
   static canEdit(user: User | null, resourceOwnerId: string): boolean {
     if (!user) return false;
@@ -30,9 +30,9 @@ export class PermissionUtils {
   }
 
   /**
-   * Retourne le libellé du rôle utilisateur
+   * Returns the user role label
    */
   static getRoleLabel(role: UserRole): string {
-    return role === 'admin' ? 'Administrateur' : 'Utilisateur';
+    return role === 'admin' ? 'Administrator' : 'User';
   }
 }

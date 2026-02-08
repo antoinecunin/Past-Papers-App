@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useInstance } from './useInstance';
 
 export interface RouteParams {
   examId?: string;
@@ -24,17 +25,18 @@ export interface Route {
 }
 
 /**
- * Hook pour gérer le routing simple avec l'API History
- * Supporte les routes: /, /upload, /exam/:examId
+ * Hook to handle simple routing with the History API
+ * Supports routes: /, /upload, /exam/:examId
  */
 export function useRouter() {
+  const { name: instanceName } = useInstance();
   const [currentRoute, setCurrentRoute] = useState<Route>(() => parseCurrentPath());
 
   /**
-   * Helper pour construire le path d'une route
-   * @param page - Type de page à construire
-   * @param params - Paramètres de la route (examId, token, etc.)
-   * @returns Le path de la route ou null en cas d'erreur
+   * Helper to build the path for a route
+   * @param page - Page type to build
+   * @param params - Route parameters (examId, token, etc.)
+   * @returns The route path or null on error
    */
   const buildPath = useCallback((page: Route['page'], params: RouteParams = {}) => {
     switch (page) {
@@ -60,7 +62,7 @@ export function useRouter() {
         return '/terms';
       case 'viewer':
         if (!params.examId) {
-          console.error('examId requis pour la route viewer');
+          console.error('examId required for viewer route');
           return null;
         }
         return `/exam/${params.examId}`;
@@ -71,16 +73,16 @@ export function useRouter() {
   }, []);
 
   /**
-   * Helper pour synchroniser toutes les instances de useRouter
-   * Déclenche manuellement un événement popstate pour notifier les autres hooks
+   * Helper to synchronize all useRouter instances
+   * Manually dispatches a popstate event to notify other hooks
    */
   const syncRouterInstances = useCallback(() => {
     window.dispatchEvent(new PopStateEvent('popstate'));
   }, []);
 
   /**
-   * Parser le path actuel en route
-   * @returns L'objet Route correspondant au path actuel
+   * Parse the current path into a route
+   * @returns The Route object corresponding to the current path
    */
   function parseCurrentPath(): Route {
     const path = window.location.pathname;
@@ -137,30 +139,30 @@ export function useRouter() {
       };
     }
 
-    // Route par défaut (/ ou autre)
+    // Default route (/ or other)
     return { path: '/', page: 'exams', params: {} };
   }
 
-  // Naviguer vers une nouvelle route
+  // Navigate to a new route
   const navigate = useCallback(
     (page: Route['page'], params: RouteParams = {}) => {
       const newPath = buildPath(page, params);
-      if (!newPath) return; // buildPath a déjà loggé l'erreur
+      if (!newPath) return; // buildPath already logged the error
 
-      // Mettre à jour l'URL sans recharger la page
+      // Update URL without reloading the page
       window.history.pushState(null, '', newPath);
 
-      // Synchroniser toutes les instances de useRouter
+      // Synchronize all useRouter instances
       syncRouterInstances();
 
-      // Mettre à jour l'état local
+      // Update local state
       const newRoute: Route = { path: newPath, page, params };
       setCurrentRoute(newRoute);
     },
     [buildPath, syncRouterInstances]
   );
 
-  // Écouter les changements de l'historique (bouton retour)
+  // Listen for history changes (back button)
   useEffect(() => {
     const handlePopState = () => {
       setCurrentRoute(parseCurrentPath());
@@ -170,58 +172,70 @@ export function useRouter() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Mettre à jour le titre de la page selon la route
+  // Update page title based on the route
   useEffect(() => {
-    let title = "Plateforme d'Annales";
+    let title = instanceName;
 
     switch (currentRoute.page) {
       case 'upload':
-        title = "Upload - Plateforme d'Annales";
+        title = `Upload | ${instanceName}`;
         break;
       case 'admin-reports':
-        title = "Signalements - Plateforme d'Annales";
+        title = `Admin | ${instanceName}`;
         break;
       case 'profile':
-        title = "Mon Profil - Plateforme d'Annales";
+        title = `Profile | ${instanceName}`;
         break;
       case 'privacy':
-        title = "Politique de Confidentialité - Plateforme d'Annales";
+        title = `Privacy Policy | ${instanceName}`;
         break;
       case 'terms':
-        title = "Conditions Générales d'Utilisation - Plateforme d'Annales";
+        title = `Terms of Service | ${instanceName}`;
         break;
       case 'viewer':
-        title = "Examen - Plateforme d'Annales";
+        title = `Exam | ${instanceName}`;
+        break;
+      case 'login':
+        title = `Sign in | ${instanceName}`;
+        break;
+      case 'register':
+        title = `Create account | ${instanceName}`;
+        break;
+      case 'forgot-password':
+        title = `Forgot password | ${instanceName}`;
+        break;
+      case 'verify-email':
+        title = `Verification | ${instanceName}`;
         break;
       case 'exams':
       default:
-        title = "Examens - Plateforme d'Annales";
+        title = `Exams | ${instanceName}`;
         break;
     }
 
     document.title = title;
-  }, [currentRoute]);
+  }, [currentRoute, instanceName]);
 
-  // Remplacer l'URL actuelle (utile pour redirection)
+  // Replace the current URL (useful for redirects)
   const replace = useCallback(
     (page: Route['page'], params: RouteParams = {}) => {
       const newPath = buildPath(page, params);
-      if (!newPath) return; // buildPath a déjà loggé l'erreur
+      if (!newPath) return; // buildPath already logged the error
 
-      // Remplacer l'URL actuelle
+      // Replace the current URL
       window.history.replaceState(null, '', newPath);
 
-      // Synchroniser toutes les instances de useRouter
+      // Synchronize all useRouter instances
       syncRouterInstances();
 
-      // Mettre à jour l'état local
+      // Update local state
       const newRoute: Route = { path: newPath, page, params };
       setCurrentRoute(newRoute);
     },
     [buildPath, syncRouterInstances]
   );
 
-  // Mémoriser les fonctions helper
+  // Memoize helper functions
   const isPage = useCallback(
     (page: Route['page']) => currentRoute.page === page,
     [currentRoute.page]

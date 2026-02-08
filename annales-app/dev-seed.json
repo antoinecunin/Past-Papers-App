@@ -1,43 +1,43 @@
 {
-  "description": "Configuration des données de test pour l'environnement de développement",
+  "description": "Test data configuration for the development environment",
   "users": [
     {
-      "email": "test@etu.unistra.fr",
+      "emailPrefix": "test",
       "password": "azerty24",
       "firstName": "Test",
       "lastName": "User",
       "isVerified": true
     },
     {
-      "email": "alice@etu.unistra.fr",
+      "emailPrefix": "alice",
       "password": "alice123",
       "firstName": "Alice",
       "lastName": "Martin",
       "isVerified": true
     },
     {
-      "email": "bob@etu.unistra.fr",
+      "emailPrefix": "bob",
       "password": "bob12345",
       "firstName": "Bob",
       "lastName": "Dupont",
       "isVerified": true
     },
     {
-      "email": "charlie@etu.unistra.fr",
+      "emailPrefix": "charlie",
       "password": "charlie1",
       "firstName": "Charlie",
       "lastName": "Bernard",
       "isVerified": true
     },
     {
-      "email": "diane@etu.unistra.fr",
+      "emailPrefix": "diane",
       "password": "diane123",
       "firstName": "Diane",
       "lastName": "Petit",
       "isVerified": true
     },
     {
-      "email": "admin@etu.unistra.fr",
+      "emailPrefix": "admin",
       "password": "admin123",
       "firstName": "Admin",
       "lastName": "User",
@@ -48,49 +48,49 @@
   "files": [
     {
       "path": "M12_controle_final.pdf",
-      "title": "Contrôle Final M12",
+      "title": "Final Exam M12",
       "year": 2021,
       "module": "M12-ALGO"
     },
     {
       "path": "M12_controle_final.pdf",
-      "title": "Contrôle M12 - Session 2",
+      "title": "M12 Exam - Session 2",
       "year": 2021,
       "module": "M12-ALGO"
     },
     {
       "path": "M12_controle_final.pdf",
-      "title": "TP Final Structures de Données",
+      "title": "Data Structures Final Lab",
       "year": 2022,
       "module": "M15-STRUCT"
     },
     {
       "path": "M12_controle_final.pdf",
-      "title": "Examen Bases de Données",
+      "title": "Database Exam",
       "year": 2022,
       "module": "M21-BDD"
     },
     {
       "path": "M12_controle_final.pdf",
-      "title": "Partiel Programmation Web",
+      "title": "Web Development Midterm",
       "year": 2023,
       "module": "M31-WEB"
     },
     {
       "path": "M12_controle_final.pdf",
-      "title": "Contrôle Continu Réseaux",
+      "title": "Networking Quiz",
       "year": 2023,
       "module": "M25-NET"
     },
     {
       "path": "M12_controle_final.pdf",
-      "title": "Examen Final Systèmes",
+      "title": "Operating Systems Final Exam",
       "year": 2024,
       "module": "M18-SYS"
     },
     {
       "path": "M12_controle_final.pdf",
-      "title": "TP Noté Intelligence Artificielle",
+      "title": "AI Lab Exam",
       "year": 2024,
       "module": "M42-IA"
     }
@@ -98,11 +98,11 @@
   "reports": {
     "count": 40,
     "items": [
-      { "reason": "inappropriate_content", "description": "Contenu offensant dans les commentaires" },
-      { "reason": "spam", "description": "Publicité pour un site externe" },
-      { "reason": "wrong_exam", "description": "Ce n'est pas un examen de M12-ALGO" },
-      { "reason": "duplicate", "description": "Document déjà uploadé" },
-      { "reason": "other", "description": "Fichier corrompu, impossible à ouvrir" }
+      { "reason": "inappropriate_content", "description": "Offensive content in comments" },
+      { "reason": "spam", "description": "Advertisement for an external website" },
+      { "reason": "wrong_exam", "description": "This is not an M12-ALGO exam" },
+      { "reason": "duplicate", "description": "Document already uploaded" },
+      { "reason": "other", "description": "Corrupted file, cannot open" }
     ]
   },
   "settings": {

@@ -1,14 +1,14 @@
 #!/bin/bash
-# Utilitaire MinIO Client pour debug/admin du stockage S3
-# Usage: ./mc.sh [commande mc]
-# Exemples:
+# MinIO Client utility for debug/admin of S3 storage
+# Usage: ./mc.sh [mc command]
+# Examples:
 #   ./mc.sh ls minio/annales-dev
 #   ./mc.sh du minio/annales-dev
-#   ./mc.sh cat minio/annales-dev/fichier.pdf
+#   ./mc.sh cat minio/annales-dev/file.pdf
 
 set -euo pipefail
 
-# Détecter le mode (dev ou prod) selon les conteneurs actifs
+# Detect mode (dev or prod) based on active containers
 if docker ps --format '{{.Names}}' | grep -q 'annales-minio-dev'; then
   COMPOSE_FILE="docker-compose.dev.yml"
   ENV_FILE=".env.dev"
@@ -16,19 +16,19 @@ elif docker ps --format '{{.Names}}' | grep -q 'annales-minio'; then
   COMPOSE_FILE="docker-compose.yml"
   ENV_FILE=".env"
 else
-  echo "❌ Aucun conteneur MinIO actif. Lance d'abord ./start.sh dev ou ./start.sh prod"
+  echo "❌ No active MinIO container found. Start services first with ./start.sh dev or ./start.sh prod"
   exit 1
 fi
 
 if [ $# -eq 0 ]; then
-  echo "Usage: $0 <commande mc>"
+  echo "Usage: $0 <mc command>"
   echo ""
-  echo "Exemples:"
-  echo "  $0 ls minio/annales-dev      # Lister les fichiers"
-  echo "  $0 du minio/annales-dev      # Espace utilisé"
-  echo "  $0 stat minio/annales-dev/x  # Infos sur un fichier"
-  echo "  $0 cat minio/annales-dev/x   # Afficher un fichier"
-  echo "  $0 rm minio/annales-dev/x    # Supprimer un fichier"
+  echo "Examples:"
+  echo "  $0 ls minio/annales-dev      # List files"
+  echo "  $0 du minio/annales-dev      # Disk usage"
+  echo "  $0 stat minio/annales-dev/x  # File info"
+  echo "  $0 cat minio/annales-dev/x   # Display a file"
+  echo "  $0 rm minio/annales-dev/x    # Delete a file"
   exit 0
 fi
 

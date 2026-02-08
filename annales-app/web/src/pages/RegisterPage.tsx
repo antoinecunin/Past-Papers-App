@@ -22,9 +22,9 @@ export default function RegisterPage() {
   const { navigate } = useRouter();
   const { name, allowedDomains } = useInstance();
 
-  // Note: Pas de redirection automatique - permet à un utilisateur connecté de voir la page d'inscription
+  // Note: No automatic redirect - allows a logged-in user to view the registration page
 
-  // Nettoyer les erreurs au démontage
+  // Clean up errors on unmount
   useEffect(() => {
     return () => clearError();
   }, [clearError]);
@@ -33,34 +33,34 @@ export default function RegisterPage() {
     const errors: string[] = [];
 
     if (!formData.firstName.trim()) {
-      errors.push('Le prénom est requis');
+      errors.push('First name is required');
     }
 
     if (!formData.lastName.trim()) {
-      errors.push('Le nom est requis');
+      errors.push('Last name is required');
     }
 
     if (!formData.email.trim()) {
-      errors.push("L'email est requis");
+      errors.push('Email is required');
     } else if (!allowedDomains.some((domain) => formData.email.toLowerCase().endsWith(domain.toLowerCase()))) {
       const domains = allowedDomains.join(', ');
-      errors.push(`L'email doit se terminer par un des domaines autorisés: ${domains}`);
+      errors.push(`Email must end with one of the allowed domains: ${domains}`);
     }
 
     if (!formData.password) {
-      errors.push('Le mot de passe est requis');
+      errors.push('Password is required');
     } else if (formData.password.length < 8) {
-      errors.push('Le mot de passe doit contenir au moins 8 caractères');
+      errors.push('Password must contain at least 8 characters');
     } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/.test(formData.password)) {
-      errors.push('Le mot de passe doit contenir au moins une lettre et un chiffre');
+      errors.push('Password must contain at least one letter and one number');
     }
 
     if (formData.password !== formData.confirmPassword) {
-      errors.push('Les mots de passe ne correspondent pas');
+      errors.push('Passwords do not match');
     }
 
     if (!acceptedTerms) {
-      errors.push('Vous devez accepter les conditions d\'utilisation et la politique de confidentialité');
+      errors.push('You must accept the Terms of Service and Privacy Policy');
     }
 
     setValidationErrors(errors);
@@ -83,7 +83,7 @@ export default function RegisterPage() {
       });
       setSuccess(true);
     } catch {
-      // L'erreur est déjà gérée par le store
+      // Error is already handled by the store
     }
   };
 
@@ -93,7 +93,7 @@ export default function RegisterPage() {
         ...prev,
         [field]: e.target.value,
       }));
-      // Nettoyer les erreurs de validation lors de la saisie
+      // Clear validation errors on input
       if (validationErrors.length > 0) {
         setValidationErrors([]);
       }
@@ -109,10 +109,10 @@ export default function RegisterPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
                 <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Inscription réussie !</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Registration successful!</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                Un email de vérification a été envoyé à votre adresse email. Veuillez cliquer sur le
-                lien contenu dans l&apos;email pour activer votre compte.
+                A verification email has been sent to your email address. Please click the
+                link in the email to activate your account.
               </p>
               <Button
                 type="button"
@@ -122,7 +122,7 @@ export default function RegisterPage() {
                 onClick={() => navigate('login')}
               >
                 <LogIn className="w-5 h-5" />
-                <span>Aller à la page de connexion</span>
+                <span>Go to login page</span>
               </Button>
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function RegisterPage() {
             <UserPlus className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
-            Créer un compte
+            Create account
           </h1>
           <p className="text-sm md:text-base text-secondary">{name}</p>
         </div>
@@ -167,40 +167,40 @@ export default function RegisterPage() {
                     setValidationErrors([]);
                   }}
                   className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
-                  aria-label="Fermer le message d'erreur"
+                  aria-label="Close error message"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             )}
 
-            {/* Prénom et Nom */}
+            {/* First name and Last name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Prénom"
+                label="First name"
                 id="firstName"
                 name="firstName"
                 type="text"
                 required
                 value={formData.firstName}
                 onChange={handleInputChange('firstName')}
-                placeholder="Jean"
+                placeholder="John"
               />
               <Input
-                label="Nom"
+                label="Last name"
                 id="lastName"
                 name="lastName"
                 type="text"
                 required
                 value={formData.lastName}
                 onChange={handleInputChange('lastName')}
-                placeholder="Dupont"
+                placeholder="Doe"
               />
             </div>
 
             {/* Email */}
             <Input
-              label="Adresse email universitaire"
+              label="University email address"
               id="email"
               name="email"
               type="email"
@@ -208,13 +208,13 @@ export default function RegisterPage() {
               required
               value={formData.email}
               onChange={handleInputChange('email')}
-              placeholder={`votre.email${allowedDomains[0] || '@example.com'}`}
-              helperText={`Seuls les emails ${allowedDomains.join(', ')} sont acceptés`}
+              placeholder={`your.email${allowedDomains[0] || '@example.com'}`}
+              helperText={`Only ${allowedDomains.join(', ')} emails are accepted`}
             />
 
-            {/* Mot de passe */}
+            {/* Password */}
             <Input
-              label="Mot de passe"
+              label="Password"
               id="password"
               name="password"
               type="password"
@@ -223,12 +223,12 @@ export default function RegisterPage() {
               value={formData.password}
               onChange={handleInputChange('password')}
               placeholder="••••••••"
-              helperText="Au moins 8 caractères avec une lettre et un chiffre"
+              helperText="At least 8 characters with one letter and one number"
             />
 
-            {/* Confirmation mot de passe */}
+            {/* Confirm password */}
             <Input
-              label="Confirmer le mot de passe"
+              label="Confirm password"
               id="confirmPassword"
               name="confirmPassword"
               type="password"
@@ -239,7 +239,7 @@ export default function RegisterPage() {
               placeholder="••••••••"
             />
 
-            {/* Checkbox consentement RGPD */}
+            {/* GDPR consent checkbox */}
             <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
               <input
                 type="checkbox"
@@ -254,26 +254,26 @@ export default function RegisterPage() {
                 className="mt-0.5 w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2 cursor-pointer"
               />
               <label htmlFor="acceptTerms" className="text-sm text-secondary leading-relaxed cursor-pointer">
-                J&apos;accepte les{' '}
+                I accept the{' '}
                 <button
                   type="button"
                   onClick={() => navigate('terms')}
                   className="text-primary hover:text-primary-hover underline font-medium cursor-pointer"
                 >
-                  Conditions Générales d&apos;Utilisation
+                  Terms of Service
                 </button>{' '}
-                et la{' '}
+                and the{' '}
                 <button
                   type="button"
                   onClick={() => navigate('privacy')}
                   className="text-primary hover:text-primary-hover underline font-medium cursor-pointer"
                 >
-                  Politique de Confidentialité
+                  Privacy Policy
                 </button>
               </label>
             </div>
 
-            {/* Bouton inscription */}
+            {/* Register button */}
             <Button
               type="submit"
               variant="primary"
@@ -292,30 +292,30 @@ export default function RegisterPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Inscription...</span>
+                  <span>Registering...</span>
                 </>
               ) : (
                 <>
                   <UserPlus className="w-5 h-5" />
-                  <span>Créer le compte</span>
+                  <span>Create account</span>
                 </>
               )}
             </Button>
           </form>
 
-          {/* Séparateur */}
+          {/* Separator */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 bg-white text-sm text-secondary font-medium">
-                Déjà un compte ?
+                Already have an account?
               </span>
             </div>
           </div>
 
-          {/* Bouton connexion */}
+          {/* Login button */}
           <Button
             type="button"
             variant="secondary"
@@ -324,7 +324,7 @@ export default function RegisterPage() {
             onClick={() => navigate('login')}
           >
             <LogIn className="w-5 h-5" />
-            <span>Se connecter</span>
+            <span>Sign in</span>
           </Button>
         </div>
       </div>

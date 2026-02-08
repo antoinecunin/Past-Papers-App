@@ -21,8 +21,8 @@ interface ExamCardProps {
 }
 
 /**
- * Composant pour afficher une carte d'examen individuelle
- * Respecte les patterns de design existants du projet
+ * Component to display an individual exam card
+ * Follows existing design patterns from the project
  */
 export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
   const { token } = useAuthStore();
@@ -32,12 +32,12 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
   };
 
   const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Empêche l'ouverture de l'examen
+    e.stopPropagation(); // Prevent opening the exam
 
     if (!token) return;
 
     try {
-      // Télécharger le fichier avec authentification
+      // Download file with authentication
       const response = await fetch(`/api/files/${exam._id}/download`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -48,7 +48,7 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
         throw new Error('Failed to download file');
       }
 
-      // Créer un blob et déclencher le téléchargement
+      // Create a blob and trigger the download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const filename = `${exam.title.replace(/[^a-zA-Z0-9]/g, '_')}${exam.year ? `_${exam.year}` : ''}.pdf`;
@@ -62,21 +62,21 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
       link.click();
       document.body.removeChild(link);
 
-      // Libérer la mémoire
+      // Free memory
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Erreur lors du téléchargement:', error);
-      await showError('Erreur', 'Impossible de télécharger le fichier');
+      console.error('Error downloading file:', error);
+      await showError('Error', 'Unable to download the file');
     }
   };
 
   const handleReport = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Empêche l'ouverture de l'examen
+    e.stopPropagation(); // Prevent opening the exam
     onReport?.(exam._id);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -96,7 +96,7 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
         }
       }}
     >
-      {/* En-tête avec titre et année */}
+      {/* Header with title and year */}
       <div className="flex justify-between items-start gap-3 mb-3">
         <h3 className="text-base md:text-lg font-semibold text-secondary-dark flex-1 leading-tight group-hover:text-primary transition-colors">
           {exam.title}
@@ -108,7 +108,7 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
         )}
       </div>
 
-      {/* Métadonnées */}
+      {/* Metadata */}
       <div className="space-y-2 mb-4">
         {exam.module && (
           <div className="flex items-center gap-2">
@@ -130,22 +130,22 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
       <div className="flex justify-between items-center pt-3 border-t border-border">
         <span className="text-xs text-secondary/70">{formatDate(exam.createdAt)}</span>
         <div className="flex items-center gap-2">
-          {/* Bouton télécharger */}
+          {/* Download button */}
           <button
             onClick={handleDownload}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/10 hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer"
-            title="Télécharger le PDF"
+            title="Download PDF"
           >
             <Download className="w-4 h-4" />
             <span className="text-xs font-medium">PDF</span>
           </button>
 
-          {/* Bouton signaler */}
+          {/* Report button */}
           {onReport && (
             <button
               onClick={handleReport}
               className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 hover:bg-warning/20 text-warning hover:text-warning transition-all cursor-pointer"
-              title="Signaler cet examen"
+              title="Report this exam"
             >
               <AlertTriangle className="w-4 h-4" />
             </button>

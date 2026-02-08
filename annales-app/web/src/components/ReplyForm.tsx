@@ -40,9 +40,9 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
   };
 
   const placeholder: Record<ContentType, string> = {
-    text: 'Votre réponse...',
-    image: "URL de l'image (imgur.com, ibb.co, postimg.cc)",
-    latex: 'Code LaTeX (ex: \\int_0^1 x^2 dx)',
+    text: 'Your reply...',
+    image: 'Image URL (imgur.com, ibb.co, postimg.cc)',
+    latex: 'LaTeX code (e.g.: \\int_0^1 x^2 dx)',
   };
 
   return (
@@ -59,7 +59,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
               type="button"
               onClick={e => { e.stopPropagation(); onClearMention(); }}
               style={mentionClearButtonStyle}
-              title="Retirer la mention"
+              title="Remove mention"
             >
               ×
             </button>
@@ -71,7 +71,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
         onChange={e => setContentType(e.target.value as ContentType)}
         style={selectStyle}
       >
-        <option value="text">Texte</option>
+        <option value="text">Text</option>
         <option value="image">Image (URL)</option>
         <option value="latex">LaTeX</option>
       </select>
@@ -95,7 +95,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
 
       {isImageInvalid && (
         <div style={warningStyle}>
-          Hebergeur non autorise. Utilisez imgur.com, ibb.co ou postimg.cc
+          Unauthorized host. Use imgur.com, ibb.co, or postimg.cc
         </div>
       )}
 
@@ -116,14 +116,14 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
             cursor: canSubmit ? 'pointer' : 'not-allowed',
           }}
         >
-          {submitting ? '...' : 'Envoyer'}
+          {submitting ? '...' : 'Send'}
         </button>
         <button
           type="button"
           onClick={e => { e.stopPropagation(); onCancel(); }}
           style={cancelButtonStyle}
         >
-          Annuler
+          Cancel
         </button>
       </div>
     </form>

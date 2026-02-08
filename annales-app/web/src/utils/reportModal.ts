@@ -8,24 +8,24 @@ interface ReportData {
 type ReportType = 'exam' | 'comment';
 
 const EXAM_REASONS = [
-  { value: 'wrong_exam', label: 'Mauvais examen (année ou module incorrect)' },
-  { value: 'poor_quality', label: 'Qualité insuffisante (illisible, incomplet)' },
-  { value: 'duplicate', label: 'Doublon' },
-  { value: 'other', label: 'Autre' },
+  { value: 'wrong_exam', label: 'Wrong exam (incorrect year or module)' },
+  { value: 'poor_quality', label: 'Poor quality (unreadable, incomplete)' },
+  { value: 'duplicate', label: 'Duplicate' },
+  { value: 'other', label: 'Other' },
 ];
 
 const COMMENT_REASONS = [
-  { value: 'inappropriate_content', label: 'Contenu inapproprié ou offensant' },
+  { value: 'inappropriate_content', label: 'Inappropriate or offensive content' },
   { value: 'spam', label: 'Spam' },
-  { value: 'off_topic', label: 'Hors-sujet' },
-  { value: 'other', label: 'Autre' },
+  { value: 'off_topic', label: 'Off-topic' },
+  { value: 'other', label: 'Other' },
 ];
 
 /**
- * Affiche un modal de signalement avec SweetAlert2
- * @param title - Titre du modal (ex: "Signaler cet examen")
- * @param type - Type de signalement ('exam' ou 'comment')
- * @returns Les données du signalement ou null si annulé
+ * Displays a report modal with SweetAlert2
+ * @param title - Modal title (e.g. "Report this exam")
+ * @param type - Report type ('exam' or 'comment')
+ * @returns The report data or null if cancelled
  */
 export async function showReportModal(title: string, type: ReportType): Promise<ReportData | null> {
   const reasons = type === 'exam' ? EXAM_REASONS : COMMENT_REASONS;
@@ -37,25 +37,25 @@ export async function showReportModal(title: string, type: ReportType): Promise<
   const result = await Swal.fire({
     title,
     html: `<div style="text-align: left;">
-      <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Raison du signalement</label>
+      <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Reason for report</label>
       <select id="swal-reason" class="swal2-input" style="margin: 0 0 16px 0; width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
-        <option value="">Sélectionnez une raison</option>
+        <option value="">Select a reason</option>
         ${optionsHtml}
       </select>
-      <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Description (optionnel)</label>
-      <textarea id="swal-description" class="swal2-textarea" placeholder="Décrivez le problème..." style="margin: 0; width: 100%; min-height: 100px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
+      <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">Description (optional)</label>
+      <textarea id="swal-description" class="swal2-textarea" placeholder="Describe the issue..." style="margin: 0; width: 100%; min-height: 100px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
     </div>`,
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonText: 'Envoyer',
-    cancelButtonText: 'Annuler',
+    confirmButtonText: 'Submit',
+    cancelButtonText: 'Cancel',
     confirmButtonColor: '#f59e0b',
     cancelButtonColor: '#64748b',
     preConfirm: () => {
       const reason = (document.getElementById('swal-reason') as HTMLSelectElement)?.value;
       const description = (document.getElementById('swal-description') as HTMLTextAreaElement)?.value;
       if (!reason) {
-        Swal.showValidationMessage('Veuillez sélectionner une raison');
+        Swal.showValidationMessage('Please select a reason');
         return false;
       }
       return { reason, description };
@@ -70,25 +70,25 @@ export async function showReportModal(title: string, type: ReportType): Promise<
 }
 
 /**
- * Affiche un message de succès pour un signalement
+ * Displays a success message for a report
  */
 export async function showReportSuccess(): Promise<void> {
   await Swal.fire({
-    title: 'Succès',
-    text: 'Signalement envoyé avec succès',
+    title: 'Success',
+    text: 'Report submitted successfully',
     icon: 'success',
     confirmButtonColor: '#2563eb',
   });
 }
 
 /**
- * Affiche un message d'erreur pour un signalement
- * @param message - Message d'erreur optionnel
+ * Displays an error message for a report
+ * @param message - Optional error message
  */
 export async function showReportError(message?: string): Promise<void> {
   await Swal.fire({
-    title: 'Erreur',
-    text: message || 'Erreur lors du signalement',
+    title: 'Error',
+    text: message || 'Error submitting report',
     icon: 'error',
     confirmButtonColor: '#ef4444',
   });

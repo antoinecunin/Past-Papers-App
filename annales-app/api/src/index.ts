@@ -55,7 +55,6 @@ app.use('/api/files', files);
 app.use('/api/answers', answers);
 app.use('/api/reports', reports);
 
-setupSwagger(app);
 app.use(errorHandler);
 
 const port = Number(process.env.API_PORT || 3000);
@@ -94,6 +93,9 @@ connectMongoWithRetry().then(async () => {
     console.error('[api] Failed to load instance config:', error);
     process.exit(1);
   }
+
+  // Setup Swagger (needs instance config loaded)
+  setupSwagger(app);
 
   // Initialize first admin user if none exists
   await AdminInitService.initializeFirstAdmin();

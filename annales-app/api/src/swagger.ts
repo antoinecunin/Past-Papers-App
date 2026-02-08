@@ -1,13 +1,15 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc, { type Options } from 'swagger-jsdoc';
+import { instanceConfigService } from './services/instance-config.service.js';
 
 export function setupSwagger(app: Express) {
+  const config = instanceConfigService.getConfig();
   const options: Options = {
     definition: {
       openapi: '3.0.0',
       info: {
-        title: 'Annales API',
+        title: `${config.instance.name} API`,
         version: '1.0.0',
       },
       servers: [{ url: '/api' }],

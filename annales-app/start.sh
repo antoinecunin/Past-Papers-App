@@ -5,7 +5,7 @@ MODE=${1:-prod}
 CLEAN=false
 SEED=false
 
-# Parser les arguments
+# Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     --clean)
@@ -20,23 +20,23 @@ while [[ $# -gt 0 ]]; do
       echo "📖 Usage: $0 [dev|prod] [OPTIONS]"
       echo ""
       echo "MODES:"
-      echo "   dev    Démarrage en mode développement avec hot reload"
-      echo "   prod   Démarrage en mode production"
+      echo "   dev    Start in development mode with hot reload"
+      echo "   prod   Start in production mode"
       echo ""
       echo "OPTIONS:"
-      echo "   --clean    Supprime les volumes de données avant le démarrage"
-      echo "   --seed     Crée des données de test selon dev-seed.json (dev uniquement)"
-      echo "   --help     Affiche cette aide"
+      echo "   --clean    Remove data volumes before starting"
+      echo "   --seed     Create test data from dev-seed.json (dev only)"
+      echo "   --help     Show this help"
       echo ""
-      echo "EXEMPLES:"
-      echo "   $0 dev                    # Dev normal avec persistance"
-      echo "   $0 dev --clean           # Dev propre (volumes supprimés)"
-      echo "   $0 dev --clean --seed    # Dev propre + données de test"
-      echo "   $0 prod --clean          # Prod propre"
+      echo "EXAMPLES:"
+      echo "   $0 dev                    # Dev with data persistence"
+      echo "   $0 dev --clean           # Clean dev (volumes removed)"
+      echo "   $0 dev --clean --seed    # Clean dev + test data"
+      echo "   $0 prod --clean          # Clean prod"
       echo ""
-      echo "FICHIERS:"
-      echo "   dev-seed.json            Configuration des données de test"
-      echo "   .env.dev / .env          Variables d'environnement"
+      echo "FILES:"
+      echo "   dev-seed.json            Test data configuration"
+      echo "   .env.dev / .env          Environment variables"
       exit 0
       ;;
     dev|prod)
@@ -44,8 +44,8 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     *)
-      echo "❌ Argument inconnu: $1"
-      echo "💡 Utilisez --help pour voir l'aide"
+      echo "❌ Unknown argument: $1"
+      echo "💡 Use --help for usage information"
       exit 1
       ;;
   esac
@@ -53,34 +53,34 @@ done
 
 if [[ "$MODE" != "dev" && "$MODE" != "prod" ]]; then
   echo "❌ Usage: $0 [dev|prod] [--clean] [--seed]"
-  echo "   dev:   Démarrage en mode développement avec hot reload"
-  echo "   prod:  Démarrage en mode production"
-  echo "   --clean: Supprime les volumes de données avant le démarrage"
-  echo "   --seed:  Crée des données de test (dev uniquement)"
+  echo "   dev:   Start in development mode with hot reload"
+  echo "   prod:  Start in production mode"
+  echo "   --clean: Remove data volumes before starting"
+  echo "   --seed:  Create test data (dev only)"
   echo ""
-  echo "Exemples:"
-  echo "   $0 dev --clean --seed  # Dev propre avec données de test"
-  echo "   $0 prod --clean        # Prod propre"
-  echo "   $0 dev                 # Dev normal"
+  echo "Examples:"
+  echo "   $0 dev --clean --seed  # Clean dev with test data"
+  echo "   $0 prod --clean        # Clean prod"
+  echo "   $0 dev                 # Normal dev"
   exit 1
 fi
 
-# --seed uniquement en dev
+# --seed only in dev
 if [[ "$SEED" == "true" && "$MODE" != "dev" ]]; then
-  echo "❌ L'option --seed n'est disponible qu'en mode dev"
+  echo "❌ The --seed option is only available in dev mode"
   exit 1
 fi
 
-echo "🚀 Démarrage de la plateforme d'annales en mode $MODE..."
+echo "🚀 Starting the platform in $MODE mode..."
 
 if ! command -v docker &>/dev/null; then
-  echo "❌ Docker n'est pas installé." ; exit 1
+  echo "❌ Docker is not installed." ; exit 1
 fi
 if ! docker compose version &>/dev/null; then
-  echo "❌ Docker Compose plugin manquant." ; exit 1
+  echo "❌ Docker Compose plugin is missing." ; exit 1
 fi
 
-# Configuration selon le mode
+# Configuration based on mode
 if [ "$MODE" = "dev" ]; then
   COMPOSE_FILE="docker-compose.dev.yml"
   ENV_FILE=".env.dev"
@@ -93,53 +93,53 @@ else
   NGINX_CONTAINER="annales-nginx"
 fi
 
-# Charger les variables d'environnement pour obtenir les ports
+# Load environment variables to get ports
 set -a
 source "$ENV_FILE"
 set +a
 
-# Vérification du fichier d'environnement
+# Check environment file
 if [ ! -f "$ENV_FILE" ]; then
   if [ "$MODE" = "prod" ]; then
-    echo "📝 Création du fichier .env depuis .env.example..."
+    echo "📝 Creating .env file from .env.example..."
     cp .env.example .env
-    echo "⚠️  Éditez .env puis relancez si besoin."
+    echo "⚠️  Edit .env then restart if needed."
   else
-    echo "❌ Fichier $ENV_FILE manquant. Création automatique..."
-    echo "📝 Le fichier $ENV_FILE a été créé automatiquement."
+    echo "❌ File $ENV_FILE is missing. Creating automatically..."
+    echo "📝 File $ENV_FILE has been created automatically."
   fi
 fi
 
-# 🧹 Nettoyage des volumes si demandé
+# 🧹 Clean volumes if requested
 if [ "$CLEAN" = "true" ]; then
-  echo "🧹 Nettoyage des volumes de données ($MODE)..."
-  
-  # Arrêter les services s'ils tournent
+  echo "🧹 Cleaning data volumes ($MODE)..."
+
+  # Stop services if running
   if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps -q >/dev/null 2>&1; then
-    echo "⏹️  Arrêt des services en cours..."
+    echo "⏹️  Stopping running services..."
     docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
   fi
-  
-  # Supprimer les volumes
+
+  # Remove volumes
   if [ "$MODE" = "dev" ]; then
-    echo "🗑️  Suppression des volumes dev..."
+    echo "🗑️  Removing dev volumes..."
     docker volume rm annales-app_mongo_data_dev annales-app_minio_data_dev 2>/dev/null || true
   else
-    echo "🗑️  Suppression des volumes prod..."
+    echo "🗑️  Removing prod volumes..."
     docker volume rm annales-app_mongo_data annales-app_minio_data 2>/dev/null || true
   fi
-  
-  echo "✅ Nettoyage terminé"
+
+  echo "✅ Cleanup complete"
 fi
 
-echo "🔨 Build images ($MODE)..."
+echo "🔨 Building images ($MODE)..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build
 
-echo "▶️  Démarrage des services ($MODE)..."
+echo "▶️  Starting services ($MODE)..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 
-echo "⏳ Attente des checks de santé..."
-# attend que reverse-proxy soit healthy
+echo "⏳ Waiting for health checks..."
+# Wait for reverse proxy to be healthy
 for i in {1..60}; do
   if docker inspect --format='{{.State.Health.Status}}' "$NGINX_CONTAINER" 2>/dev/null | grep -q healthy; then
     break
@@ -148,29 +148,29 @@ for i in {1..60}; do
 done
 
 if curl -sf "http://localhost:$WEB_PORT/api/health" >/dev/null; then
-  echo "✅ Services démarrés avec succès en mode $MODE!"
-  echo "🌐 Interface web: http://localhost:$WEB_PORT"
-  echo "📖 API docs:     http://localhost:$WEB_PORT/api/docs"
-  echo "❤️  Health:      http://localhost:$WEB_PORT/api/health"
-  
+  echo "✅ Services started successfully in $MODE mode!"
+  echo "🌐 Web interface: http://localhost:$WEB_PORT"
+  echo "📖 API docs:      http://localhost:$WEB_PORT/api/docs"
+  echo "❤️  Health:       http://localhost:$WEB_PORT/api/health"
+
   if [ "$MODE" = "dev" ]; then
     echo ""
-    echo "🔥 Mode développement actif:"
-    echo "   - Hot reload activé pour Web et API"
-    echo "   - API directe:    http://localhost:$API_EXTERNAL_PORT"
-    echo "   - Web directe:    http://localhost:$VITE_PORT"
+    echo "🔥 Development mode active:"
+    echo "   - Hot reload enabled for Web and API"
+    echo "   - Direct API:     http://localhost:$API_EXTERNAL_PORT"
+    echo "   - Direct Web:     http://localhost:$VITE_PORT"
     echo "   - MongoDB:        localhost:$MONGO_EXTERNAL_PORT"
     echo "   - MinIO:          http://localhost:$MINIO_EXTERNAL_PORT"
     echo "   - MinIO Console:  http://localhost:$MINIO_CONSOLE_EXTERNAL_PORT"
   fi
-  
-  # 🌱 Création de données de test si demandé
+
+  # 🌱 Create test data if requested
   if [ "$SEED" = "true" ]; then
     echo ""
     ./seed.sh
   fi
 else
-  echo "❌ Reverse-proxy KO (port $WEB_PORT). Logs:"
+  echo "❌ Reverse proxy failed (port $WEB_PORT). Logs:"
   docker logs "$NGINX_CONTAINER" || true
   exit 1
 fi

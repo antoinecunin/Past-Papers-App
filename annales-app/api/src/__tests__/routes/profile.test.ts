@@ -158,7 +158,7 @@ describe('PATCH /api/auth/profile', () => {
       .send({});
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Au moins un champ');
+    expect(response.body.error).toContain('At least one field');
   });
 
   it('should return 400 for empty firstName', async () => {
@@ -177,7 +177,7 @@ describe('PATCH /api/auth/profile', () => {
       .send({ firstName: 'a'.repeat(51) });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('trop long');
+    expect(response.body.error).toContain('too long');
   });
 
   it('should trim whitespace from names', async () => {
@@ -271,7 +271,7 @@ describe('POST /api/auth/change-password', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('8 caractères');
+    expect(response.body.error).toContain('8 characters');
   });
 
   it('should reject new password without letter', async () => {
@@ -662,7 +662,7 @@ describe('PUT /api/auth/email', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('invalide');
+    expect(response.body.error).toContain('Invalid email');
   });
 
   it('should reject email from unauthorized domain', async () => {

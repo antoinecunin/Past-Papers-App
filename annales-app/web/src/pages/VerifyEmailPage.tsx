@@ -18,9 +18,9 @@ export default function VerifyEmailPage() {
 
   const token = currentRoute.params.token;
 
-  // Note: Pas de redirection automatique - permet à un utilisateur connecté d'accéder à cette page
+  // Note: No automatic redirect - allows a logged-in user to access this page
 
-  // Vérifier automatiquement le token à l'arrivée sur la page
+  // Automatically verify token on page load
   useEffect(() => {
     const verifyToken = async () => {
       if (!token) {
@@ -39,7 +39,7 @@ export default function VerifyEmailPage() {
     verifyToken();
   }, [token, verifyEmail]);
 
-  // Nettoyer les erreurs au démontage
+  // Clean up errors on unmount
   useEffect(() => {
     return () => clearError();
   }, [clearError]);
@@ -53,9 +53,9 @@ export default function VerifyEmailPage() {
 
     try {
       await resendVerification(email);
-      // Optionnel: afficher un message de succès
+      // Optional: show a success message
     } catch {
-      // L'erreur est déjà gérée par le store
+      // Error is already handled by the store
     }
   };
 
@@ -68,9 +68,9 @@ export default function VerifyEmailPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-info/10 mb-4">
                 <div className="w-8 h-8 border-2 border-info/30 border-t-info rounded-full animate-spin"></div>
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Vérification en cours...</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Verification in progress...</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed">
-                Nous vérifions votre adresse email, veuillez patienter.
+                We are verifying your email address, please wait.
               </p>
             </div>
           </div>
@@ -88,10 +88,10 @@ export default function VerifyEmailPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
                 <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Email vérifié !</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Email verified!</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous
-                connecter à votre compte.
+                Your email address has been verified successfully. You can now
+                sign in to your account.
               </p>
               <Button
                 type="button"
@@ -101,7 +101,7 @@ export default function VerifyEmailPage() {
                 onClick={() => navigate('login')}
               >
                 <LogIn className="w-5 h-5" />
-                <span>Se connecter</span>
+                <span>Sign in</span>
               </Button>
             </div>
           </div>
@@ -120,10 +120,10 @@ export default function VerifyEmailPage() {
             <AlertCircle className="w-8 h-8 text-error" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
-            Problème de vérification
+            Verification problem
           </h1>
           <p className="text-sm md:text-base text-secondary">
-            Le lien de vérification n&apos;est pas valide ou a expiré
+            The verification link is invalid or has expired
           </p>
         </div>
 
@@ -138,7 +138,7 @@ export default function VerifyEmailPage() {
                 type="button"
                 onClick={clearError}
                 className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
-                aria-label="Fermer le message d'erreur"
+                aria-label="Close error message"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -146,17 +146,17 @@ export default function VerifyEmailPage() {
           )}
 
           <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold text-secondary-dark mb-2">Lien expiré ou invalide</h3>
+            <h3 className="text-lg font-semibold text-secondary-dark mb-2">Expired or invalid link</h3>
             <p className="text-sm text-secondary">
-              Ce lien de vérification n&apos;est plus valide. Vous pouvez demander un nouveau lien
-              de vérification ci-dessous.
+              This verification link is no longer valid. You can request a new
+              verification link below.
             </p>
           </div>
 
           <form onSubmit={handleResendVerification} className="space-y-5">
             {/* Email input */}
             <Input
-              label="Adresse email"
+              label="Email address"
               id="email"
               name="email"
               type="email"
@@ -164,7 +164,7 @@ export default function VerifyEmailPage() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder={`votre.email${allowedDomains[0] || '@example.com'}`}
+              placeholder={`your.email${allowedDomains[0] || '@example.com'}`}
             />
 
             {/* Submit button */}
@@ -178,25 +178,25 @@ export default function VerifyEmailPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Envoi...</span>
+                  <span>Sending...</span>
                 </>
               ) : (
                 <>
                   <RotateCcw className="w-5 h-5" />
-                  <span>Renvoyer l&apos;email de vérification</span>
+                  <span>Resend verification email</span>
                 </>
               )}
             </Button>
           </form>
 
-          {/* Séparateur */}
+          {/* Separator */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 bg-white text-sm text-secondary font-medium">
-                ou
+                or
               </span>
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function VerifyEmailPage() {
               onClick={() => navigate('login')}
             >
               <LogIn className="w-5 h-5" />
-              <span>Retour à la connexion</span>
+              <span>Back to login</span>
             </Button>
 
             <Button
@@ -222,7 +222,7 @@ export default function VerifyEmailPage() {
               onClick={() => navigate('register')}
             >
               <UserPlus className="w-5 h-5" />
-              <span>Créer un nouveau compte</span>
+              <span>Create a new account</span>
             </Button>
           </div>
         </div>

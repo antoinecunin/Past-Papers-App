@@ -23,12 +23,12 @@ export interface InstanceConfig {
  */
 export const DEFAULT_INSTANCE_CONFIG: InstanceConfig = {
   instance: {
-    name: 'Annales - Université de Strasbourg',
-    organizationName: 'Université de Strasbourg',
+    name: 'Exam Archive',
+    organizationName: 'My University',
     contactEmail: 'contact@example.com',
   },
   email: {
-    allowedDomains: ['@etu.unistra.fr'],
+    allowedDomains: ['@students.example.edu'],
   },
   branding: {
     primaryColor: '#0EA5E9',

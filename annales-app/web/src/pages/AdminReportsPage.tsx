@@ -16,14 +16,14 @@ interface User {
 }
 
 interface TargetDetails {
-  // Pour les examens
+  // For exams
   title?: string;
   module?: string;
   year?: number;
-  // Pour les commentaires
+  // For comments
   examId?: string;
   page?: number;
-  // Indique si le contenu existe encore
+  // Indicates whether the content still exists
   exists: boolean;
 }
 
@@ -90,11 +90,11 @@ export default function AdminReportsPage() {
         setError(null);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Erreur lors du chargement des signalements');
+        setError(errorData.error || 'Error loading reports');
       }
     } catch (err) {
-      console.error('Erreur fetch signalements:', err);
-      setError('Erreur réseau lors du chargement des signalements');
+      console.error('Error fetching reports:', err);
+      setError('Network error while loading reports');
     } finally {
       setLoading(false);
     }
@@ -104,19 +104,19 @@ export default function AdminReportsPage() {
     if (!token) return;
 
     const result = await Swal.fire({
-      title: action === 'approve' ? 'Approuver et supprimer' : 'Rejeter le signalement',
+      title: action === 'approve' ? 'Approve and delete' : 'Reject report',
       html: `
         <div style="text-align: left;">
           <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
-            Note (optionnel)
+            Note (optional)
           </label>
-          <textarea id="swal-note" class="swal2-textarea" placeholder="Ajoutez une note..." style="margin: 0; width: 100%; min-height: 80px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
+          <textarea id="swal-note" class="swal2-textarea" placeholder="Add a note..." style="margin: 0; width: 100%; min-height: 80px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
         </div>
       `,
       icon: action === 'approve' ? 'warning' : 'question',
       showCancelButton: true,
-      confirmButtonText: action === 'approve' ? 'Approuver & Supprimer' : 'Rejeter',
-      cancelButtonText: 'Annuler',
+      confirmButtonText: action === 'approve' ? 'Approve & Delete' : 'Reject',
+      cancelButtonText: 'Cancel',
       confirmButtonColor: action === 'approve' ? '#ef4444' : '#64748b',
       cancelButtonColor: '#64748b',
       preConfirm: () => {
@@ -140,8 +140,8 @@ export default function AdminReportsPage() {
 
       if (response.ok) {
         await Swal.fire({
-          title: 'Succès',
-          text: action === 'approve' ? 'Signalement approuvé et contenu supprimé' : 'Signalement rejeté',
+          title: 'Success',
+          text: action === 'approve' ? 'Report approved and content deleted' : 'Report rejected',
           icon: 'success',
           confirmButtonColor: '#10b981',
         });
@@ -149,17 +149,17 @@ export default function AdminReportsPage() {
       } else {
         const errorData = await response.json();
         await Swal.fire({
-          title: 'Erreur',
-          text: `Erreur: ${errorData.error}`,
+          title: 'Error',
+          text: `Error: ${errorData.error}`,
           icon: 'error',
           confirmButtonColor: '#ef4444',
         });
       }
     } catch (err) {
-      console.error('Erreur traitement signalement:', err);
+      console.error('Error processing report:', err);
       await Swal.fire({
-        title: 'Erreur',
-        text: 'Erreur lors du traitement du signalement',
+        title: 'Error',
+        text: 'Error while processing the report',
         icon: 'error',
         confirmButtonColor: '#ef4444',
       });
@@ -168,13 +168,13 @@ export default function AdminReportsPage() {
     }
   };
 
-  // Reset offset quand les filtres changent
+  // Reset offset when filters change
   useEffect(() => {
     setOffset(0);
     fetchReports(0);
   }, [filter, token, fetchReports]);
 
-  // Handlers de pagination
+  // Pagination handlers
   const handlePreviousPage = () => {
     const newOffset = Math.max(0, offset - REPORTS_PER_PAGE);
     setOffset(newOffset);
@@ -192,15 +192,15 @@ export default function AdminReportsPage() {
   const currentPage = Math.floor(offset / REPORTS_PER_PAGE) + 1;
   const totalPages = pagination ? Math.ceil(pagination.total / REPORTS_PER_PAGE) : 1;
 
-  // Vérifier les permissions admin
+  // Check admin permissions
   if (!user || !PermissionUtils.isAdmin(user)) {
     return (
       <div className="bg-error-bg border border-error/20 rounded-xl p-6">
         <div className="flex items-start gap-3">
           <AlertCircle className="w-6 h-6 text-error flex-shrink-0 mt-0.5" />
           <div>
-            <h1 className="text-lg font-semibold text-error mb-1">Accès refusé</h1>
-            <p className="text-error">Cette page est réservée aux administrateurs.</p>
+            <h1 className="text-lg font-semibold text-error mb-1">Access denied</h1>
+            <p className="text-error">This page is restricted to administrators.</p>
           </div>
         </div>
       </div>
@@ -209,13 +209,13 @@ export default function AdminReportsPage() {
 
   const getReasonLabel = (reason: Report['reason']) => {
     const labels = {
-      inappropriate_content: 'Contenu inapproprié',
+      inappropriate_content: 'Inappropriate content',
       spam: 'Spam',
-      off_topic: 'Hors-sujet',
-      wrong_exam: 'Mauvais examen',
-      poor_quality: 'Qualité insuffisante',
-      duplicate: 'Doublon',
-      other: 'Autre',
+      off_topic: 'Off-topic',
+      wrong_exam: 'Wrong exam',
+      poor_quality: 'Poor quality',
+      duplicate: 'Duplicate',
+      other: 'Other',
     };
     return labels[reason];
   };
@@ -223,8 +223,8 @@ export default function AdminReportsPage() {
   const handleViewTarget = (report: Report) => {
     if (!report.target.exists) {
       Swal.fire({
-        title: 'Contenu supprimé',
-        text: 'Ce contenu a été supprimé suite à l\'approbation du signalement.',
+        title: 'Content deleted',
+        text: 'This content has been deleted following report approval.',
         icon: 'info',
         confirmButtonColor: '#2563eb',
       });
@@ -240,12 +240,12 @@ export default function AdminReportsPage() {
 
   const getTargetLabel = (report: Report): string => {
     if (!report.target.exists) {
-      return 'Contenu supprimé';
+      return 'Content deleted';
     }
     if (report.type === 'exam') {
-      return report.target.title || 'Examen';
+      return report.target.title || 'Exam';
     }
-    return `Commentaire page ${report.target.page || '?'}`;
+    return `Comment page ${report.target.page || '?'}`;
   };
 
   const getStatusBadge = (status: Report['status']) => {
@@ -256,9 +256,9 @@ export default function AdminReportsPage() {
     };
 
     const labels = {
-      pending: 'En attente',
-      approved: 'Approuvé',
-      rejected: 'Rejeté',
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected',
     };
 
     return (
@@ -269,7 +269,7 @@ export default function AdminReportsPage() {
   };
 
   const getTypeLabel = (type: Report['type']) => {
-    return type === 'exam' ? 'Examen' : 'Commentaire';
+    return type === 'exam' ? 'Exam' : 'Comment';
   };
 
   if (loading) {
@@ -277,7 +277,7 @@ export default function AdminReportsPage() {
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          <span className="text-secondary">Chargement des signalements...</span>
+          <span className="text-secondary">Loading reports...</span>
         </div>
       </div>
     );
@@ -292,18 +292,18 @@ export default function AdminReportsPage() {
             <Shield className="w-6 h-6 text-warning" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">Gestion des signalements</h1>
-            <p className="text-sm md:text-base text-secondary mt-1">Gérez les signalements de contenu inapproprié</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">Report management</h1>
+            <p className="text-sm md:text-base text-secondary mt-1">Manage reports of inappropriate content</p>
           </div>
         </div>
         <div className="text-sm text-secondary">
           {pagination ? (
             <>
-              {pagination.total} signalement{pagination.total !== 1 ? 's' : ''}
+              {pagination.total} report{pagination.total !== 1 ? 's' : ''}
               {totalPages > 1 && ` • Page ${currentPage}/${totalPages}`}
             </>
           ) : (
-            `${reports.length} signalement${reports.length !== 1 ? 's' : ''}`
+            `${reports.length} report${reports.length !== 1 ? 's' : ''}`
           )}
         </div>
       </div>
@@ -317,7 +317,7 @@ export default function AdminReportsPage() {
         </div>
       )}
 
-      {/* Filtres */}
+      {/* Filters */}
       <div className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
         <div className="flex flex-wrap gap-3">
           <select
@@ -325,10 +325,10 @@ export default function AdminReportsPage() {
             onChange={(e) => setFilter({ ...filter, status: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
-            <option value="">Tous les statuts</option>
-            <option value="pending">En attente</option>
-            <option value="approved">Approuvés</option>
-            <option value="rejected">Rejetés</option>
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
 
           <select
@@ -336,9 +336,9 @@ export default function AdminReportsPage() {
             onChange={(e) => setFilter({ ...filter, type: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
-            <option value="">Tous les types</option>
-            <option value="exam">Examens</option>
-            <option value="comment">Commentaires</option>
+            <option value="">All types</option>
+            <option value="exam">Exams</option>
+            <option value="comment">Comments</option>
           </select>
 
           <Button
@@ -348,19 +348,19 @@ export default function AdminReportsPage() {
             className="gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>Actualiser</span>
+            <span>Refresh</span>
           </Button>
         </div>
       </div>
 
-      {/* Liste des signalements */}
+      {/* Reports list */}
       {reports.length === 0 ? (
         <div className="bg-white border border-border rounded-xl p-8 md:p-12 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
             <CheckCircle className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-secondary-dark mb-2">Aucun signalement</h3>
-          <p className="text-sm text-secondary">Aucun signalement ne correspond aux filtres sélectionnés.</p>
+          <h3 className="text-lg font-semibold text-secondary-dark mb-2">No reports</h3>
+          <p className="text-sm text-secondary">No reports match the selected filters.</p>
         </div>
       ) : (
         <>
@@ -390,7 +390,7 @@ export default function AdminReportsPage() {
                           ? 'text-primary hover:bg-primary/10 cursor-pointer'
                           : 'text-secondary/50 cursor-not-allowed'
                       }`}
-                      title={report.target.exists ? 'Voir le contenu' : 'Contenu supprimé'}
+                      title={report.target.exists ? 'View content' : 'Content deleted'}
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>{getTargetLabel(report)}</span>
@@ -399,7 +399,7 @@ export default function AdminReportsPage() {
 
                   {/* Reason */}
                   <div>
-                    <span className="text-sm font-medium text-secondary">Raison: </span>
+                    <span className="text-sm font-medium text-secondary">Reason: </span>
                     <span className="text-sm text-secondary-dark">{getReasonLabel(report.reason)}</span>
                   </div>
 
@@ -412,7 +412,7 @@ export default function AdminReportsPage() {
 
                   {/* Reporter */}
                   <div className="flex items-center gap-2 pt-2 border-t border-border">
-                    <span className="text-xs text-secondary">Signalé par:</span>
+                    <span className="text-xs text-secondary">Reported by:</span>
                     <span className="text-xs font-medium text-secondary-dark">
                       {report.reportedBy.firstName} {report.reportedBy.lastName}
                     </span>
@@ -423,7 +423,7 @@ export default function AdminReportsPage() {
 
                   {/* Date */}
                   <div className="text-xs text-secondary/70">
-                    {new Date(report.createdAt).toLocaleDateString('fr-FR', {
+                    {new Date(report.createdAt).toLocaleDateString('en-US', {
                       day: '2-digit',
                       month: '2-digit',
                       year: 'numeric',
@@ -441,12 +441,12 @@ export default function AdminReportsPage() {
                   {/* Reviewer info */}
                   {report.reviewedBy && (
                     <div className="text-xs text-secondary">
-                      <div>Par: {report.reviewedBy.firstName} {report.reviewedBy.lastName}</div>
+                      <div>By: {report.reviewedBy.firstName} {report.reviewedBy.lastName}</div>
                       {report.reviewNote && (
                         <div className="mt-1 italic">Note: {report.reviewNote}</div>
                       )}
                       <div className="mt-1">
-                        {new Date(report.reviewedAt!).toLocaleDateString('fr-FR')}
+                        {new Date(report.reviewedAt!).toLocaleDateString('en-US')}
                       </div>
                     </div>
                   )}
@@ -466,7 +466,7 @@ export default function AdminReportsPage() {
                         ) : (
                           <>
                             <CheckCircle className="w-4 h-4" />
-                            <span>Approuver</span>
+                            <span>Approve</span>
                           </>
                         )}
                       </Button>
@@ -482,7 +482,7 @@ export default function AdminReportsPage() {
                         ) : (
                           <>
                             <XCircle className="w-4 h-4" />
-                            <span>Rejeter</span>
+                            <span>Reject</span>
                           </>
                         )}
                       </Button>
@@ -505,11 +505,11 @@ export default function AdminReportsPage() {
               className="gap-1.5"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Précédent</span>
+              <span>Previous</span>
             </Button>
 
             <span className="text-sm text-secondary">
-              Page {currentPage} sur {totalPages}
+              Page {currentPage} of {totalPages}
             </span>
 
             <Button
@@ -519,7 +519,7 @@ export default function AdminReportsPage() {
               size="sm"
               className="gap-1.5"
             >
-              <span>Suivant</span>
+              <span>Next</span>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

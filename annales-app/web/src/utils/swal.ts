@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 
 /**
- * Couleurs standardisées pour SweetAlert2
+ * Standardized colors for SweetAlert2
  */
 const colors = {
   primary: '#2563eb',
@@ -12,7 +12,7 @@ const colors = {
 };
 
 /**
- * Affiche un message de succès
+ * Displays a success message
  */
 export async function showSuccess(title: string, text?: string): Promise<void> {
   await Swal.fire({
@@ -24,7 +24,7 @@ export async function showSuccess(title: string, text?: string): Promise<void> {
 }
 
 /**
- * Affiche un message d'erreur
+ * Displays an error message
  */
 export async function showError(title: string, text?: string): Promise<void> {
   await Swal.fire({
@@ -36,7 +36,7 @@ export async function showError(title: string, text?: string): Promise<void> {
 }
 
 /**
- * Affiche un avertissement
+ * Displays a warning
  */
 export async function showWarning(title: string, text?: string): Promise<void> {
   await Swal.fire({
@@ -48,8 +48,8 @@ export async function showWarning(title: string, text?: string): Promise<void> {
 }
 
 /**
- * Affiche une demande de confirmation
- * @returns true si confirmé, false sinon
+ * Displays a confirmation dialog
+ * @returns true if confirmed, false otherwise
  */
 export async function showConfirm(
   title: string,
@@ -66,8 +66,8 @@ export async function showConfirm(
     text,
     icon: options?.icon ?? 'warning',
     showCancelButton: true,
-    confirmButtonText: options?.confirmText ?? 'Confirmer',
-    cancelButtonText: options?.cancelText ?? 'Annuler',
+    confirmButtonText: options?.confirmText ?? 'Confirm',
+    cancelButtonText: options?.cancelText ?? 'Cancel',
     confirmButtonColor: options?.confirmColor ?? colors.error,
     cancelButtonColor: colors.secondary,
   });
@@ -76,11 +76,11 @@ export async function showConfirm(
 }
 
 /**
- * Affiche une erreur de validation (style plus léger)
+ * Displays a validation error (lighter style)
  */
 export async function showValidationError(text: string): Promise<void> {
   await Swal.fire({
-    title: 'Champ manquant',
+    title: 'Missing field',
     text,
     icon: 'warning',
     confirmButtonColor: colors.primary,
@@ -88,7 +88,7 @@ export async function showValidationError(text: string): Promise<void> {
 }
 
 /**
- * Affiche un toast de succès (coin supérieur droit, disparaît automatiquement)
+ * Displays a success toast (top-right corner, auto-dismiss)
  */
 export function showSuccessToast(title: string): void {
   const Toast = Swal.mixin({
@@ -110,7 +110,7 @@ export function showSuccessToast(title: string): void {
 }
 
 /**
- * Affiche un toast d'erreur (coin supérieur droit, disparaît automatiquement)
+ * Displays an error toast (top-right corner, auto-dismiss)
  */
 export function showErrorToast(title: string): void {
   const Toast = Swal.mixin({

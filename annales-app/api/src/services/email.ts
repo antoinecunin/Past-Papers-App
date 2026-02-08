@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { instanceConfigService } from '../services/instance-config.service.js';
 
 interface EmailOptions {
   to: string;
@@ -27,6 +28,10 @@ interface EmailTemplateOptions {
 function buildEmailHtml(options: EmailTemplateOptions): string {
   const { title, headerColor, greeting, bodyText, buttonText, buttonUrl, alerts, closingText } =
     options;
+
+  const config = instanceConfigService.getConfig();
+  const teamName = config.instance.name;
+  const orgName = config.instance.organizationName;
 
   const alertsHtml = alerts
     .map(
@@ -133,14 +138,14 @@ function buildEmailHtml(options: EmailTemplateOptions): string {
       <div class="button-container">
         <a href="${buttonUrl}" style="display: inline-block; background: ${headerColor}; color: #ffffff; padding: 0.875rem 2rem; text-decoration: none; border-radius: 0.5rem; font-weight: 600;">${buttonText}</a>
       </div>
-      <p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :</p>
+      <p>If the button doesn't work, copy and paste this link into your browser:</p>
       <div class="link-box">${buttonUrl}</div>
       ${alertsHtml}
       ${closingHtml}
     </div>
     <div class="footer">
-      <p><strong>Équipe Annales</strong></p>
-      <p>Université de Strasbourg</p>
+      <p><strong>The ${teamName} team</strong></p>
+      <p>${orgName}</p>
     </div>
   </div>
 </body>
@@ -151,12 +156,11 @@ class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Validation des variables d'environnement requises
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error('Variables SMTP_USER et SMTP_PASS requises');
+      throw new Error('SMTP_USER and SMTP_PASS variables are required');
     }
     if (!process.env.EMAIL_FROM_ADDRESS) {
-      throw new Error('Variable EMAIL_FROM_ADDRESS requise');
+      throw new Error('EMAIL_FROM_ADDRESS variable is required');
     }
 
     this.transporter = nodemailer.createTransport({
@@ -171,9 +175,10 @@ class EmailService {
   }
 
   async sendEmail(options: EmailOptions): Promise<void> {
+    const config = instanceConfigService.getConfig();
     const mailOptions = {
       from: {
-        name: process.env.EMAIL_FROM_NAME || 'Annales - Unistra',
+        name: process.env.EMAIL_FROM_NAME || config.instance.name,
         address: process.env.EMAIL_FROM_ADDRESS || 'no-reply@localhost',
       },
       to: options.to,
@@ -187,50 +192,52 @@ class EmailService {
       console.log(`Email sent successfully to ${options.to}`);
     } catch (error) {
       console.error('Failed to send email:', error);
-      throw new Error("Erreur lors de l'envoi de l'email");
+      throw new Error('Failed to send email');
     }
   }
 
   async sendVerificationEmail(email: string, verificationToken: string): Promise<void> {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    const config = instanceConfigService.getConfig();
+    const instanceName = config.instance.name;
 
     const html = buildEmailHtml({
-      title: 'Vérifiez votre adresse email',
+      title: 'Verify your email address',
       headerColor: '#2563eb',
-      greeting: 'Bonjour,',
+      greeting: 'Hello,',
       bodyText:
-        "Merci de vous être inscrit sur notre plateforme d'annales d'examens. Pour activer votre compte et commencer à utiliser la plateforme, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :",
-      buttonText: 'Vérifier mon adresse email',
+        'Thank you for signing up on our exam archive platform. To activate your account and start using the platform, please verify your email address by clicking the button below:',
+      buttonText: 'Verify my email address',
       buttonUrl: verificationUrl,
       alerts: [
         {
           color: '#1e40af',
           bgColor: '#dbeafe',
-          content: '<strong>Important :</strong> Ce lien est valide pendant 24 heures.',
+          content: '<strong>Important:</strong> This link is valid for 24 hours.',
         },
       ],
       closingText:
-        "Si vous n'avez pas créé de compte sur notre plateforme, vous pouvez ignorer cet email en toute sécurité.",
+        "If you didn't create an account on our platform, you can safely ignore this email.",
     });
 
     const text = `
-      Bienvenue sur Annales - Unistra
+      Welcome to ${instanceName}
 
-      Merci de vous être inscrit sur notre plateforme d'annales d'examens.
-      Pour activer votre compte, veuillez cliquer sur le lien suivant :
+      Thank you for signing up on our exam archive platform.
+      To activate your account, please click the following link:
 
       ${verificationUrl}
 
-      Ce lien est valide pendant 24 heures.
-      Si vous n'avez pas créé ce compte, ignorez cet email.
+      This link is valid for 24 hours.
+      If you didn't create this account, please ignore this email.
 
-      Équipe Annales - Unistra
-      Université de Strasbourg
+      The ${instanceName} team
+      ${config.instance.organizationName}
     `;
 
     await this.sendEmail({
       to: email,
-      subject: 'Vérifiez votre adresse email - Annales Unistra',
+      subject: `Verify your email address - ${instanceName}`,
       html,
       text,
     });
@@ -238,48 +245,50 @@ class EmailService {
 
   async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const config = instanceConfigService.getConfig();
+    const instanceName = config.instance.name;
 
     const html = buildEmailHtml({
-      title: 'Réinitialisation de mot de passe',
+      title: 'Password reset',
       headerColor: '#f59e0b',
-      greeting: 'Bonjour,',
+      greeting: 'Hello,',
       bodyText:
-        "Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte sur la plateforme d'annales. Pour créer un nouveau mot de passe, cliquez sur le bouton ci-dessous :",
-      buttonText: 'Réinitialiser mon mot de passe',
+        'We received a password reset request for your account on the exam archive platform. To create a new password, click the button below:',
+      buttonText: 'Reset my password',
       buttonUrl: resetUrl,
       alerts: [
         {
           color: '#92400e',
           bgColor: '#fef3c7',
-          content: '<strong>Important :</strong> Ce lien est valide pendant 1 heure uniquement.',
+          content: '<strong>Important:</strong> This link is valid for 1 hour only.',
         },
         {
           color: '#991b1b',
           bgColor: '#fee2e2',
           content:
-            "<strong>Vous n'avez pas demandé cette réinitialisation ?</strong><br>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et votre mot de passe restera inchangé. Nous vous recommandons de modifier votre mot de passe si vous pensez que quelqu'un tente d'accéder à votre compte.",
+            "<strong>Didn't request this reset?</strong><br>If you didn't initiate this request, please ignore this email and your password will remain unchanged. We recommend changing your password if you believe someone is trying to access your account.",
         },
       ],
     });
 
     const text = `
-      Réinitialisation de mot de passe - Annales Unistra
+      Password reset - ${instanceName}
 
-      Vous avez demandé la réinitialisation de votre mot de passe.
-      Cliquez sur le lien suivant pour créer un nouveau mot de passe :
+      You requested a password reset.
+      Click the following link to create a new password:
 
       ${resetUrl}
 
-      Ce lien est valide pendant 1 heure.
-      Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
+      This link is valid for 1 hour.
+      If you didn't request this reset, please ignore this email.
 
-      Équipe Annales - Unistra
-      Université de Strasbourg
+      The ${instanceName} team
+      ${config.instance.organizationName}
     `;
 
     await this.sendEmail({
       to: email,
-      subject: 'Réinitialisation de mot de passe - Annales Unistra',
+      subject: `Password reset - ${instanceName}`,
       html,
       text,
     });

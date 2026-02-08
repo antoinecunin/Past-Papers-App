@@ -1,12 +1,12 @@
 {
   "$schema": "./instance.config.schema.json",
   "instance": {
-    "name": "Annales - Université de Strasbourg",
-    "organizationName": "Université de Strasbourg",
+    "name": "Exam Archive - My University",
+    "organizationName": "My University",
     "contactEmail": "contact@example.com"
   },
   "email": {
-    "allowedDomains": ["@etu.unistra.fr"]
+    "allowedDomains": ["@students.example.edu"]
   },
   "branding": {
     "primaryColor": "#2563eb"

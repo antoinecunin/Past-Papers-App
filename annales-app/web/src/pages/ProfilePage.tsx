@@ -56,7 +56,7 @@ export default function ProfilePage() {
 
     try {
       await updateProfile({ firstName, lastName });
-      showSuccessToast('Profil mis à jour');
+      showSuccessToast('Profile updated');
     } catch {
       // Error handled by store
     }
@@ -67,19 +67,19 @@ export default function ProfilePage() {
     const errors: string[] = [];
 
     if (!currentPassword) {
-      errors.push('Le mot de passe actuel est requis');
+      errors.push('Current password is required');
     }
 
     if (!newPassword) {
-      errors.push('Le nouveau mot de passe est requis');
+      errors.push('New password is required');
     } else if (newPassword.length < 8) {
-      errors.push('Le nouveau mot de passe doit contenir au moins 8 caractères');
+      errors.push('New password must contain at least 8 characters');
     } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/.test(newPassword)) {
-      errors.push('Le mot de passe doit contenir au moins une lettre et un chiffre');
+      errors.push('Password must contain at least one letter and one number');
     }
 
     if (newPassword !== confirmPassword) {
-      errors.push('Les mots de passe ne correspondent pas');
+      errors.push('Passwords do not match');
     }
 
     setPasswordErrors(errors);
@@ -100,7 +100,7 @@ export default function ProfilePage() {
       setNewPassword('');
       setConfirmPassword('');
       setPasswordErrors([]);
-      showSuccessToast('Mot de passe modifié');
+      showSuccessToast('Password changed');
     } catch {
       // Error handled by store
     }
@@ -119,14 +119,14 @@ export default function ProfilePage() {
     const errors: string[] = [];
 
     if (!newEmail.trim()) {
-      errors.push('La nouvelle adresse email est requise');
+      errors.push('New email address is required');
     } else if (!allowedDomains.some((domain) => newEmail.toLowerCase().endsWith(domain.toLowerCase()))) {
       const domains = allowedDomains.join(', ');
-      errors.push(`L'email doit se terminer par un des domaines autorisés: ${domains}`);
+      errors.push(`Email must end with one of the allowed domains: ${domains}`);
     }
 
     if (!emailPassword) {
-      errors.push('Le mot de passe est requis pour confirmer le changement');
+      errors.push('Password is required to confirm the change');
     }
 
     setEmailErrors(errors);
@@ -157,7 +157,7 @@ export default function ProfilePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setEmailErrors([data.error || 'Erreur lors du changement d\'email']);
+        setEmailErrors([data.error || 'Error changing email']);
         return;
       }
 
@@ -167,16 +167,16 @@ export default function ProfilePage() {
       setEmailErrors([]);
 
       await Swal.fire({
-        title: 'Email modifié',
-        text: data.message || 'Un email de vérification a été envoyé à votre nouvelle adresse.',
+        title: 'Email changed',
+        text: data.message || 'A verification email has been sent to your new address.',
         icon: 'success',
         confirmButtonColor: '#10b981',
       });
 
-      // Déconnecter l'utilisateur pour qu'il vérifie son nouvel email
+      // Log out the user so they verify their new email
       await Swal.fire({
-        title: 'Vérification requise',
-        text: 'Vous allez être déconnecté. Veuillez vérifier votre nouvelle adresse email avant de vous reconnecter.',
+        title: 'Verification required',
+        text: 'You will be logged out. Please verify your new email address before signing in again.',
         icon: 'info',
         confirmButtonColor: '#3b82f6',
       });
@@ -184,7 +184,7 @@ export default function ProfilePage() {
       logout();
       navigate('login');
     } catch {
-      setEmailErrors(['Erreur de connexion au serveur']);
+      setEmailErrors(['Server connection error']);
     }
   };
 
@@ -196,7 +196,7 @@ export default function ProfilePage() {
       }
     };
 
-  // Export data handler (RGPD)
+  // Export data handler (GDPR)
   const handleExportData = async () => {
     try {
       const response = await fetch('/api/auth/data-export', {
@@ -207,15 +207,15 @@ export default function ProfilePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Échec de l\'export');
+        throw new Error('Export failed');
       }
 
       const data = await response.json();
 
-      // Créer un blob JSON et déclencher le téléchargement
+      // Create a JSON blob and trigger download
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
-      const filename = `mes-donnees-${new Date().toISOString().split('T')[0]}.json`;
+      const filename = `my-data-${new Date().toISOString().split('T')[0]}.json`;
 
       const link = document.createElement('a');
       link.href = url;
@@ -229,15 +229,15 @@ export default function ProfilePage() {
       window.URL.revokeObjectURL(url);
 
       await Swal.fire({
-        title: 'Export réussi',
-        text: 'Vos données ont été exportées avec succès.',
+        title: 'Export successful',
+        text: 'Your data has been exported successfully.',
         icon: 'success',
         confirmButtonColor: '#10b981',
       });
     } catch {
       await Swal.fire({
-        title: 'Erreur',
-        text: 'Impossible d\'exporter vos données.',
+        title: 'Error',
+        text: 'Unable to export your data.',
         icon: 'error',
         confirmButtonColor: '#ef4444',
       });
@@ -247,34 +247,34 @@ export default function ProfilePage() {
   // Delete account handler
   const handleDeleteAccount = async () => {
     const firstConfirm = await Swal.fire({
-      title: 'Supprimer votre compte ?',
+      title: 'Delete your account?',
       html: `
-        <p class="text-gray-600 mb-2">Cette action est <strong>irréversible</strong>.</p>
-        <p class="text-gray-600 text-sm">Toutes vos données seront supprimées : examens, commentaires, signalements.</p>
+        <p class="text-gray-600 mb-2">This action is <strong>irreversible</strong>.</p>
+        <p class="text-gray-600 text-sm">All your data will be deleted: exams, comments, reports.</p>
       `,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Continuer',
-      cancelButtonText: 'Annuler',
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Cancel',
     });
 
     if (!firstConfirm.isConfirmed) return;
 
     const { value: password } = await Swal.fire({
-      title: 'Confirmer la suppression',
+      title: 'Confirm deletion',
       input: 'password',
-      inputLabel: 'Entrez votre mot de passe pour confirmer',
-      inputPlaceholder: 'Mot de passe',
+      inputLabel: 'Enter your password to confirm',
+      inputPlaceholder: 'Password',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Supprimer définitivement',
-      cancelButtonText: 'Annuler',
+      confirmButtonText: 'Delete permanently',
+      cancelButtonText: 'Cancel',
       inputValidator: (value) => {
         if (!value) {
-          return 'Le mot de passe est requis';
+          return 'Password is required';
         }
         return null;
       },
@@ -285,8 +285,8 @@ export default function ProfilePage() {
     try {
       await deleteAccount(password);
       await Swal.fire({
-        title: 'Compte supprimé',
-        text: 'Votre compte a été supprimé avec succès.',
+        title: 'Account deleted',
+        text: 'Your account has been deleted successfully.',
         icon: 'success',
         confirmButtonColor: '#10b981',
       });
@@ -294,8 +294,8 @@ export default function ProfilePage() {
     } catch {
       // Error handled by store, but show a toast
       await Swal.fire({
-        title: 'Erreur',
-        text: error || 'Impossible de supprimer le compte',
+        title: 'Error',
+        text: error || 'Unable to delete account',
         icon: 'error',
         confirmButtonColor: '#ef4444',
       });
@@ -314,20 +314,20 @@ export default function ProfilePage() {
           <User className="w-7 h-7 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-secondary-dark">Mon profil</h1>
-          <p className="text-secondary">Gérez vos informations personnelles</p>
+          <h1 className="text-2xl font-bold text-secondary-dark">My profile</h1>
+          <p className="text-secondary">Manage your personal information</p>
         </div>
       </div>
 
-      {/* Layout 2 colonnes sur desktop */}
+      {/* 2-column layout on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Colonne gauche */}
+        {/* Left column */}
         <div className="space-y-6">
           {/* User Info Card (read-only) */}
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
-              Informations du compte
+              Account information
             </h2>
             <div className="space-y-4">
               <div>
@@ -338,20 +338,20 @@ export default function ProfilePage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Rôle</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Role</label>
                   <div className="px-4 py-3 bg-bg-tertiary rounded-xl text-secondary-dark border border-border flex items-center gap-2">
                     <Shield className="w-4 h-4 text-primary" />
                     {PermissionUtils.getRoleLabel(user.role)}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Statut</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Status</label>
                   <div className="px-4 py-3 bg-bg-tertiary rounded-xl border border-border flex items-center gap-2">
                     <div
                       className={`w-2.5 h-2.5 rounded-full ${user.isVerified ? 'bg-success' : 'bg-warning'}`}
                     />
                     <span className="text-secondary-dark">
-                      {user.isVerified ? 'Vérifié' : 'Non vérifié'}
+                      {user.isVerified ? 'Verified' : 'Not verified'}
                     </span>
                   </div>
                 </div>
@@ -363,7 +363,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
-              Modifier mes informations
+              Edit my information
             </h2>
 
             <form onSubmit={handleProfileSubmit} className="space-y-4">
@@ -383,17 +383,17 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Prénom"
+                  label="First name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Votre prénom"
+                  placeholder="Your first name"
                   required
                 />
                 <Input
-                  label="Nom"
+                  label="Last name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Votre nom"
+                  placeholder="Your last name"
                   required
                 />
               </div>
@@ -407,12 +407,12 @@ export default function ProfilePage() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Enregistrement...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Enregistrer
+                    Save
                   </>
                 )}
               </Button>
@@ -423,7 +423,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
-              Changer l&apos;adresse email
+              Change email address
             </h2>
 
             <form onSubmit={handleEmailSubmit} className="space-y-4">
@@ -450,34 +450,34 @@ export default function ProfilePage() {
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
                 <p className="font-medium mb-1">⚠️ Important</p>
                 <p className="text-xs leading-relaxed">
-                  Après changement, vous devrez vérifier votre nouvelle adresse email avant de
-                  pouvoir vous reconnecter. Vous serez automatiquement déconnecté.
+                  After the change, you will need to verify your new email address before you can
+                  sign in again. You will be automatically logged out.
                 </p>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-3">
                 <label className="block text-xs font-medium text-secondary mb-1">
-                  Email actuel
+                  Current email
                 </label>
                 <p className="text-sm text-secondary-dark">{user?.email}</p>
               </div>
 
               <Input
-                label="Nouvelle adresse email"
+                label="New email address"
                 type="email"
                 value={newEmail}
                 onChange={handleEmailInputChange(setNewEmail)}
-                placeholder={`nouvelle.adresse${allowedDomains[0] || '@example.com'}`}
-                helperText={`Seuls les emails ${allowedDomains.join(', ')} sont acceptés`}
+                placeholder={`new.address${allowedDomains[0] || '@example.com'}`}
+                helperText={`Only ${allowedDomains.join(', ')} emails are accepted`}
                 autoComplete="email"
               />
 
               <Input
-                label="Mot de passe actuel (confirmation)"
+                label="Current password (confirmation)"
                 type="password"
                 value={emailPassword}
                 onChange={handleEmailInputChange(setEmailPassword)}
-                placeholder="Votre mot de passe actuel"
+                placeholder="Your current password"
                 autoComplete="current-password"
               />
 
@@ -490,12 +490,12 @@ export default function ProfilePage() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Modification...
+                    Changing...
                   </>
                 ) : (
                   <>
                     <Mail className="w-4 h-4" />
-                    Changer l&apos;email
+                    Change email
                   </>
                 )}
               </Button>
@@ -503,13 +503,13 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Colonne droite */}
+        {/* Right column */}
         <div className="space-y-6">
           {/* Change Password Card */}
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <Key className="w-5 h-5 text-primary" />
-              Changer le mot de passe
+              Change password
             </h2>
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -537,30 +537,30 @@ export default function ProfilePage() {
               )}
 
               <Input
-                label="Mot de passe actuel"
+                label="Current password"
                 type="password"
                 value={currentPassword}
                 onChange={handlePasswordInputChange(setCurrentPassword)}
-                placeholder="Votre mot de passe actuel"
+                placeholder="Your current password"
                 autoComplete="current-password"
               />
 
               <Input
-                label="Nouveau mot de passe"
+                label="New password"
                 type="password"
                 value={newPassword}
                 onChange={handlePasswordInputChange(setNewPassword)}
-                placeholder="Nouveau mot de passe"
-                helperText="Au moins 8 caractères avec une lettre et un chiffre"
+                placeholder="New password"
+                helperText="At least 8 characters with one letter and one number"
                 autoComplete="new-password"
               />
 
               <Input
-                label="Confirmer le nouveau mot de passe"
+                label="Confirm new password"
                 type="password"
                 value={confirmPassword}
                 onChange={handlePasswordInputChange(setConfirmPassword)}
-                placeholder="Confirmer le mot de passe"
+                placeholder="Confirm password"
                 autoComplete="new-password"
               />
 
@@ -573,26 +573,26 @@ export default function ProfilePage() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Modification...
+                    Changing...
                   </>
                 ) : (
                   <>
                     <Key className="w-4 h-4" />
-                    Changer le mot de passe
+                    Change password
                   </>
                 )}
               </Button>
             </form>
           </div>
 
-          {/* RGPD - Données personnelles */}
+          {/* GDPR - Personal data */}
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-2 flex items-center gap-2">
               <Shield className="w-5 h-5" />
-              Données personnelles (RGPD)
+              Personal data (GDPR)
             </h2>
             <p className="text-sm text-secondary mb-4">
-              Conformément au RGPD, vous pouvez exporter toutes vos données au format JSON.
+              In accordance with GDPR, you can export all your data in JSON format.
             </p>
             <div className="space-y-3">
               <Button
@@ -602,21 +602,21 @@ export default function ProfilePage() {
                 className="gap-2 w-full sm:w-auto"
               >
                 <Download className="w-4 h-4" />
-                Exporter mes données
+                Export my data
               </Button>
               <div className="flex items-start gap-2 text-xs text-secondary">
                 <FileJson className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p>
-                  L&apos;export inclut : profil, examens uploadés, commentaires, signalements.
-                  Consultez notre{' '}
+                  The export includes: profile, uploaded exams, comments, reports.
+                  See our{' '}
                   <button
                     type="button"
                     onClick={() => navigate('privacy')}
                     className="text-primary hover:underline cursor-pointer"
                   >
-                    Politique de Confidentialité
+                    Privacy Policy
                   </button>
-                  {' '}pour plus d&apos;informations.
+                  {' '}for more information.
                 </p>
               </div>
             </div>
@@ -626,10 +626,10 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-error/30 p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-error mb-2 flex items-center gap-2">
               <Trash2 className="w-5 h-5" />
-              Zone de danger
+              Danger zone
             </h2>
             <p className="text-sm text-secondary mb-4">
-              Supprimer définitivement votre compte et toutes vos données.
+              Permanently delete your account and all your data.
             </p>
             <Button
               type="button"
@@ -639,7 +639,7 @@ export default function ProfilePage() {
               className="gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Supprimer mon compte
+              Delete my account
             </Button>
           </div>
         </div>

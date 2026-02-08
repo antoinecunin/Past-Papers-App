@@ -27,27 +27,27 @@ export default function UploadPage() {
     e.preventDefault();
 
     if (!token) {
-      await showValidationError('Vous devez être connecté pour uploader un fichier');
+      await showValidationError('You must be logged in to upload a file');
       return;
     }
 
     if (!selectedFile) {
-      await showValidationError('Veuillez sélectionner un fichier PDF');
+      await showValidationError('Please select a PDF file');
       return;
     }
 
     if (!title.trim()) {
-      await showValidationError('Veuillez renseigner un titre');
+      await showValidationError('Please enter a title');
       return;
     }
 
     if (!year) {
-      await showValidationError('Veuillez renseigner une année');
+      await showValidationError('Please enter a year');
       return;
     }
 
     if (!module.trim()) {
-      await showValidationError('Veuillez renseigner un module');
+      await showValidationError('Please enter a module');
       return;
     }
 
@@ -73,11 +73,11 @@ export default function UploadPage() {
 
       setTimeout(() => setUploadSuccess(false), 5000);
     } catch (error) {
-      console.error('Erreur upload:', error);
+      console.error('Upload error:', error);
       if (axios.isAxiosError(error)) {
-        await showError('Erreur d\'upload', error.response?.data?.error || error.message);
+        await showError('Upload error', error.response?.data?.error || error.message);
       } else {
-        await showError('Erreur', 'Une erreur inattendue est survenue lors de l\'upload');
+        await showError('Error', 'An unexpected error occurred during upload');
       }
     } finally {
       setIsUploading(false);
@@ -92,10 +92,10 @@ export default function UploadPage() {
           <Upload className="w-8 h-8 text-primary" />
         </div>
         <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">
-          Uploader une annale
+          Upload an exam
         </h1>
         <p className="text-sm md:text-base text-secondary">
-          Partagez vos examens avec la communauté
+          Share your exams with the community
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export default function UploadPage() {
         <div className="bg-success-bg border border-success/20 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2 duration-200">
           <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
           <p className="text-sm text-success font-medium">
-            Upload réussi ! Votre annale a été ajoutée.
+            Upload successful! Your exam has been added.
           </p>
         </div>
       )}
@@ -112,22 +112,22 @@ export default function UploadPage() {
       {/* Upload form */}
       <div className="bg-white border border-border rounded-xl p-6 md:p-8 shadow-xl shadow-black/5">
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Titre */}
+          {/* Title */}
           <Input
-            label="Titre de l'examen"
+            label="Exam title"
             id="title"
             name="title"
             type="text"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex: Contrôle final Mathématiques"
+            placeholder="E.g.: Final exam Mathematics"
           />
 
-          {/* Année et Module */}
+          {/* Year and Module */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Année"
+              label="Year"
               id="year"
               name="year"
               type="number"
@@ -146,7 +146,7 @@ export default function UploadPage() {
                   }
                 }
               }}
-              placeholder="Ex: 2024"
+              placeholder="E.g.: 2024"
             />
             <Input
               label="Module"
@@ -156,19 +156,19 @@ export default function UploadPage() {
               required
               value={module}
               onChange={(e) => setModule(e.target.value)}
-              placeholder="Ex: M12 - Algèbre"
+              placeholder="E.g.: M12 - Algebra"
             />
           </div>
 
           {/* File drop */}
           <div>
             <label className="block text-sm font-medium text-secondary-dark mb-2">
-              Fichier PDF
+              PDF file
             </label>
             <FileDrop onFiles={handleFileSelect} />
             {selectedFile && (
               <p className="mt-2 text-sm text-secondary">
-                Fichier sélectionné : <span className="font-medium">{selectedFile.name}</span>
+                Selected file: <span className="font-medium">{selectedFile.name}</span>
               </p>
             )}
           </div>
@@ -192,12 +192,12 @@ export default function UploadPage() {
             {isUploading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Upload en cours...</span>
+                <span>Uploading...</span>
               </>
             ) : (
               <>
                 <Upload className="w-5 h-5" />
-                <span>Uploader l&apos;annale</span>
+                <span>Upload exam</span>
               </>
             )}
           </Button>

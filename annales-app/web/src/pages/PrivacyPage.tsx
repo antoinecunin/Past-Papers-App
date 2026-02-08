@@ -2,25 +2,25 @@ import { ArrowLeft } from 'lucide-react';
 import { useInstance } from '../hooks/useInstance';
 
 export default function PrivacyPage() {
-  const { organizationName, contactEmail } = useInstance();
+  const { organizationName, contactEmail, name } = useInstance();
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-xl shadow-sm border border-border p-8 md:p-12">
-          {/* Header avec bouton retour */}
+          {/* Header with back button */}
           <button
             onClick={() => window.history.back()}
             className="flex items-center gap-2 text-primary hover:text-primary-hover transition-colors mb-6 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Retour</span>
+            <span className="text-sm">Back</span>
           </button>
 
           <h1 className="text-3xl font-bold text-secondary-dark mb-2">
-            Politique de Confidentialité
+            Privacy Policy
           </h1>
           <p className="text-secondary text-sm mb-8">
-            Dernière mise à jour : {new Date().toLocaleDateString('fr-FR')}
+            Last updated: {new Date().toLocaleDateString('en-US')}
           </p>
 
           <div className="space-y-8 text-secondary-dark">
@@ -28,301 +28,299 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
               <p className="leading-relaxed">
-                La présente politique de confidentialité décrit comment la plateforme d&apos;annales
-                (ci-après &quot;nous&quot;, &quot;notre&quot; ou &quot;la plateforme&quot;) collecte, utilise, stocke et protège
-                vos données personnelles conformément au Règlement Général sur la Protection des Données
-                (RGPD) et à la loi Informatique et Libertés.
+                This privacy policy describes how {name} (hereinafter &quot;we&quot;, &quot;our&quot;,
+                or &quot;the platform&quot;) collects, uses, stores, and protects your personal data in
+                accordance with the General Data Protection Regulation (GDPR) and applicable data
+                protection legislation.
               </p>
             </section>
 
-            {/* 2. Responsable du traitement */}
+            {/* 2. Data Controller */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">2. Responsable du Traitement</h2>
+              <h2 className="text-2xl font-semibold mb-4">2. Data Controller</h2>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <p>
                   <strong>{organizationName}</strong>
                 </p>
-                <p>Contact : {contactEmail}</p>
+                <p>Contact: {contactEmail}</p>
                 <p className="text-sm text-secondary mt-2">
-                  Pour toute question concernant vos données personnelles, vous pouvez nous contacter
-                  à l&apos;adresse ci-dessus.
+                  For any questions regarding your personal data, you may contact us at the address
+                  above.
                 </p>
               </div>
             </section>
 
-            {/* 3. Données collectées */}
+            {/* 3. Data Collected */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">3. Données Collectées</h2>
-              <p className="mb-4">Nous collectons les données suivantes :</p>
+              <h2 className="text-2xl font-semibold mb-4">3. Data Collected</h2>
+              <p className="mb-4">We collect the following data:</p>
 
               <div className="space-y-4">
                 <div className="border-l-4 border-primary pl-4">
-                  <h3 className="font-semibold mb-2">3.1. Données d&apos;identification</h3>
+                  <h3 className="font-semibold mb-2">3.1. Identification Data</h3>
                   <ul className="list-disc list-inside space-y-1 text-secondary">
-                    <li>Adresse email (obligatoire pour l&apos;inscription)</li>
-                    <li>Prénom et nom (obligatoires)</li>
-                    <li>Mot de passe (chiffré avec bcrypt)</li>
-                    <li>Rôle utilisateur (utilisateur standard ou administrateur)</li>
+                    <li>Email address (required for registration)</li>
+                    <li>First name and last name (required)</li>
+                    <li>Password (encrypted with bcrypt)</li>
+                    <li>User role (standard user or administrator)</li>
                   </ul>
                 </div>
 
                 <div className="border-l-4 border-primary pl-4">
-                  <h3 className="font-semibold mb-2">3.2. Données de contenu</h3>
+                  <h3 className="font-semibold mb-2">3.2. Content Data</h3>
                   <ul className="list-disc list-inside space-y-1 text-secondary">
-                    <li>Examens téléversés (fichiers PDF)</li>
-                    <li>Commentaires et annotations sur les examens</li>
-                    <li>Réponses aux commentaires (threads de discussion)</li>
-                    <li>Signalements de contenu</li>
+                    <li>Uploaded exams (PDF files)</li>
+                    <li>Comments and annotations on exams</li>
+                    <li>Replies to comments (discussion threads)</li>
+                    <li>Content reports</li>
                   </ul>
                 </div>
 
                 <div className="border-l-4 border-primary pl-4">
-                  <h3 className="font-semibold mb-2">3.3. Données techniques</h3>
+                  <h3 className="font-semibold mb-2">3.3. Technical Data</h3>
                   <ul className="list-disc list-inside space-y-1 text-secondary">
-                    <li>Adresse IP (lors de la connexion)</li>
-                    <li>Date et heure de connexion</li>
-                    <li>Type de navigateur et système d&apos;exploitation</li>
-                    <li>Tokens de session (JWT stockés localement)</li>
+                    <li>IP address (upon login)</li>
+                    <li>Date and time of login</li>
+                    <li>Browser type and operating system</li>
+                    <li>Session tokens (JWT stored locally)</li>
                   </ul>
                 </div>
               </div>
             </section>
 
-            {/* 4. Finalités et base légale */}
+            {/* 4. Purposes and Legal Basis */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">4. Finalités et Base Légale</h2>
+              <h2 className="text-2xl font-semibold mb-4">4. Purposes and Legal Basis</h2>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="border border-gray-200 p-3 text-left">Finalité</th>
-                      <th className="border border-gray-200 p-3 text-left">Base légale</th>
+                      <th className="border border-gray-200 p-3 text-left">Purpose</th>
+                      <th className="border border-gray-200 p-3 text-left">Legal Basis</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td className="border border-gray-200 p-3">
-                        Création et gestion de votre compte
+                        Account creation and management
                       </td>
-                      <td className="border border-gray-200 p-3">Exécution du contrat</td>
+                      <td className="border border-gray-200 p-3">Performance of contract</td>
                     </tr>
                     <tr>
                       <td className="border border-gray-200 p-3">
-                        Partage et consultation d&apos;annales
+                        Sharing and viewing past exams
                       </td>
-                      <td className="border border-gray-200 p-3">Exécution du contrat</td>
+                      <td className="border border-gray-200 p-3">Performance of contract</td>
                     </tr>
                     <tr>
                       <td className="border border-gray-200 p-3">
-                        Modération et lutte contre les abus
+                        Moderation and abuse prevention
                       </td>
-                      <td className="border border-gray-200 p-3">Intérêt légitime</td>
+                      <td className="border border-gray-200 p-3">Legitimate interest</td>
                     </tr>
                     <tr>
                       <td className="border border-gray-200 p-3">
-                        Amélioration de la plateforme
+                        Platform improvement
                       </td>
-                      <td className="border border-gray-200 p-3">Intérêt légitime</td>
+                      <td className="border border-gray-200 p-3">Legitimate interest</td>
                     </tr>
                     <tr>
                       <td className="border border-gray-200 p-3">
-                        Respect des obligations légales
+                        Compliance with legal obligations
                       </td>
-                      <td className="border border-gray-200 p-3">Obligation légale</td>
+                      <td className="border border-gray-200 p-3">Legal obligation</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </section>
 
-            {/* 5. Durée de conservation */}
+            {/* 5. Data Retention */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">5. Durée de Conservation</h2>
+              <h2 className="text-2xl font-semibold mb-4">5. Data Retention</h2>
               <ul className="space-y-2 list-disc list-inside text-secondary">
                 <li>
-                  <strong>Compte actif :</strong> vos données sont conservées tant que votre compte est
-                  actif
+                  <strong>Active account:</strong> your data is retained for as long as your account
+                  remains active
                 </li>
                 <li>
-                  <strong>Après suppression de compte :</strong> vos données personnelles
-                  (email, nom, prénom) sont supprimées immédiatement. Vos contributions (examens,
-                  commentaires) sont anonymisées (auteur mis à null) et conservées pour préserver
-                  l&apos;intérêt de la communauté
+                  <strong>After account deletion:</strong> your personal data (email, name) is
+                  deleted immediately. Your contributions (exams, comments) are anonymized (author
+                  set to null) and retained to preserve their value to the community
                 </li>
                 <li>
-                  <strong>Données de connexion :</strong> conservées 12 mois maximum pour des raisons
-                  de sécurité
+                  <strong>Login data:</strong> retained for a maximum of 12 months for security
+                  purposes
                 </li>
                 <li>
-                  <strong>Signalements :</strong> supprimés définitivement lors de la suppression de
-                  votre compte
+                  <strong>Reports:</strong> permanently deleted upon deletion of your account
                 </li>
               </ul>
             </section>
 
-            {/* 6. Destinataires */}
+            {/* 6. Data Recipients */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">6. Destinataires des Données</h2>
-              <p className="mb-4">Vos données peuvent être partagées avec :</p>
+              <h2 className="text-2xl font-semibold mb-4">6. Data Recipients</h2>
+              <p className="mb-4">Your data may be shared with:</p>
               <ul className="space-y-2 list-disc list-inside text-secondary">
                 <li>
-                  <strong>Hébergement :</strong> nos serveurs sont auto-hébergés. Nous utilisons MongoDB
-                  pour la base de données et MinIO pour le stockage des fichiers PDF
+                  <strong>Hosting:</strong> our servers are self-hosted. We use MongoDB for the
+                  database and MinIO for PDF file storage
                 </li>
                 <li>
-                  <strong>Service email :</strong> un prestataire SMTP pour l&apos;envoi des emails de
-                  vérification et de réinitialisation de mot de passe
+                  <strong>Email service:</strong> an SMTP provider for sending verification and
+                  password reset emails
                 </li>
                 <li>
-                  <strong>Administrateurs :</strong> pour la modération du contenu signalé
+                  <strong>Administrators:</strong> for moderation of reported content
                 </li>
               </ul>
               <p className="mt-4 text-secondary">
-                Aucune donnée n&apos;est vendue ou partagée avec des tiers à des fins commerciales.
+                No data is sold or shared with third parties for commercial purposes.
               </p>
             </section>
 
-            {/* 7. Vos droits */}
+            {/* 7. Your Rights */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">7. Vos Droits</h2>
+              <h2 className="text-2xl font-semibold mb-4">7. Your Rights</h2>
               <p className="mb-4">
-                Conformément au RGPD, vous disposez des droits suivants concernant vos données
-                personnelles :
+                In accordance with the GDPR, you have the following rights regarding your personal
+                data:
               </p>
 
               <div className="space-y-3">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Droit d&apos;accès
+                    ✓ Right of Access
                   </h3>
                   <p className="text-sm text-blue-800">
-                    Vous pouvez consulter et exporter l&apos;ensemble de vos données depuis votre profil
-                    (bouton &quot;Exporter mes données&quot;).
+                    You can view and export all of your data from your profile (&quot;Export My
+                    Data&quot; button).
                   </p>
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Droit de rectification
+                    ✓ Right to Rectification
                   </h3>
                   <p className="text-sm text-blue-800">
-                    Vous pouvez modifier vos prénom, nom et email depuis votre profil.
+                    You can modify your first name, last name, and email address from your profile.
                   </p>
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Droit à l&apos;effacement (&quot;droit à l&apos;oubli&quot;)
+                    ✓ Right to Erasure (&quot;Right to Be Forgotten&quot;)
                   </h3>
                   <p className="text-sm text-blue-800">
-                    Vous pouvez supprimer votre compte à tout moment depuis votre profil (bouton
-                    &quot;Supprimer mon compte&quot;). Vos données personnelles seront supprimées et vos
-                    contributions anonymisées.
+                    You can delete your account at any time from your profile (&quot;Delete My
+                    Account&quot; button). Your personal data will be deleted and your contributions
+                    will be anonymized.
                   </p>
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Droit à la portabilité
+                    ✓ Right to Data Portability
                   </h3>
                   <p className="text-sm text-blue-800">
-                    Vous pouvez exporter vos données au format JSON depuis votre profil.
+                    You can export your data in JSON format from your profile.
                   </p>
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Droit d&apos;opposition et de limitation
+                    ✓ Right to Object and Right to Restriction
                   </h3>
                   <p className="text-sm text-blue-800">
-                    Vous pouvez vous opposer au traitement de vos données en supprimant votre compte
-                    ou en nous contactant.
+                    You can object to the processing of your data by deleting your account or by
+                    contacting us.
                   </p>
                 </div>
               </div>
 
               <p className="mt-4 text-sm text-secondary">
-                Pour exercer vos droits, contactez-nous à{' '}
+                To exercise your rights, contact us at{' '}
                 <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
                   {contactEmail}
                 </a>
               </p>
             </section>
 
-            {/* 8. Sécurité */}
+            {/* 8. Security */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">8. Sécurité</h2>
-              <p className="mb-4">Nous mettons en œuvre les mesures de sécurité suivantes :</p>
+              <h2 className="text-2xl font-semibold mb-4">8. Security</h2>
+              <p className="mb-4">We implement the following security measures:</p>
               <ul className="space-y-2 list-disc list-inside text-secondary">
-                <li>Chiffrement des mots de passe avec bcrypt (10 rounds de salage)</li>
-                <li>Authentification par JWT avec expiration</li>
-                <li>HTTPS obligatoire en production (TLS/SSL)</li>
-                <li>Protection CORS et en-têtes de sécurité (Helmet.js)</li>
-                <li>Limitation du taux de requêtes (rate limiting)</li>
-                <li>Validation stricte des entrées utilisateur (Zod)</li>
-                <li>Séparation des environnements (dev/prod)</li>
-                <li>Filtrage IP au niveau du reverse proxy (Nginx)</li>
+                <li>Password encryption with bcrypt (10 salt rounds)</li>
+                <li>JWT authentication with expiration</li>
+                <li>Mandatory HTTPS in production (TLS/SSL)</li>
+                <li>CORS protection and security headers (Helmet.js)</li>
+                <li>Rate limiting on requests</li>
+                <li>Strict user input validation (Zod)</li>
+                <li>Environment separation (dev/prod)</li>
+                <li>IP filtering at the reverse proxy level (Nginx)</li>
               </ul>
             </section>
 
             {/* 9. Cookies */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">9. Cookies et Stockage Local</h2>
+              <h2 className="text-2xl font-semibold mb-4">9. Cookies and Local Storage</h2>
               <p className="mb-4">
-                Notre plateforme utilise le stockage local du navigateur (localStorage) pour :
+                Our platform uses browser local storage (localStorage) for:
               </p>
               <ul className="space-y-2 list-disc list-inside text-secondary">
                 <li>
-                  <strong>Token d&apos;authentification (JWT) :</strong> nécessaire au fonctionnement de
-                  la plateforme, conservé jusqu&apos;à déconnexion
+                  <strong>Authentication token (JWT):</strong> required for the platform to function,
+                  retained until logout
                 </li>
                 <li>
-                  <strong>Préférences utilisateur :</strong> paramètres d&apos;affichage et de navigation
+                  <strong>User preferences:</strong> display and navigation settings
                 </li>
               </ul>
               <p className="mt-4 text-secondary">
-                Nous n&apos;utilisons pas de cookies tiers ou de trackers publicitaires. Tous les
-                éléments stockés sont strictement nécessaires au fonctionnement de la plateforme.
+                We do not use third-party cookies or advertising trackers. All stored items are
+                strictly necessary for the operation of the platform.
               </p>
             </section>
 
-            {/* 10. Transferts internationaux */}
+            {/* 10. International Transfers */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">10. Transferts Internationaux</h2>
+              <h2 className="text-2xl font-semibold mb-4">10. International Transfers</h2>
               <p className="text-secondary">
-                Vos données sont hébergées en France et ne font l&apos;objet d&apos;aucun transfert hors de
-                l&apos;Union Européenne.
+                Your data is hosted within the European Union and is not subject to any transfer
+                outside of the European Union.
               </p>
             </section>
 
-            {/* 11. Mineurs */}
+            {/* 11. Minors */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">11. Protection des Mineurs</h2>
+              <h2 className="text-2xl font-semibold mb-4">11. Protection of Minors</h2>
               <p className="text-secondary">
-                Notre plateforme est destinée aux étudiants majeurs. Si vous avez moins de 18 ans,
-                l&apos;autorisation d&apos;un parent ou tuteur légal est requise avant toute inscription.
+                Our platform is intended for adult students. If you are under 18 years of age,
+                parental or legal guardian consent is required before registration.
               </p>
             </section>
 
             {/* 12. Modifications */}
             <section>
               <h2 className="text-2xl font-semibold mb-4">
-                12. Modifications de la Politique
+                12. Changes to This Policy
               </h2>
               <p className="text-secondary">
-                Nous nous réservons le droit de modifier cette politique de confidentialité à tout
-                moment. Toute modification sera publiée sur cette page avec une mise à jour de la
-                date. Les changements significatifs vous seront notifiés par email.
+                We reserve the right to modify this privacy policy at any time. Any changes will be
+                published on this page with an updated date. Significant changes will be notified to
+                you by email.
               </p>
             </section>
 
-            {/* 13. Réclamations */}
+            {/* 13. Complaints */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">13. Droit de Réclamation</h2>
+              <h2 className="text-2xl font-semibold mb-4">13. Right to Lodge a Complaint</h2>
               <p className="text-secondary">
-                Si vous estimez que vos droits ne sont pas respectés, vous pouvez introduire une
-                réclamation auprès de la Commission Nationale de l&apos;Informatique et des Libertés
-                (CNIL) :
+                If you believe that your rights are not being respected, you may lodge a complaint
+                with your local data protection authority. For users in France, this is the
+                Commission Nationale de l&apos;Informatique et des Libertés (CNIL):
               </p>
               <div className="bg-gray-50 rounded-lg p-4 mt-4">
                 <p className="font-semibold">CNIL</p>
@@ -330,7 +328,7 @@ export default function PrivacyPage() {
                 <p className="text-sm text-secondary">TSA 80715</p>
                 <p className="text-sm text-secondary">75334 Paris Cedex 07</p>
                 <p className="text-sm text-secondary mt-2">
-                  Site web :{' '}
+                  Website:{' '}
                   <a
                     href="https://www.cnil.fr"
                     target="_blank"
@@ -345,14 +343,13 @@ export default function PrivacyPage() {
 
             {/* 14. Contact */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">14. Nous Contacter</h2>
+              <h2 className="text-2xl font-semibold mb-4">14. Contact Us</h2>
               <p className="text-secondary mb-4">
-                Pour toute question concernant cette politique de confidentialité ou vos données
-                personnelles :
+                For any questions regarding this privacy policy or your personal data:
               </p>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm">
-                  <strong>Email :</strong>{' '}
+                  <strong>Email:</strong>{' '}
                   <a
                     href={`mailto:${contactEmail}`}
                     className="text-primary hover:underline"
@@ -361,7 +358,7 @@ export default function PrivacyPage() {
                   </a>
                 </p>
                 <p className="text-sm mt-2 text-secondary">
-                  Nous nous engageons à répondre à toute demande dans un délai maximum de 30 jours.
+                  We are committed to responding to any request within a maximum of 30 days.
                 </p>
               </div>
             </section>

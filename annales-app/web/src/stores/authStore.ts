@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Erreur de connexion');
+            throw new Error(data.error || 'Login error');
           }
 
           set({
@@ -77,7 +77,7 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur de connexion',
+            error: error instanceof Error ? error.message : 'Login error',
           });
           throw error;
         }
@@ -97,14 +97,14 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || "Erreur d'inscription");
+            throw new Error(data.error || 'Registration error');
           }
 
           set({ isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : "Erreur d'inscription",
+            error: error instanceof Error ? error.message : 'Registration error',
           });
           throw error;
         }
@@ -132,14 +132,14 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Erreur lors de la demande');
+            throw new Error(data.error || 'Error processing request');
           }
 
           set({ isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur lors de la demande',
+            error: error instanceof Error ? error.message : 'Error processing request',
           });
           throw error;
         }
@@ -159,14 +159,14 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Erreur lors de la réinitialisation');
+            throw new Error(data.error || 'Error resetting password');
           }
 
           set({ isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur lors de la réinitialisation',
+            error: error instanceof Error ? error.message : 'Error resetting password',
           });
           throw error;
         }
@@ -186,14 +186,14 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Erreur de vérification');
+            throw new Error(data.error || 'Verification error');
           }
 
           set({ isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur de vérification',
+            error: error instanceof Error ? error.message : 'Verification error',
           });
           throw error;
         }
@@ -213,14 +213,14 @@ export const useAuthStore = create<AuthStore>()(
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Erreur lors du renvoi');
+            throw new Error(data.error || 'Error resending verification');
           }
 
           set({ isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur lors du renvoi',
+            error: error instanceof Error ? error.message : 'Error resending verification',
           });
           throw error;
         }
@@ -242,15 +242,15 @@ export const useAuthStore = create<AuthStore>()(
           const result = await response.json();
 
           if (!response.ok) {
-            throw new Error(result.error || 'Erreur lors de la mise à jour');
+            throw new Error(result.error || 'Error updating profile');
           }
 
-          // Mettre à jour l'utilisateur dans le store
+          // Update user in the store
           set({ user: result.user, isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
+            error: error instanceof Error ? error.message : 'Error updating profile',
           });
           throw error;
         }
@@ -272,14 +272,14 @@ export const useAuthStore = create<AuthStore>()(
           const result = await response.json();
 
           if (!response.ok) {
-            throw new Error(result.error || 'Erreur lors du changement de mot de passe');
+            throw new Error(result.error || 'Error changing password');
           }
 
           set({ isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur lors du changement',
+            error: error instanceof Error ? error.message : 'Error changing password',
           });
           throw error;
         }
@@ -301,15 +301,15 @@ export const useAuthStore = create<AuthStore>()(
           const result = await response.json();
 
           if (!response.ok) {
-            throw new Error(result.error || 'Erreur lors de la suppression');
+            throw new Error(result.error || 'Error deleting account');
           }
 
-          // Déconnexion après suppression
+          // Log out after deletion
           set({ user: null, token: null, isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+            error: error instanceof Error ? error.message : 'Error deleting account',
           });
           throw error;
         }
