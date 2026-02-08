@@ -3,7 +3,7 @@
   "users": [
     {
       "emailPrefix": "test",
-      "password": "azerty24",
+      "password": "test1234",
       "firstName": "Test",
       "lastName": "User",
       "isVerified": true

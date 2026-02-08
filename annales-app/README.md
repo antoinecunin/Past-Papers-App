@@ -115,7 +115,7 @@ Default test accounts (customize in `dev-seed.json`):
 
 | Email | Password | Role |
 |-------|----------|------|
-| `test@etu.unistra.fr` | `azerty24` | user |
+| `test@etu.unistra.fr` | `test1234` | user |
 | `admin@etu.unistra.fr` | `admin123` | admin |
 
 ### Tests
