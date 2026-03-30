@@ -16,6 +16,8 @@ export interface Answer {
   parentId?: string; // ID du commentaire parent (thread)
   mentionedUserId?: string; // ID de l'utilisateur mentionné
   replyCount?: number; // Nombre de réponses (uniquement sur les racines)
+  score?: number; // Score (somme des votes)
+  userVote?: number | null; // Vote de l'utilisateur courant (1, -1, ou null)
   author?: { firstName: string; lastName: string } | null; // Auteur du commentaire
   mentionedAuthor?: { firstName: string; lastName: string } | null; // Auteur mentionné
   createdAt: string;

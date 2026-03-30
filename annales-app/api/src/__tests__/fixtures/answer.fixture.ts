@@ -16,6 +16,7 @@ export function createAnswerData(
       data: 'Test comment',
     },
     authorId: new Types.ObjectId(),
+    score: 0,
     ...overrides,
   };
 }

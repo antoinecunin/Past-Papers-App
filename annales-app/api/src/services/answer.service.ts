@@ -2,14 +2,23 @@ import { Types } from 'mongoose';
 import { AnswerModel, Answer, AnswerContent } from '../models/Answer.js';
 import { UserModel } from '../models/User.js';
 import { ServiceError } from './ServiceError.js';
+import { voteService } from './vote.service.js';
 
 export interface AuthorInfo {
   firstName: string;
   lastName: string;
 }
 
-export type AnswerWithAuthor = Answer & { replyCount: number; author: AuthorInfo | null };
-export type ReplyWithAuthor = Answer & { author: AuthorInfo | null; mentionedAuthor: AuthorInfo | null };
+export type AnswerWithAuthor = Answer & {
+  replyCount: number;
+  author: AuthorInfo | null;
+  userVote: number | null;
+};
+export type ReplyWithAuthor = Answer & {
+  author: AuthorInfo | null;
+  mentionedAuthor: AuthorInfo | null;
+  userVote: number | null;
+};
 
 export interface CreateAnswerData {
   examId: string;
@@ -30,7 +39,7 @@ class AnswerService {
    * Liste les commentaires racines d'un examen (optionnellement filtrés par page)
    * Retourne uniquement les commentaires sans parentId, avec un replyCount
    */
-  async findByExam(examId: string, page?: number): Promise<AnswerWithAuthor[]> {
+  async findByExam(examId: string, page?: number, userId?: string): Promise<AnswerWithAuthor[]> {
     const filter: Record<string, unknown> = { examId, parentId: null };
     if (page) {
       filter.page = page;
@@ -50,13 +59,15 @@ class AnswerService {
       replyCountMap.set(rc._id.toString(), rc.count);
     }
 
-    // Batch lookup des auteurs
+    // Batch lookup des auteurs + votes utilisateur
     const authorMap = await this.buildAuthorMap(answers);
+    const voteMap = userId ? await voteService.getUserVotes(answerIds, userId) : new Map();
 
     return answers.map(a => ({
       ...a,
       replyCount: replyCountMap.get(a._id.toString()) || 0,
       author: a.authorId ? authorMap.get(a.authorId.toString()) ?? null : null,
+      userVote: voteMap.get(a._id.toString()) ?? null,
     })) as AnswerWithAuthor[];
   }
 
@@ -66,7 +77,8 @@ class AnswerService {
   async findReplies(
     parentId: string,
     cursor?: string,
-    limit = 10
+    limit = 10,
+    userId?: string
   ): Promise<{ replies: ReplyWithAuthor[]; hasMore: boolean }> {
     if (!Types.ObjectId.isValid(parentId)) {
       throw ServiceError.badRequest('ID invalide');
@@ -92,18 +104,21 @@ class AnswerService {
       replies.pop();
     }
 
-    // Batch lookup des auteurs + mentionedUserIds
+    // Batch lookup des auteurs + mentionedUserIds + votes utilisateur
     const mentionedUserIds = replies
       .map(r => r.mentionedUserId)
       .filter((id): id is Types.ObjectId => id != null);
     const allUserDocs = [...replies, ...mentionedUserIds.map(id => ({ authorId: id }))];
     const authorMap = await this.buildAuthorMap(allUserDocs);
+    const replyIds = replies.map(r => r._id);
+    const voteMap = userId ? await voteService.getUserVotes(replyIds, userId) : new Map();
 
     return {
       replies: replies.map(r => ({
         ...r,
         author: r.authorId ? authorMap.get(r.authorId.toString()) ?? null : null,
         mentionedAuthor: r.mentionedUserId ? authorMap.get(r.mentionedUserId.toString()) ?? null : null,
+        userVote: voteMap.get(r._id.toString()) ?? null,
       })) as ReplyWithAuthor[],
       hasMore,
     };
@@ -215,9 +230,15 @@ class AnswerService {
       throw ServiceError.forbidden('Vous ne pouvez supprimer que vos propres commentaires');
     }
 
-    // Cascade delete des réponses si c'est un commentaire racine
+    // Cascade delete des réponses et votes si c'est un commentaire racine
     if (!existingAnswer.parentId) {
+      const replyIds = (
+        await AnswerModel.find({ parentId: existingAnswer._id }).select('_id').lean()
+      ).map(r => r._id);
+      await voteService.deleteByAnswerIds([...replyIds, existingAnswer._id]);
       await AnswerModel.deleteMany({ parentId: existingAnswer._id });
+    } else {
+      await voteService.deleteByAnswerIds([existingAnswer._id]);
     }
 
     await AnswerModel.findByIdAndDelete(id);
@@ -228,6 +249,8 @@ class AnswerService {
    * (Utilisé lors de la suppression d'un examen via report)
    */
   async deleteByExamId(examId: Types.ObjectId): Promise<number> {
+    const answerIds = (await AnswerModel.find({ examId }).select('_id').lean()).map(a => a._id);
+    await voteService.deleteByAnswerIds(answerIds);
     const result = await AnswerModel.deleteMany({ examId });
     return result.deletedCount;
   }

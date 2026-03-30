@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
 import { answerService } from '../services/answer.service.js';
+import { voteService } from '../services/vote.service.js';
 import { objectIdSchema } from '../utils/validation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { CONTENT_MAX_LENGTH, isAllowedImageUrl } from '../constants/content.js';
@@ -61,6 +62,12 @@ const updateAnswerSchema = z.object({
 const getRepliesQuerySchema = z.object({
   cursor: objectIdSchema('cursor').optional(),
   limit: z.string().transform(Number).pipe(z.number().int().min(1).max(50)).optional(),
+});
+
+const voteSchema = z.object({
+  value: z.union([z.literal(1), z.literal(-1)], {
+    errorMap: () => ({ message: 'value doit être 1 ou -1' }),
+  }),
 });
 
 /**
@@ -330,7 +337,7 @@ router.get(
     }
 
     const { examId, page } = result.data;
-    const answers = await answerService.findByExam(examId, page);
+    const answers = await answerService.findByExam(examId, page, req.user!.id);
 
     return res.json(answers);
   })
@@ -357,6 +364,72 @@ router.post(
     });
 
     return res.json({ id });
+  })
+);
+
+/**
+ * @swagger
+ * /answers/{id}/vote:
+ *   post:
+ *     summary: Voter sur un commentaire (upvote ou downvote)
+ *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *         description: ID du commentaire
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [value]
+ *             properties:
+ *               value:
+ *                 type: integer
+ *                 enum: [1, -1]
+ *                 description: "1 pour upvote, -1 pour downvote. Renvoyer la même valeur annule le vote."
+ *     responses:
+ *       200:
+ *         description: Vote enregistré
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 score:
+ *                   type: integer
+ *                   description: Score total du commentaire
+ *                 userVote:
+ *                   type: integer
+ *                   nullable: true
+ *                   description: "Vote actuel de l'utilisateur (1, -1, ou null si annulé)"
+ *       400:
+ *         description: Paramètres invalides
+ *       401:
+ *         description: Non authentifié
+ *       404:
+ *         description: Commentaire non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post(
+  '/:id/vote',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { id } = req.params;
+
+    const result = voteSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const { score, userVote } = await voteService.vote(id, req.user!.id, result.data.value);
+    return res.json({ score, userVote });
   })
 );
 
@@ -476,7 +549,7 @@ router.get(
     }
 
     const { cursor, limit } = queryResult.data;
-    const result = await answerService.findReplies(id, cursor, limit || 10);
+    const result = await answerService.findReplies(id, cursor, limit || 10, req.user!.id);
 
     return res.json(result);
   })

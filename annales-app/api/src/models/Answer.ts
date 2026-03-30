@@ -17,6 +17,7 @@ export interface Answer {
   authorId?: Types.ObjectId; // Référence utilisateur
   parentId?: Types.ObjectId; // Référence vers le commentaire parent (thread)
   mentionedUserId?: Types.ObjectId; // Référence vers l'utilisateur mentionné (style YouTube)
+  score: number; // Score dénormalisé (somme des votes)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +40,7 @@ const AnswerSchema = new Schema<Answer>(
     authorId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     parentId: { type: Schema.Types.ObjectId, ref: 'Answer', default: null, index: true },
     mentionedUserId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    score: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

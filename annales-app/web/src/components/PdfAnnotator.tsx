@@ -6,6 +6,7 @@ import { renderLatex } from '../utils/latex';
 import { PermissionUtils } from '../utils/permissions';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { AnswerContentDisplay } from './AnswerContentDisplay';
+import { VoteButtons } from './VoteButtons';
 import { ReplyForm } from './ReplyForm';
 import { useAuthStore } from '../stores/authStore';
 import { useInstance } from '../hooks/useInstance';
@@ -863,6 +864,45 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [token]
   );
 
+  // Vote on a comment
+  const voteOnAnswer = useCallback(
+    async (answerId: string, value: 1 | -1) => {
+      if (!token) return;
+      const res = await fetch(`/api/answers/${answerId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ value }),
+      });
+      if (!res.ok) throw new Error('Failed to vote');
+      const data: { score: number; userVote: number | null } = await res.json();
+
+      // Update root answers state
+      setAllAnswers(prev =>
+        prev.map(a => (a._id === answerId ? { ...a, score: data.score, userVote: data.userVote } : a))
+      );
+      // Update loaded replies if the voted answer is a reply
+      setLoadedReplies(prev => {
+        const updated = { ...prev };
+        for (const parentId of Object.keys(updated)) {
+          const entry = updated[parentId];
+          if (entry.replies.some(r => r._id === answerId)) {
+            updated[parentId] = {
+              ...entry,
+              replies: entry.replies.map(r =>
+                r._id === answerId ? { ...r, score: data.score, userVote: data.userVote } : r
+              ),
+            };
+          }
+        }
+        return updated;
+      });
+    },
+    [token]
+  );
+
   // Load replies for a thread
   const loadReplies = useCallback(
     async (parentId: string, cursor?: string) => {
@@ -1058,24 +1098,6 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                   }, 3000);
                 }
               }}
-              onMouseEnter={e => {
-                // Trigger hover on AnswerContentDisplay action buttons
-                const buttons = e.currentTarget.querySelector(
-                  '[data-action-buttons]'
-                ) as HTMLElement;
-                if (buttons) {
-                  buttons.style.opacity = '1';
-                }
-              }}
-              onMouseLeave={e => {
-                // Remove hover from action buttons
-                const buttons = e.currentTarget.querySelector(
-                  '[data-action-buttons]'
-                ) as HTMLElement;
-                if (buttons) {
-                  buttons.style.opacity = '0';
-                }
-              }}
               style={{
                 ...commentItemStyle,
                 cursor: 'pointer',
@@ -1087,8 +1109,18 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                   : 'none',
               }}
             >
-              <div style={commentMetaStyle}>
-                {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonymous'} • Page {a.page}
+              <div
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <div style={commentMetaStyle}>
+                  {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonymous'} • Page {a.page}
+                </div>
+                <VoteButtons
+                  answerId={a._id}
+                  score={a.score ?? 0}
+                  userVote={a.userVote ?? null}
+                  onVote={voteOnAnswer}
+                />
               </div>
               <AnswerContentDisplay
                 answer={a}
@@ -1128,13 +1160,21 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                       key={reply._id}
                       style={replyItemStyle}
                     >
-                      <div style={commentMetaStyle}>
-                        {reply.mentionedAuthor && (
-                          <span style={getMentionDisplayStyle(primaryHoverColor)}>
-                            @{reply.mentionedAuthor.firstName} {reply.mentionedAuthor.lastName[0]}.
-                          </span>
-                        )}
-                        {reply.author ? `${reply.author.firstName} ${reply.author.lastName[0]}.` : 'Anonymous'}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={commentMetaStyle}>
+                          {reply.mentionedAuthor && (
+                            <span style={getMentionDisplayStyle(primaryHoverColor)}>
+                              @{reply.mentionedAuthor.firstName} {reply.mentionedAuthor.lastName[0]}.
+                            </span>
+                          )}
+                          {reply.author ? `${reply.author.firstName} ${reply.author.lastName[0]}.` : 'Anonymous'}
+                        </div>
+                        <VoteButtons
+                          answerId={reply._id}
+                          score={reply.score ?? 0}
+                          userVote={reply.userVote ?? null}
+                          onVote={voteOnAnswer}
+                        />
                       </div>
                       <AnswerContentDisplay
                         answer={reply}
