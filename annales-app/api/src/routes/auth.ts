@@ -2,7 +2,8 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
+import { authMiddleware, requireAdmin, AuthenticatedRequest } from '../middleware/auth.js';
+import { UserModel, UserRole } from '../models/User.js';
 import { instanceConfigService } from '../services/instance-config.service.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
@@ -712,6 +713,133 @@ router.delete(
     await authService.deleteAccount(req.user!.id, result.data.password);
 
     res.json({ message: 'Compte supprimé avec succès' });
+  })
+);
+
+// ─── Admin: user management ───
+
+const updateRoleSchema = z.object({
+  role: z.enum(['user', 'admin'], {
+    errorMap: () => ({ message: 'role must be "user" or "admin"' }),
+  }),
+});
+
+/**
+ * @swagger
+ * /auth/users:
+ *   get:
+ *     summary: List all users (admin only)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not admin
+ */
+router.get(
+  '/users',
+  authMiddleware,
+  requireAdmin,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const users = await UserModel.find()
+      .select('email firstName lastName role isVerified createdAt')
+      .sort({ createdAt: 1 })
+      .lean();
+
+    const initialAdminEmail = process.env.INITIAL_ADMIN_EMAIL?.toLowerCase();
+    const callerIsInitialAdmin = !!initialAdminEmail && req.user!.email === initialAdminEmail;
+
+    return res.json({ users, canManageRoles: callerIsInitialAdmin });
+  })
+);
+
+/**
+ * @swagger
+ * /auth/users/{id}/role:
+ *   put:
+ *     summary: Change a user's role (initial admin only)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [role]
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *     responses:
+ *       200:
+ *         description: Role updated
+ *       400:
+ *         description: Invalid role or cannot change this user
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not the initial admin
+ *       404:
+ *         description: User not found
+ */
+router.put(
+  '/users/:id/role',
+  authMiddleware,
+  requireAdmin,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    // Only the initial admin can change roles
+    const initialAdminEmail = process.env.INITIAL_ADMIN_EMAIL?.toLowerCase();
+    if (!initialAdminEmail || req.user!.email !== initialAdminEmail) {
+      return res.status(403).json({ error: 'Only the initial admin can manage roles' });
+    }
+
+    const result = updateRoleSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const { id } = req.params;
+    const { role } = result.data;
+
+    // Cannot change own role
+    if (id === req.user!.id) {
+      return res.status(400).json({ error: 'Cannot change your own role' });
+    }
+
+    const targetUser = await UserModel.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Cannot change the initial admin's role
+    if (targetUser.email === initialAdminEmail) {
+      return res.status(400).json({ error: 'Cannot change the initial admin role' });
+    }
+
+    targetUser.role = role as UserRole;
+    await targetUser.save();
+
+    return res.json({
+      success: true,
+      user: {
+        _id: targetUser._id,
+        email: targetUser.email,
+        firstName: targetUser.firstName,
+        lastName: targetUser.lastName,
+        role: targetUser.role,
+      },
+    });
   })
 );
 

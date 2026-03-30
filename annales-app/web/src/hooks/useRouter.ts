@@ -13,6 +13,7 @@ export interface Route {
     | 'exams'
     | 'viewer'
     | 'admin-reports'
+    | 'admin-users'
     | 'login'
     | 'register'
     | 'forgot-password'
@@ -46,6 +47,8 @@ export function useRouter() {
         return '/profile';
       case 'admin-reports':
         return '/admin/reports';
+      case 'admin-users':
+        return '/admin/users';
       case 'login':
         return '/login';
       case 'register':
@@ -94,6 +97,10 @@ export function useRouter() {
 
     if (path === '/admin/reports') {
       return { path, page: 'admin-reports', params: {} };
+    }
+
+    if (path === '/admin/users') {
+      return { path, page: 'admin-users', params: {} };
     }
 
     if (path === '/profile') {
@@ -181,7 +188,10 @@ export function useRouter() {
         title = `Upload | ${instanceName}`;
         break;
       case 'admin-reports':
-        title = `Admin | ${instanceName}`;
+        title = `Reports | ${instanceName}`;
+        break;
+      case 'admin-users':
+        title = `Users | ${instanceName}`;
         break;
       case 'profile':
         title = `Profile | ${instanceName}`;

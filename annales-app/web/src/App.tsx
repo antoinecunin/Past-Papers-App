@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import UploadPage from './pages/UploadPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import AdminUsersPage from './pages/AdminUsersPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -223,6 +224,8 @@ function App() {
         return <UploadPage />;
       case 'admin-reports':
         return <AdminReportsPage />;
+      case 'admin-users':
+        return <AdminUsersPage />;
       case 'profile':
         return <ProfilePage />;
       case 'exams':
@@ -359,16 +362,28 @@ function App() {
                   Upload
                 </button>
                 {PermissionUtils.isAdmin(user) && (
-                  <button
-                    onClick={() => navigate('admin-reports')}
-                    className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
-                      isPage('admin-reports')
-                        ? 'bg-purple-500 text-white'
-                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                    }`}
-                  >
-                    Reports
-                  </button>
+                  <>
+                    <button
+                      onClick={() => navigate('admin-reports')}
+                      className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
+                        isPage('admin-reports')
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      }`}
+                    >
+                      Reports
+                    </button>
+                    <button
+                      onClick={() => navigate('admin-users')}
+                      className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
+                        isPage('admin-users')
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      }`}
+                    >
+                      Users
+                    </button>
+                  </>
                 )}
               </div>
             </div>
