@@ -1,13 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_INSTANCE_CONFIG, type InstanceConfig } from '../types/instance-config';
-
-interface InstanceContextType {
-  config: InstanceConfig;
-  isLoading: boolean;
-  error: string | null;
-}
-
-const InstanceContext = createContext<InstanceContextType | undefined>(undefined);
+import { InstanceContext } from './instanceContext';
 
 /**
  * Provider component that loads instance configuration from the API
@@ -86,16 +79,4 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       {children}
     </InstanceContext.Provider>
   );
-}
-
-/**
- * Hook to access instance configuration
- * Provides instance name, branding, features, and legal info
- */
-export function useInstanceContext() {
-  const context = useContext(InstanceContext);
-  if (context === undefined) {
-    throw new Error('useInstanceContext must be used within InstanceProvider');
-  }
-  return context;
 }

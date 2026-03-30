@@ -1,4 +1,5 @@
-import { useInstanceContext } from '../contexts/InstanceContext';
+import { useContext } from 'react';
+import { InstanceContext } from '../contexts/instanceContext';
 
 /**
  * Hook pour accéder aux informations de l'instance actuelle
@@ -6,7 +7,11 @@ import { useInstanceContext } from '../contexts/InstanceContext';
  * Les valeurs viennent de l'API /api/config/instance
  */
 export const useInstance = () => {
-  const { config, isLoading, error } = useInstanceContext();
+  const context = useContext(InstanceContext);
+  if (context === undefined) {
+    throw new Error('useInstance must be used within InstanceProvider');
+  }
+  const { config, isLoading, error } = context;
 
   // Helper: calcule primaryHoverColor (darken de 10%)
   const getPrimaryHoverColor = (primaryColor: string): string => {
