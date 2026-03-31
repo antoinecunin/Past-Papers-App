@@ -18,6 +18,8 @@ export interface User {
   verificationExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  canComment: boolean;
+  canUpload: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +81,14 @@ const UserSchema = new Schema<User>(
     },
     resetPasswordExpires: {
       type: Date,
+    },
+    canComment: {
+      type: Boolean,
+      default: true,
+    },
+    canUpload: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }

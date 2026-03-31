@@ -97,6 +97,10 @@ router.post(
   authMiddleware,
   upload.single('file'),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
+    if (!req.user!.canUpload) {
+      return res.status(403).json({ error: 'Your upload permission has been revoked' });
+    }
+
     if (!req.file) return res.status(400).json({ error: 'Fichier manquant' });
 
     // Validation du type MIME
@@ -259,6 +263,10 @@ router.post(
   authMiddleware,
   imageUpload.single('image'),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
+    if (!req.user!.canComment) {
+      return res.status(403).json({ error: 'Your commenting permission has been revoked' });
+    }
+
     if (!req.file) {
       return res.status(400).json({ error: 'Image manquante' });
     }

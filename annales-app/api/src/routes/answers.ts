@@ -347,6 +347,10 @@ router.post(
   '/',
   authMiddleware,
   asyncHandler(async (req: AuthenticatedRequest, res) => {
+    if (!req.user!.canComment) {
+      return res.status(403).json({ error: 'Your commenting permission has been revoked' });
+    }
+
     const result = createAnswerSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });

@@ -746,7 +746,7 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: AuthenticatedRequest, res) => {
     const users = await UserModel.find()
-      .select('email firstName lastName role isVerified createdAt')
+      .select('email firstName lastName role isVerified canComment canUpload createdAt')
       .sort({ createdAt: 1 })
       .lean();
 
@@ -838,6 +838,92 @@ router.put(
         firstName: targetUser.firstName,
         lastName: targetUser.lastName,
         role: targetUser.role,
+      },
+    });
+  })
+);
+
+const updatePermissionsSchema = z.object({
+  canComment: z.boolean().optional(),
+  canUpload: z.boolean().optional(),
+}).refine(data => data.canComment !== undefined || data.canUpload !== undefined, {
+  message: 'At least one permission must be provided',
+});
+
+/**
+ * @swagger
+ * /auth/users/{id}/permissions:
+ *   put:
+ *     summary: Update user permissions (admin only)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               canComment:
+ *                 type: boolean
+ *               canUpload:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Permissions updated
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not admin
+ *       404:
+ *         description: User not found
+ */
+router.put(
+  '/users/:id/permissions',
+  authMiddleware,
+  requireAdmin,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const result = updatePermissionsSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const { id } = req.params;
+
+    // Cannot change own permissions
+    if (id === req.user!.id) {
+      return res.status(400).json({ error: 'Cannot change your own permissions' });
+    }
+
+    const targetUser = await UserModel.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Cannot change admin permissions
+    if (targetUser.role === UserRole.ADMIN) {
+      return res.status(400).json({ error: 'Cannot change admin permissions' });
+    }
+
+    const { canComment, canUpload } = result.data;
+    if (canComment !== undefined) targetUser.canComment = canComment;
+    if (canUpload !== undefined) targetUser.canUpload = canUpload;
+    await targetUser.save();
+
+    return res.json({
+      success: true,
+      user: {
+        _id: targetUser._id,
+        canComment: targetUser.canComment,
+        canUpload: targetUser.canUpload,
       },
     });
   })

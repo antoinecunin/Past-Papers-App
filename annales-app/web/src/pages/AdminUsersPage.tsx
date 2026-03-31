@@ -11,6 +11,8 @@ interface UserEntry {
   lastName: string;
   role: 'user' | 'admin';
   isVerified: boolean;
+  canComment: boolean;
+  canUpload: boolean;
   createdAt: string;
 }
 
@@ -89,6 +91,36 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleTogglePermission = async (targetUser: UserEntry, permission: 'canComment' | 'canUpload') => {
+    if (!token) return;
+    const newValue = !targetUser[permission];
+
+    try {
+      setActionLoading(`${targetUser._id}-${permission}`);
+      const response = await fetch(`/api/auth/users/${targetUser._id}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ [permission]: newValue }),
+      });
+
+      if (response.ok) {
+        setUsers(prev =>
+          prev.map(u => (u._id === targetUser._id ? { ...u, [permission]: newValue } : u))
+        );
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Erreur lors du changement de permission');
+      }
+    } catch {
+      alert('Erreur réseau');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Access control
   if (!PermissionUtils.isAdmin(user)) {
     return (
@@ -162,9 +194,10 @@ export default function AdminUsersPage() {
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">User</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Email</th>
                 <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Role</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Status</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">Comment</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">Upload</th>
                 {isInitialAdmin && (
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Actions</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Role</th>
                 )}
               </tr>
             </thead>
@@ -197,11 +230,40 @@ export default function AdminUsersPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      {u.isVerified ? (
-                        <span className="text-xs text-green-600">Verified</span>
+                    <td className="px-4 py-3 text-center">
+                      {u.role === 'admin' ? (
+                        <span className="text-xs text-gray-400">—</span>
                       ) : (
-                        <span className="text-xs text-orange-600">Unverified</span>
+                        <button
+                          onClick={() => handleTogglePermission(u, 'canComment')}
+                          disabled={actionLoading === `${u._id}-canComment`}
+                          className={`w-8 h-5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
+                            (u.canComment ?? true) ? 'bg-green-500' : 'bg-red-400'
+                          }`}
+                          title={(u.canComment ?? true) ? 'Désactiver les commentaires' : 'Réactiver les commentaires'}
+                        >
+                          <span className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
+                            (u.canComment ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'
+                          }`} />
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {u.role === 'admin' ? (
+                        <span className="text-xs text-gray-400">—</span>
+                      ) : (
+                        <button
+                          onClick={() => handleTogglePermission(u, 'canUpload')}
+                          disabled={actionLoading === `${u._id}-canUpload`}
+                          className={`w-8 h-5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
+                            (u.canUpload ?? true) ? 'bg-green-500' : 'bg-red-400'
+                          }`}
+                          title={(u.canUpload ?? true) ? "Désactiver l'upload" : "Réactiver l'upload"}
+                        >
+                          <span className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
+                            (u.canUpload ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'
+                          }`} />
+                        </button>
                       )}
                     </td>
                     {isInitialAdmin && (

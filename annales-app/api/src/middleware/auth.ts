@@ -10,6 +10,8 @@ export interface AuthenticatedRequest extends Request {
     lastName: string;
     role: UserRole;
     isVerified: boolean;
+    canComment: boolean;
+    canUpload: boolean;
   };
 }
 
@@ -47,6 +49,8 @@ export const authMiddleware = async (
       lastName: user.lastName,
       role: user.role,
       isVerified: user.isVerified,
+      canComment: user.canComment ?? true,
+      canUpload: user.canUpload ?? true,
     };
 
     next();
@@ -80,6 +84,8 @@ export const optionalAuthMiddleware = async (
         lastName: user.lastName,
         role: user.role,
         isVerified: user.isVerified,
+        canComment: user.canComment ?? true,
+        canUpload: user.canUpload ?? true,
       };
     }
 
