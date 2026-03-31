@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Shield, AlertCircle, RefreshCw, Users, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Shield, AlertCircle, RefreshCw, Users, ChevronUp, ChevronDown, Search, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 interface UserEntry {
   _id: string;
@@ -23,6 +24,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isInitialAdmin, setIsInitialAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string>('');
 
   const fetchUsers = useCallback(async () => {
     if (!token) return;
@@ -123,6 +126,22 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Filtering
+  const filteredUsers = useMemo(() => {
+    return users.filter(u => {
+      const matchesSearch = searchTerm === '' ||
+        `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = !selectedRole || u.role === selectedRole;
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchTerm, selectedRole]);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedRole('');
+  };
+
   // Access control
   if (!PermissionUtils.isAdmin(user)) {
     return (
@@ -168,15 +187,60 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="flex gap-4">
-        <div className="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-          <span className="text-sm text-gray-500">Total: </span>
-          <span className="font-semibold">{users.length}</span>
+      {/* Stats + reset */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div className="flex gap-4">
+          <div className="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+            <span className="text-sm text-gray-500">
+              {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
+              {filteredUsers.length !== users.length && ` out of ${users.length}`}
+            </span>
+          </div>
+          <div className="px-4 py-2 bg-purple-50 rounded-lg border border-purple-200">
+            <span className="text-sm text-purple-600">Admins: </span>
+            <span className="font-semibold text-purple-700">{users.filter(u => u.role === 'admin').length}</span>
+          </div>
         </div>
-        <div className="px-4 py-2 bg-purple-50 rounded-lg border border-purple-200">
-          <span className="text-sm text-purple-600">Admins: </span>
-          <span className="font-semibold text-purple-700">{users.filter(u => u.role === 'admin').length}</span>
+        {(searchTerm || selectedRole) && (
+          <button
+            onClick={resetFilters}
+            className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Reset filters</span>
+          </button>
+        )}
+      </div>
+
+      {/* Search and filters */}
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <Input
+              id="user-search"
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              label="Search"
+            />
+            <Search className="absolute right-3 top-9 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+          <div>
+            <label htmlFor="role-filter" className="block text-sm font-medium text-gray-700 mb-1">
+              Role
+            </label>
+            <select
+              id="role-filter"
+              value={selectedRole}
+              onChange={e => setSelectedRole(e.target.value)}
+              className="w-full py-2 px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 bg-white transition-colors cursor-pointer"
+            >
+              <option value="">All roles</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -204,7 +268,7 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map(u => {
+              {filteredUsers.map(u => {
                 const isSelf = u._id === user?.id;
                 const isCurrentUserInitialAdmin = isSelf && u.role === 'admin';
 
