@@ -76,6 +76,14 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, onUplo
       }
 
       await onSubmit(content);
+    } catch (err) {
+      const { default: Swal } = await import('sweetalert2');
+      await Swal.fire({
+        title: 'Error',
+        text: err instanceof Error ? err.message : 'An error occurred',
+        icon: 'error',
+        confirmButtonColor: '#2563eb',
+      });
     } finally {
       setSubmitting(false);
     }

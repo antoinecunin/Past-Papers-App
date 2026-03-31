@@ -1015,7 +1015,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error('Failed to create reply');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to create reply');
+      }
 
       setReplyTarget(null);
       // Reload thread replies and root comments (to update replyCount)
