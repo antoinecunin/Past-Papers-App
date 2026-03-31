@@ -173,7 +173,7 @@ export default function AdminUsersPage() {
         </Button>
       </div>
 
-      {!isInitialAdmin && (
+      {!loading && !isInitialAdmin && (
         <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
           <AlertCircle className="w-5 h-5 text-yellow-600" />
           <p className="text-yellow-700">Only the initial admin can change user roles. You can view users but not modify roles.</p>
