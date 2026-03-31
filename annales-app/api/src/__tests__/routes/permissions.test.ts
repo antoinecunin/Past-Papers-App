@@ -3,11 +3,9 @@ import express from 'express';
 import { router as authRouter } from '../../routes/auth.js';
 import { router as answersRouter } from '../../routes/answers.js';
 import { Exam as ExamModel } from '../../models/Exam.js';
-import { AnswerModel } from '../../models/Answer.js';
 import { UserModel } from '../../models/User.js';
 import { createAuthenticatedUser, testEmail } from '../helpers/auth.helper.js';
 import { createExamData } from '../fixtures/exam.fixture.js';
-import { createAnswerData } from '../fixtures/answer.fixture.js';
 import { errorHandler } from '../../middleware/errorHandler.js';
 
 describe('User permissions', () => {

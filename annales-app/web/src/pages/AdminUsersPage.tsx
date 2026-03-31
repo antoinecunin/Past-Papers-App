@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
         </div>
         <Button
           onClick={() => fetchUsers()}
-          variant="outline"
+          variant="secondary"
           size="sm"
           disabled={loading}
         >
