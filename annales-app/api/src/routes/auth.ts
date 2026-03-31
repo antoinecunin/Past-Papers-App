@@ -828,6 +828,10 @@ router.put(
     }
 
     targetUser.role = role as UserRole;
+    if (role === 'admin') {
+      targetUser.canComment = true;
+      targetUser.canUpload = true;
+    }
     await targetUser.save();
 
     return res.json({

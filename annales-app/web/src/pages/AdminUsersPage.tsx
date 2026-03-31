@@ -75,7 +75,9 @@ export default function AdminUsersPage() {
       if (response.ok) {
         // Update local state
         setUsers(prev =>
-          prev.map(u => (u._id === targetUser._id ? { ...u, role: newRole } : u))
+          prev.map(u => (u._id === targetUser._id
+            ? { ...u, role: newRole, ...(newRole === 'admin' ? { canComment: true, canUpload: true } : {}) }
+            : u))
         );
       } else {
         const errorData = await response.json();
