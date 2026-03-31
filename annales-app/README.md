@@ -27,9 +27,12 @@ A self-hosted platform for sharing and annotating past exam papers (annales). Bu
 ## Features
 
 - **PDF upload & viewer** — Upload exam papers with metadata (module, year), view them in-browser
-- **Annotations** — Add comments on any page at any position, with support for text, images, and LaTeX
+- **Annotations** — Add comments on any page at any position, with support for text, image uploads (auto-converted to WebP), and LaTeX
 - **Threaded discussions** — Reply to comments with @mentions
+- **Voting** — Upvote/downvote comments and replies
+- **Best answers** — Admins can mark comments as best answer (shown with a green badge, sorted first)
 - **Content moderation** — Report system with admin moderation panel
+- **User management** — Initial admin can promote/demote users to admin role
 - **Multi-instance ready** — Each deployment configures its own branding, email domains, legal info, etc.
 
 ## Quick Start
@@ -61,7 +64,7 @@ Edit `.env` — required variables:
 | `CORS_ORIGIN` | Allowed origins (comma-separated) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | SMTP credentials |
 | `EMAIL_FROM_ADDRESS` | Sender email address |
-| `S3_ACCESS_KEY`, `S3_SECRET_KEY` | MinIO access keys (change defaults in production) |
+| `S3_ACCESS_KEY`, `S3_SECRET_KEY` | Garage S3 keys (generated on first run, see startup output) |
 | `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | First admin account (auto-created on startup) |
 
 Edit `instance.config.json` (see `instance.config.schema.json` for full schema):
@@ -109,7 +112,7 @@ The application will be available at `http://localhost:8080`.
 | `http://localhost:5173` | Vite dev server (direct) |
 | `http://localhost:3000` | API (direct) |
 | `http://localhost:8080/api/docs` | Swagger API docs |
-| `http://localhost:9001` | MinIO console |
+| `http://localhost:3900` | Garage S3 API |
 
 Default test accounts (customize in `dev-seed.json`):
 
@@ -122,7 +125,7 @@ Default test accounts (customize in `dev-seed.json`):
 
 ```bash
 cd api
-npm test              # 156 tests (Jest + mongodb-memory-server)
+npm test              # 192 tests (Jest + mongodb-memory-server)
 npm run test:coverage # Coverage report
 ```
 
@@ -151,8 +154,8 @@ cd web && npm run lint && npm run format:check
                            ┌────────┴────────┐
                            │                 │
                      ┌─────┴─────┐     ┌─────┴─────┐
-                     │  MongoDB  │     │   MinIO    │
-                     │ (metadata)│     │  (PDFs)    │
+                     │  MongoDB  │     │  Garage    │
+                     │ (metadata)│     │(PDFs+imgs) │
                      └───────────┘     └───────────┘
 ```
 
@@ -161,7 +164,7 @@ cd web && npm run lint && npm run format:check
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, Zustand |
 | Backend | Node.js 20, Express, TypeScript, Mongoose |
 | Database | MongoDB 7 |
-| Storage | MinIO (S3-compatible, internal network only) |
+| Storage | Garage (S3-compatible, Rust, internal network only) |
 | Reverse Proxy | Nginx |
 | Infrastructure | Docker Compose |
 
@@ -171,8 +174,8 @@ cd web && npm run lint && npm run format:check
 ├── api/                          # Backend (Node.js / Express / TypeScript)
 │   └── src/
 │       ├── routes/               # REST endpoints
-│       ├── models/               # Mongoose models (User, Exam, Answer, Report)
-│       ├── services/             # Business logic (S3, email, admin-init)
+│       ├── models/               # Mongoose models (User, Exam, Answer, Vote, Report)
+│       ├── services/             # Business logic (S3, email, image, vote, admin-init)
 │       ├── middleware/           # Auth & role-based access control
 │       └── __tests__/            # Jest test suites
 ├── web/                          # Frontend (React / Vite / Tailwind)
@@ -211,7 +214,7 @@ example.com {
 - [ ] Set `FRONTEND_URL` and `CORS_ORIGIN` to your domain
 - [ ] Set `INITIAL_ADMIN_PASSWORD` to a strong password
 - [ ] Set up HTTPS (see above)
-- [ ] Change default MinIO access keys (`S3_ACCESS_KEY`, `S3_SECRET_KEY`)
+- [ ] Update S3 credentials from Garage first-run output (`S3_ACCESS_KEY`, `S3_SECRET_KEY`)
 
 ## Contributing
 
