@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { authMiddleware, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
+import { authMiddleware, requireAdmin, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
 import { answerService } from '../services/answer.service.js';
 import { voteService } from '../services/vote.service.js';
 import { objectIdSchema } from '../utils/validation.js';
@@ -430,6 +430,42 @@ router.post(
 
     const { score, userVote } = await voteService.vote(id, req.user!.id, result.data.value);
     return res.json({ score, userVote });
+  })
+);
+
+/**
+ * @swagger
+ * /answers/{id}/best:
+ *   put:
+ *     summary: Toggle best answer mark (admin only, root comments only)
+ *     tags: [Answers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Best answer toggled
+ *       400:
+ *         description: Invalid ID or not a root comment
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not admin
+ *       404:
+ *         description: Comment not found
+ */
+router.put(
+  '/:id/best',
+  authMiddleware,
+  requireAdmin,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { id } = req.params;
+    const result = await answerService.toggleBestAnswer(id);
+    return res.json(result);
   })
 );
 

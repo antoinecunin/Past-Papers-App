@@ -220,6 +220,28 @@ class AnswerService {
   }
 
   /**
+   * Toggle le marquage "meilleure réponse" sur un commentaire racine (admin only)
+   */
+  async toggleBestAnswer(id: string): Promise<{ isBestAnswer: boolean }> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw ServiceError.badRequest('ID invalide');
+    }
+
+    const answer = await AnswerModel.findById(id);
+    if (!answer) {
+      throw ServiceError.notFound('Commentaire non trouvé');
+    }
+
+    if (answer.parentId) {
+      throw ServiceError.badRequest('Seuls les commentaires racines peuvent être marqués');
+    }
+
+    answer.isBestAnswer = !answer.isBestAnswer;
+    await answer.save();
+    return { isBestAnswer: answer.isBestAnswer };
+  }
+
+  /**
    * Supprime un commentaire (et ses réponses si c'est un commentaire racine)
    * @param id - ID du commentaire
    * @param userId - ID de l'utilisateur effectuant la suppression

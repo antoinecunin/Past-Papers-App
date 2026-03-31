@@ -914,6 +914,23 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [token]
   );
 
+  // Toggle best answer (admin only)
+  const toggleBestAnswer = useCallback(
+    async (answerId: string) => {
+      if (!token) return;
+      const res = await fetch(`/api/answers/${answerId}/best`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const { isBestAnswer } = await res.json();
+      setAllAnswers(prev =>
+        prev.map(a => (a._id === answerId ? { ...a, isBestAnswer } : a))
+      );
+    },
+    [token]
+  );
+
   // Load replies for a thread
   const loadReplies = useCallback(
     async (parentId: string, cursor?: string) => {
@@ -1051,7 +1068,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         )}
 
         <ul style={commentListStyle}>
-          {(selectedGroup || answers).map(a => (
+          {[...(selectedGroup || answers)].sort((a, b) => {
+            if (a.isBestAnswer && !b.isBestAnswer) return -1;
+            if (!a.isBestAnswer && b.isBestAnswer) return 1;
+            return 0;
+          }).map(a => (
             <li
               key={a._id}
               onClick={() => {
@@ -1124,6 +1145,27 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               >
                 <div style={commentMetaStyle}>
+                  {PermissionUtils.isAdmin(user) && !a.parentId ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); toggleBestAnswer(a._id); }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLButtonElement).style.background = a.isBestAnswer ? '#15803d' : '#16a34a';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLButtonElement).style.background = a.isBestAnswer ? '#16a34a' : '#d1d5db';
+                      }}
+                      style={{
+                        ...bestAnswerBadgeStyle,
+                        background: a.isBestAnswer ? '#16a34a' : '#d1d5db',
+                        cursor: 'pointer',
+                      }}
+                      title={a.isBestAnswer ? 'Remove best answer' : 'Mark as best answer'}
+                    >
+                      ✓
+                    </button>
+                  ) : a.isBestAnswer ? (
+                    <span style={bestAnswerBadgeStyle} title="Best answer">✓</span>
+                  ) : null}
                   {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonymous'} • Page {a.page}
                 </div>
                 <VoteButtons
@@ -1360,3 +1402,19 @@ const getMentionDisplayStyle = (primaryHoverColor: string): React.CSSProperties 
     marginRight: '4px',
   };
 };
+
+const bestAnswerBadgeStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '16px',
+  height: '16px',
+  borderRadius: '50%',
+  background: '#16a34a',
+  color: 'white',
+  fontSize: '10px',
+  fontWeight: 700,
+  marginRight: '4px',
+  verticalAlign: 'middle',
+};
+

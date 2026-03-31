@@ -17,6 +17,7 @@ export function createAnswerData(
     },
     authorId: new Types.ObjectId(),
     score: 0,
+    isBestAnswer: false,
     ...overrides,
   };
 }
