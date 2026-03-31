@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ExamCard from './ExamCard';
-import { AlertCircle, FileX, Search, RotateCcw } from 'lucide-react';
+import { AlertCircle, FileX, Search, RotateCcw, ArrowUpDown } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
 import { Input } from './ui/Input';
@@ -36,6 +36,8 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedModule, setSelectedModule] = useState<string>('');
+  const [sortField, setSortField] = useState<string>('date');
+  const [sortAsc, setSortAsc] = useState(false);
 
   // Load exams
   useEffect(() => {
@@ -71,9 +73,9 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
     loadExams();
   }, [token, navigate]);
 
-  // Filtering and search with useMemo for performance
+  // Filtering, search and sort with useMemo for performance
   const filteredExams = useMemo(() => {
-    return exams.filter(exam => {
+    const filtered = exams.filter(exam => {
       const matchesSearch =
         exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (exam.module?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
@@ -82,7 +84,22 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
       return matchesSearch && matchesYear && matchesModule;
     });
-  }, [exams, searchTerm, selectedYear, selectedModule]);
+
+    const dir = sortAsc ? 1 : -1;
+    return filtered.sort((a, b) => {
+      switch (sortField) {
+        case 'title':
+          return dir * a.title.localeCompare(b.title);
+        case 'year':
+          return dir * ((a.year ?? 0) - (b.year ?? 0));
+        case 'module':
+          return dir * (a.module ?? '').localeCompare(b.module ?? '');
+        case 'date':
+        default:
+          return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      }
+    });
+  }, [exams, searchTerm, selectedYear, selectedModule, sortField, sortAsc]);
 
   // Filter options
   const availableYears = useMemo(() => {
@@ -99,6 +116,8 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
     setSearchTerm('');
     setSelectedYear('');
     setSelectedModule('');
+    setSortField('date');
+    setSortAsc(false);
   };
 
   const handleReportExam = async (examId: string) => {
@@ -181,7 +200,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
       {/* Filters and search */}
       <div className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Input
@@ -233,6 +252,33 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Sort */}
+          <div>
+            <label htmlFor="sort" className="block text-sm font-medium text-secondary-dark mb-1">
+              Sort by
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="sort"
+                value={sortField}
+                onChange={e => setSortField(e.target.value)}
+                className="flex-1 py-2 px-3 border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
+              >
+                <option value="date">Date</option>
+                <option value="title">Title</option>
+                <option value="module">Module</option>
+                <option value="year">Year</option>
+              </select>
+              <button
+                onClick={() => setSortAsc(prev => !prev)}
+                className="px-2.5 py-2 border border-border rounded-input hover:bg-gray-50 transition-colors cursor-pointer"
+                title={sortAsc ? 'Ascending' : 'Descending'}
+              >
+                <ArrowUpDown className="w-4 h-4 text-secondary" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

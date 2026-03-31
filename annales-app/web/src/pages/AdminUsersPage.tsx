@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Shield, AlertCircle, RefreshCw, Users, ChevronUp, ChevronDown, Search, RotateCcw } from 'lucide-react';
+import { Shield, AlertCircle, RefreshCw, Users, ChevronUp, ChevronDown, Search, RotateCcw, ArrowUpDown } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
 import { Button } from '../components/ui/Button';
@@ -26,6 +26,8 @@ export default function AdminUsersPage() {
   const [isInitialAdmin, setIsInitialAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('');
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortAsc, setSortAsc] = useState(true);
 
   const fetchUsers = useCallback(async () => {
     if (!token) return;
@@ -126,20 +128,33 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Filtering
+  // Filtering and sort
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
+    const filtered = users.filter(u => {
       const matchesSearch = searchTerm === '' ||
         `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = !selectedRole || u.role === selectedRole;
       return matchesSearch && matchesRole;
     });
-  }, [users, searchTerm, selectedRole]);
+
+    const dir = sortAsc ? 1 : -1;
+    return filtered.sort((a, b) => {
+      switch (sortField) {
+        case 'date':
+          return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        case 'name':
+        default:
+          return dir * `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+      }
+    });
+  }, [users, searchTerm, selectedRole, sortField, sortAsc]);
 
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedRole('');
+    setSortField('name');
+    setSortAsc(true);
   };
 
   // Access control
@@ -214,7 +229,7 @@ export default function AdminUsersPage() {
 
       {/* Search and filters */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <Input
               id="user-search"
@@ -240,6 +255,29 @@ export default function AdminUsersPage() {
               <option value="admin">Admin</option>
               <option value="user">User</option>
             </select>
+          </div>
+          <div>
+            <label htmlFor="user-sort" className="block text-sm font-medium text-gray-700 mb-1">
+              Sort by
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="user-sort"
+                value={sortField}
+                onChange={e => setSortField(e.target.value)}
+                className="flex-1 py-2 px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 bg-white transition-colors cursor-pointer"
+              >
+                <option value="name">Name</option>
+                <option value="date">Date</option>
+              </select>
+              <button
+                onClick={() => setSortAsc(prev => !prev)}
+                className="px-2.5 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                title={sortAsc ? 'Ascending' : 'Descending'}
+              >
+                <ArrowUpDown className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
