@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 import { TrashIcon, CopyIcon } from './ui/Icon';
-import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor } from '../constants/content';
+import { CONTENT_MAX_LENGTH, IMAGE_MAX_SIZE, formatCharCount, getCharCountColor, imageKeyToUrl } from '../constants/content';
 
 interface AnswerContentDisplayProps {
   answer: Answer;
@@ -10,6 +10,7 @@ interface AnswerContentDisplayProps {
   onDelete?: (answerId: string) => Promise<void>;
   onReport?: (answerId: string) => Promise<void>;
   onReply?: (answerId: string) => void;
+  onUploadImage?: (file: File) => Promise<string>;
 }
 
 export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
@@ -18,12 +19,17 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
   onDelete,
   onReport,
   onReply,
+  onUploadImage,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [editContent, setEditContent] = useState<AnswerContent | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [renderKey, setRenderKey] = useState(0);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editImageError, setEditImageError] = useState<string | null>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
   const content = answer.content;
 
   // Force re-render when content changes or when exiting edit mode
@@ -33,24 +39,37 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
 
   const startEdit = () => {
     setEditContent(content);
+    setEditImageFile(null);
+    setEditImagePreview(null);
+    setEditImageError(null);
     setIsEditing(true);
   };
 
   const saveEdit = async () => {
-    if (editContent && onEdit) {
-      try {
-        await onEdit(answer._id.toString(), editContent);
-        setIsEditing(false);
-        setEditContent(null);
-      } catch (error) {
-        console.error('Error editing:', error);
+    if (!editContent || !onEdit) return;
+    try {
+      let contentToSave = editContent;
+      // Upload new image if one was selected
+      if (editContent.type === 'image' && editImageFile && onUploadImage) {
+        const key = await onUploadImage(editImageFile);
+        contentToSave = { type: 'image', data: key };
       }
+      await onEdit(answer._id.toString(), contentToSave);
+      setIsEditing(false);
+      setEditContent(null);
+      setEditImageFile(null);
+      setEditImagePreview(null);
+    } catch (error) {
+      console.error('Error editing:', error);
     }
   };
 
   const cancelEdit = () => {
     setIsEditing(false);
     setEditContent(null);
+    setEditImageFile(null);
+    setEditImagePreview(null);
+    setEditImageError(null);
   };
 
   const handleCopy = async () => {
@@ -127,14 +146,14 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
         return (
           <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
             <img
-              src={contentToRender.data}
+              src={imageKeyToUrl(contentToRender.data)}
               alt="Comment image"
               style={imageStyle}
               onError={e => {
                 const img = e.target as HTMLImageElement;
                 const errorDiv = img.nextElementSibling as HTMLDivElement;
                 img.style.display = 'none';
-                errorDiv.textContent = `[Image not found: ${contentToRender.data}]`;
+                errorDiv.textContent = '[Image not found]';
                 errorDiv.style.display = 'block';
               }}
             />
@@ -193,9 +212,12 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
           onChange={e => {
             const newType = e.target.value as ContentType;
             const newContent = { ...editContent, type: newType };
-            // Remove rendered when changing type
             delete newContent.rendered;
             setEditContent({ ...newContent });
+            setEditImageFile(null);
+            setEditImagePreview(null);
+            setEditImageError(null);
+            if (editFileInputRef.current) editFileInputRef.current.value = '';
           }}
           style={selectStyle}
         >
@@ -203,55 +225,71 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
           <option value="image">🖼️ Image</option>
           <option value="latex">📐 LaTeX</option>
         </select>
-        <textarea
-          value={editContent.data}
-          onChange={e => {
-            const newContent = { ...editContent, data: e.target.value };
-            // If it's LaTeX, remove existing rendered to force regeneration
-            if (newContent.type === 'latex') {
-              delete newContent.rendered;
-            }
-            setEditContent(newContent);
-          }}
-          style={textareaStyle}
-          maxLength={CONTENT_MAX_LENGTH[editContent.type]}
-        />
-        <div style={{
-          fontSize: '11px',
-          textAlign: 'right',
-          marginTop: '2px',
-          color: getCharCountColor(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type]),
-        }}>
-          {formatCharCount(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type])}
-        </div>
+        {editContent.type === 'image' ? (
+          <div>
+            {/* Show current image */}
+            {editContent.data && !editImagePreview && (
+              <img
+                src={imageKeyToUrl(editContent.data)}
+                alt="Current"
+                style={previewImageStyle}
+              />
+            )}
+            {editImagePreview && (
+              <img src={editImagePreview} alt="New preview" style={previewImageStyle} />
+            )}
+            <input
+              ref={editFileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                setEditImageError(null);
+                if (!file) { setEditImageFile(null); setEditImagePreview(null); return; }
+                if (!file.type.startsWith('image/')) {
+                  setEditImageError('Only image files are accepted');
+                  return;
+                }
+                if (file.size > IMAGE_MAX_SIZE) {
+                  setEditImageError(`Image too large (max ${IMAGE_MAX_SIZE / 1024 / 1024} MB)`);
+                  return;
+                }
+                setEditImageFile(file);
+                setEditImagePreview(URL.createObjectURL(file));
+              }}
+              style={{ fontSize: '11px', padding: '4px 0', marginTop: '4px' }}
+            />
+            {editImageError && (
+              <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '2px' }}>{editImageError}</div>
+            )}
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={editContent.data}
+              onChange={e => {
+                const newContent = { ...editContent, data: e.target.value };
+                if (newContent.type === 'latex') {
+                  delete newContent.rendered;
+                }
+                setEditContent(newContent);
+              }}
+              style={textareaStyle}
+              maxLength={CONTENT_MAX_LENGTH[editContent.type]}
+            />
+            <div style={{
+              fontSize: '11px',
+              textAlign: 'right',
+              marginTop: '2px',
+              color: getCharCountColor(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type]),
+            }}>
+              {formatCharCount(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type])}
+            </div>
+          </>
+        )}
         {editContent.type === 'latex' && (
           <div style={latexPreviewStyle} key={`latex-preview-${editContent.data.length}`}>
             <div dangerouslySetInnerHTML={{ __html: renderLatex(editContent.data) }} />
-          </div>
-        )}
-        {editContent.type === 'image' && editContent.data.trim() && (
-          <div style={imagePreviewStyle} key={`image-preview-${editContent.data.trim()}`}>
-            <strong
-              style={{ fontSize: '10px', color: '#6b7280', display: 'block', marginBottom: '4px' }}
-            >
-              Image preview:
-            </strong>
-            <img
-              src={editContent.data.trim()}
-              alt="Preview"
-              style={previewImageStyle}
-              key={editContent.data.trim()}
-              onError={e => {
-                const img = e.target as HTMLImageElement;
-                const errorDiv = img.nextElementSibling as HTMLDivElement;
-                img.style.display = 'none';
-                if (errorDiv) {
-                  errorDiv.textContent = `[Image not found: ${editContent.data.trim()}]`;
-                  errorDiv.style.display = 'block';
-                }
-              }}
-            />
-            <div style={{ ...errorDivStyle, marginTop: '4px' }}></div>
           </div>
         )}
         <div style={buttonContainerStyle}>
@@ -569,14 +607,6 @@ const deleteButtonStyle: React.CSSProperties = {
   borderRadius: '4px',
   fontSize: '12px',
   cursor: 'pointer',
-};
-
-const imagePreviewStyle: React.CSSProperties = {
-  marginTop: '8px',
-  padding: '8px',
-  background: '#f9fafb',
-  borderRadius: '4px',
-  border: '1px solid #e5e7eb',
 };
 
 const previewImageStyle: React.CSSProperties = {

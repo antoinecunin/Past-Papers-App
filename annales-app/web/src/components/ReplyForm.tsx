@@ -1,26 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 import { useInstance } from '../hooks/useInstance';
-import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor, isAllowedImageUrl } from '../constants/content';
+import { CONTENT_MAX_LENGTH, IMAGE_MAX_SIZE, formatCharCount, getCharCountColor } from '../constants/content';
 
 interface ReplyFormProps {
   onSubmit: (content: AnswerContent) => Promise<void>;
   onCancel: () => void;
+  onUploadImage: (file: File) => Promise<string>;
   mentionLabel?: string;
   onClearMention?: () => void;
 }
 
-export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentionLabel, onClearMention }) => {
+export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, onUploadImage, mentionLabel, onClearMention }) => {
   const { primaryHoverColor } = useInstance();
   const [contentType, setContentType] = useState<ContentType>('text');
   const [data, setData] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const maxLength = CONTENT_MAX_LENGTH[contentType];
   const trimmed = data.trim();
-  const isImageInvalid = contentType === 'image' && trimmed.startsWith('http') && !isAllowedImageUrl(trimmed);
-  const canSubmit = trimmed.length > 0 && !isImageInvalid && !submitting;
+  const canSubmit = contentType === 'image'
+    ? !!imageFile && !imageError && !submitting
+    : trimmed.length > 0 && !submitting;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setImageError(null);
+
+    if (!file) {
+      setImageFile(null);
+      setImagePreview(null);
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setImageError('Only image files are accepted');
+      setImageFile(null);
+      setImagePreview(null);
+      return;
+    }
+
+    if (file.size > IMAGE_MAX_SIZE) {
+      setImageError(`Image too large (max ${IMAGE_MAX_SIZE / 1024 / 1024} MB)`);
+      setImageFile(null);
+      setImagePreview(null);
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,20 +63,31 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
 
     setSubmitting(true);
     try {
-      const content: AnswerContent = { type: contentType, data: trimmed };
-      if (contentType === 'latex') {
-        content.rendered = renderLatex(trimmed);
+      let content: AnswerContent;
+
+      if (contentType === 'image' && imageFile) {
+        const key = await onUploadImage(imageFile);
+        content = { type: 'image', data: key };
+      } else {
+        content = { type: contentType, data: trimmed };
+        if (contentType === 'latex') {
+          content.rendered = renderLatex(trimmed);
+        }
       }
+
       await onSubmit(content);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const placeholder: Record<ContentType, string> = {
-    text: 'Your reply...',
-    image: 'Image URL (imgur.com, ibb.co, postimg.cc)',
-    latex: 'LaTeX code (e.g.: \\int_0^1 x^2 dx)',
+  const handleTypeChange = (newType: ContentType) => {
+    setContentType(newType);
+    setData('');
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -68,35 +113,46 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, mentio
       )}
       <select
         value={contentType}
-        onChange={e => setContentType(e.target.value as ContentType)}
+        onChange={e => handleTypeChange(e.target.value as ContentType)}
         style={selectStyle}
       >
         <option value="text">Text</option>
-        <option value="image">Image (URL)</option>
+        <option value="image">Image</option>
         <option value="latex">LaTeX</option>
       </select>
 
-      <textarea
-        value={data}
-        onChange={e => setData(e.target.value)}
-        placeholder={placeholder[contentType]}
-        maxLength={maxLength}
-        rows={2}
-        style={textareaStyle}
-      />
-
-      <div style={{
-        fontSize: '11px',
-        textAlign: 'right',
-        color: getCharCountColor(data.length, maxLength),
-      }}>
-        {formatCharCount(data.length, maxLength)}
-      </div>
-
-      {isImageInvalid && (
-        <div style={warningStyle}>
-          Unauthorized host. Use imgur.com, ibb.co, or postimg.cc
-        </div>
+      {contentType === 'image' ? (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            style={fileInputStyle}
+          />
+          {imageError && <div style={warningStyle}>{imageError}</div>}
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" style={imagePreviewStyle} />
+          )}
+        </>
+      ) : (
+        <>
+          <textarea
+            value={data}
+            onChange={e => setData(e.target.value)}
+            placeholder={contentType === 'latex' ? 'LaTeX code (e.g.: \\int_0^1 x^2 dx)' : 'Your reply...'}
+            maxLength={maxLength}
+            rows={2}
+            style={textareaStyle}
+          />
+          <div style={{
+            fontSize: '11px',
+            textAlign: 'right',
+            color: getCharCountColor(data.length, maxLength),
+          }}>
+            {formatCharCount(data.length, maxLength)}
+          </div>
+        </>
       )}
 
       {contentType === 'latex' && trimmed && (
@@ -157,6 +213,18 @@ const textareaStyle: React.CSSProperties = {
   fontFamily: 'inherit',
 };
 
+const fileInputStyle: React.CSSProperties = {
+  fontSize: '11px',
+  padding: '4px 0',
+};
+
+const imagePreviewStyle: React.CSSProperties = {
+  maxWidth: '100%',
+  maxHeight: '150px',
+  borderRadius: '4px',
+  objectFit: 'contain',
+};
+
 const warningStyle: React.CSSProperties = {
   fontSize: '11px',
   color: '#dc2626',
@@ -203,7 +271,6 @@ const mentionBadgeContainerStyle: React.CSSProperties = {
 };
 
 const getMentionTagStyle = (primaryHoverColor: string): React.CSSProperties => {
-  // Calculate lighter background based on primary hover color
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result

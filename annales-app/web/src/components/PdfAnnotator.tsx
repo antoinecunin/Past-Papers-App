@@ -11,7 +11,7 @@ import { ReplyForm } from './ReplyForm';
 import { useAuthStore } from '../stores/authStore';
 import { useInstance } from '../hooks/useInstance';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
-import { CONTENT_MAX_LENGTH, formatCharCount, getCharCountColor, isAllowedImageUrl } from '../constants/content';
+import { CONTENT_MAX_LENGTH, IMAGE_MAX_SIZE, formatCharCount, getCharCountColor } from '../constants/content';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -384,6 +384,27 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     checkAndCreateIndicators();
   }, [allAnswers, visiblePage, selectedGroup, pdfDoc]);
 
+  // Upload an image to S3
+  const uploadImage = useCallback(
+    async (file: File): Promise<string> => {
+      if (!token) throw new Error('Not authenticated');
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch('/api/files/image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Erreur lors de l'upload de l'image");
+      }
+      const { key } = await res.json();
+      return key;
+    },
+    [token]
+  );
+
   // Handle new comment indicator
   useEffect(() => {
     const container = containerRef.current;
@@ -457,7 +478,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           <form class="new-comment-form" style="display: flex; flex-direction: column; gap: 8px;">
             <select class="content-type-select" style="padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
               <option value="text">💬 Text</option>
-              <option value="image">🖼️ Image (URL)</option>
+              <option value="image">🖼️ Image</option>
               <option value="latex">📐 LaTeX</option>
             </select>
             <textarea
@@ -468,14 +489,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               maxlength="${defaultMaxLength}"
               required
             ></textarea>
-            <div class="char-counter" style="font-size: 11px; text-align: right; color: #6b7280;">
-              0 / ${defaultMaxLength.toLocaleString('en-US')}
-            </div>
-            <div class="image-host-warning" style="display: none; font-size: 11px; color: #dc2626; padding: 4px 8px; background: #fef2f2; border-radius: 4px; border: 1px solid #fecaca;">
-              Unauthorized host. Use imgur.com, ibb.co, or postimg.cc
-            </div>
+            <input class="image-file-input" type="file" accept="image/*" style="display: none; font-size: 12px; padding: 4px 0;" />
+            <div class="image-error" style="display: none; font-size: 11px; color: #dc2626; padding: 4px 8px; background: #fef2f2; border-radius: 4px; border: 1px solid #fecaca;"></div>
             <div class="image-preview" style="display: none; max-width: 50%; max-height: 5rem; overflow: hidden;">
               <img style="width: 100%; height: auto; border-radius: 4px; object-fit: cover;" />
+            </div>
+            <div class="char-counter" style="font-size: 11px; text-align: right; color: #6b7280;">
+              0 / ${defaultMaxLength.toLocaleString('en-US')}
             </div>
             <div class="latex-preview" style="display: none; padding: 8px; background: #f9fafb; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 14px; max-width: 100%; overflow-x: auto; overflow-y: hidden; word-wrap: break-word; overflow-wrap: break-word;">
             </div>
@@ -495,12 +515,15 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         const typeSelect = indicator.querySelector('.content-type-select') as HTMLSelectElement;
         const textarea = indicator.querySelector('.content-input') as HTMLTextAreaElement;
         const cancelBtn = indicator.querySelector('.cancel-btn') as HTMLButtonElement;
-        const imagePreview = indicator.querySelector('.image-preview') as HTMLDivElement;
-        const previewImg = imagePreview.querySelector('img') as HTMLImageElement;
+        const imageFileInput = indicator.querySelector('.image-file-input') as HTMLInputElement;
+        const imageErrorDiv = indicator.querySelector('.image-error') as HTMLDivElement;
+        const imagePreviewDiv = indicator.querySelector('.image-preview') as HTMLDivElement;
+        const previewImg = imagePreviewDiv.querySelector('img') as HTMLImageElement;
         const latexPreview = indicator.querySelector('.latex-preview') as HTMLDivElement;
         const charCounter = indicator.querySelector('.char-counter') as HTMLDivElement;
-        const imageHostWarning = indicator.querySelector('.image-host-warning') as HTMLDivElement;
         const submitBtn = indicator.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+        let selectedImageFile: File | null = null;
 
         // Function to update the character counter
         const updateCharCounter = () => {
@@ -514,116 +537,104 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         // Handle type change
         const updatePlaceholder = () => {
           const selectedType = typeSelect.value as ContentType;
-          const content = textarea.value.trim();
           const maxLength = CONTENT_MAX_LENGTH[selectedType];
 
-          // Update textarea limit
-          textarea.maxLength = maxLength;
-          updateCharCounter();
-
-          // Reset button state and warning
           submitBtn.disabled = false;
           submitBtn.style.opacity = '1';
           submitBtn.style.cursor = 'pointer';
-          imageHostWarning.style.display = 'none';
+          imageErrorDiv.style.display = 'none';
 
-          switch (selectedType) {
-            case 'text':
+          if (selectedType === 'image') {
+            textarea.style.display = 'none';
+            textarea.removeAttribute('required');
+            charCounter.style.display = 'none';
+            imageFileInput.style.display = 'block';
+            latexPreview.style.display = 'none';
+          } else {
+            textarea.style.display = 'block';
+            textarea.setAttribute('required', '');
+            charCounter.style.display = 'block';
+            imageFileInput.style.display = 'none';
+            imagePreviewDiv.style.display = 'none';
+            selectedImageFile = null;
+            imageFileInput.value = '';
+
+            textarea.maxLength = maxLength;
+            updateCharCounter();
+
+            if (selectedType === 'text') {
               textarea.placeholder = 'Your comment...';
-              imagePreview.style.display = 'none';
               latexPreview.style.display = 'none';
-              break;
-            case 'image':
-              textarea.placeholder = 'Image URL (imgur.com, ibb.co, postimg.cc)';
-              latexPreview.style.display = 'none';
-              // Update image preview with existing content
-              if (content && content.startsWith('http')) {
-                const isAllowed = isAllowedImageUrl(content);
-                imageHostWarning.style.display = isAllowed ? 'none' : 'block';
-                submitBtn.disabled = !isAllowed;
-                submitBtn.style.opacity = isAllowed ? '1' : '0.5';
-                submitBtn.style.cursor = isAllowed ? 'pointer' : 'not-allowed';
-                if (isAllowed) {
-                  previewImg.src = content;
-                  imagePreview.style.display = 'block';
-                  previewImg.onerror = () => (imagePreview.style.display = 'none');
-                } else {
-                  imagePreview.style.display = 'none';
-                }
-              } else {
-                imagePreview.style.display = 'none';
-              }
-              break;
-            case 'latex':
+            } else {
               textarea.placeholder = 'LaTeX code (e.g.: \\int_0^1 x^2 dx = \\frac{1}{3})';
-              imagePreview.style.display = 'none';
+              const content = textarea.value.trim();
               latexPreview.style.display = 'block';
-              // Update preview with existing content
-              if (content) {
-                latexPreview.innerHTML = renderLatex(content);
-              } else {
-                latexPreview.innerHTML = '<em style="color: #9ca3af;">LaTeX preview...</em>';
-              }
-              break;
+              latexPreview.innerHTML = content
+                ? renderLatex(content)
+                : '<em style="color: #9ca3af;">LaTeX preview...</em>';
+            }
           }
         };
 
         typeSelect.addEventListener('change', updatePlaceholder);
 
-        // Real-time preview + character counter
+        // Image file selection
+        imageFileInput.addEventListener('change', () => {
+          const file = imageFileInput.files?.[0];
+          imageErrorDiv.style.display = 'none';
+          if (!file) { selectedImageFile = null; imagePreviewDiv.style.display = 'none'; return; }
+          if (!file.type.startsWith('image/')) {
+            imageErrorDiv.textContent = 'Only image files are accepted';
+            imageErrorDiv.style.display = 'block';
+            selectedImageFile = null;
+            return;
+          }
+          if (file.size > IMAGE_MAX_SIZE) {
+            imageErrorDiv.textContent = `Image too large (max ${IMAGE_MAX_SIZE / 1024 / 1024} MB)`;
+            imageErrorDiv.style.display = 'block';
+            selectedImageFile = null;
+            return;
+          }
+          selectedImageFile = file;
+          previewImg.src = URL.createObjectURL(file);
+          imagePreviewDiv.style.display = 'block';
+        });
+
+        // Real-time preview + character counter for text/latex
         textarea.addEventListener('input', () => {
           const currentType = typeSelect.value as ContentType;
           const content = textarea.value.trim();
-
-          // Update counter
           updateCharCounter();
 
-          if (currentType === 'image') {
-            if (content && content.startsWith('http')) {
-              // Check if the host is authorized
-              const isAllowed = isAllowedImageUrl(content);
-              imageHostWarning.style.display = isAllowed ? 'none' : 'block';
-              submitBtn.disabled = !isAllowed;
-              submitBtn.style.opacity = isAllowed ? '1' : '0.5';
-              submitBtn.style.cursor = isAllowed ? 'pointer' : 'not-allowed';
-
-              // Show preview only if authorized
-              if (isAllowed) {
-                previewImg.src = content;
-                imagePreview.style.display = 'block';
-                previewImg.onerror = () => (imagePreview.style.display = 'none');
-              } else {
-                imagePreview.style.display = 'none';
-              }
-            } else {
-              imageHostWarning.style.display = 'none';
-              imagePreview.style.display = 'none';
-              submitBtn.disabled = false;
-              submitBtn.style.opacity = '1';
-              submitBtn.style.cursor = 'pointer';
-            }
-          } else if (currentType === 'latex') {
-            if (content) {
-              latexPreview.innerHTML = renderLatex(content);
-            } else {
-              latexPreview.innerHTML = '<em style="color: #9ca3af;">LaTeX preview...</em>';
-            }
+          if (currentType === 'latex') {
+            latexPreview.innerHTML = content
+              ? renderLatex(content)
+              : '<em style="color: #9ca3af;">LaTeX preview...</em>';
           }
         });
 
-        form.addEventListener('submit', e => {
+        form.addEventListener('submit', async e => {
           e.preventDefault();
           e.stopPropagation();
-          const content = textarea.value.trim();
           const contentType = typeSelect.value as ContentType;
 
-          if (content) {
-            // Create the AnswerContent object based on selected type
-            const answerContent: AnswerContent = {
-              type: contentType,
-              data: content,
-            };
-
+          if (contentType === 'image') {
+            if (!selectedImageFile) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '...';
+            try {
+              const key = await uploadImage(selectedImageFile);
+              wrappedConfirmComment({ type: 'image', data: key });
+            } catch (err) {
+              imageErrorDiv.textContent = err instanceof Error ? err.message : 'Upload failed';
+              imageErrorDiv.style.display = 'block';
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Add';
+            }
+          } else {
+            const content = textarea.value.trim();
+            if (!content) return;
+            const answerContent: AnswerContent = { type: contentType, data: content };
             wrappedConfirmComment(answerContent);
           }
         });
@@ -652,7 +663,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         }
       }
     }
-  }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment]);
+  }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment, uploadImage]);
 
   // Function to load all comments
   const loadAllAnswers = useCallback(async () => {
@@ -1128,6 +1139,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 onDelete={PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined}
                 onReport={reportAnswer}
                 onReply={!a.parentId ? (id) => setReplyTarget(replyTarget?.rootId === id ? null : { rootId: id }) : undefined}
+                onUploadImage={uploadImage}
               />
 
               {/* Thread: reply form (just below the root comment) */}
@@ -1135,6 +1147,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 <ReplyForm
                   onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
                   onCancel={() => setReplyTarget(null)}
+                  onUploadImage={uploadImage}
                   mentionLabel={replyTarget.mentionLabel}
                   onClearMention={() => setReplyTarget({ rootId: a._id })}
                 />
@@ -1191,6 +1204,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                             mentionLabel: label,
                           });
                         }}
+                        onUploadImage={uploadImage}
                       />
                     </div>
                   ))}

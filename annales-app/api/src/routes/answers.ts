@@ -5,7 +5,7 @@ import { answerService } from '../services/answer.service.js';
 import { voteService } from '../services/vote.service.js';
 import { objectIdSchema } from '../utils/validation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { CONTENT_MAX_LENGTH, isAllowedImageUrl } from '../constants/content.js';
+import { CONTENT_MAX_LENGTH, isValidImageKey } from '../constants/content.js';
 
 export const router = Router();
 
@@ -30,8 +30,8 @@ const contentSchema = z
       message: `Contenu trop long (max ${CONTENT_MAX_LENGTH[content.type].toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
     })
   )
-  .refine(content => content.type !== 'image' || isAllowedImageUrl(content.data), {
-    message: "Hébergeur d'image non autorisé. Utilisez imgur.com, ibb.co ou postimg.cc",
+  .refine(content => content.type !== 'image' || isValidImageKey(content.data), {
+    message: "Clé d'image invalide. Uploadez une image via /api/files/image",
   });
 
 const getAnswersQuerySchema = z.object({

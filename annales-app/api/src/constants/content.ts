@@ -1,30 +1,13 @@
 /** Limites de longueur par type de contenu */
 export const CONTENT_MAX_LENGTH = {
   text: 50_000,
-  image: 10_000,
+  image: 200, // Clé S3 (ex: "images/550e8400-e29b-41d4-a716-446655440000.webp")
   latex: 10_000,
 } as const;
 
-/** Domaines autorisés pour les images */
-export const ALLOWED_IMAGE_HOSTS = [
-  'i.imgur.com',
-  'imgur.com',
-  'i.ibb.co',
-  'ibb.co',
-  'i.postimg.cc',
-  'postimg.cc',
-] as const;
-
 /**
- * Vérifie si une URL d'image provient d'un domaine autorisé
+ * Vérifie qu'une clé d'image est au format attendu (images/<uuid>.webp)
  */
-export function isAllowedImageUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return ALLOWED_IMAGE_HOSTS.some(
-      host => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
-    );
-  } catch {
-    return false;
-  }
+export function isValidImageKey(key: string): boolean {
+  return /^images\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/.test(key);
 }

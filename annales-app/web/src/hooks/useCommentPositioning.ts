@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import Swal from 'sweetalert2';
 import { renderLatex } from '../utils/latex';
-import { isAllowedImageUrl } from '../constants/content';
 import type { AnswerContent } from '../types/answer';
 
 interface ClickPosition {
@@ -53,17 +52,6 @@ export function useCommentPositioning(
 
       try {
         const answerContent = { ...content };
-
-        // Valider l'URL d'image avant envoi
-        if (answerContent.type === 'image' && !isAllowedImageUrl(answerContent.data)) {
-          await Swal.fire({
-            title: 'Hébergeur non autorisé',
-            text: 'Utilisez imgur.com, ibb.co ou postimg.cc pour héberger vos images.',
-            icon: 'warning',
-            confirmButtonColor: '#2563eb',
-          });
-          return;
-        }
 
         // Pré-rendre le LaTeX si nécessaire
         if (answerContent.type === 'latex' && !answerContent.rendered) {

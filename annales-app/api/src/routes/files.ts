@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import { uploadBuffer, objectKey, downloadFile } from '../services/s3.js';
+import { imageService } from '../services/image.service.js';
 import { Exam } from '../models/Exam.js';
 import { PDFDocument } from 'pdf-lib';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
@@ -10,6 +11,7 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 
 export const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const imageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 // Schémas Zod
 const currentYear = new Date().getFullYear();
@@ -120,7 +122,7 @@ router.post(
       return res.status(400).json({ error: "Le fichier n'est pas un PDF valide" });
     }
 
-    const key = objectKey('annales', `${year}`, req.file.originalname.replace(/\s+/g, '_'));
+    const key = objectKey('exams', `${year}`, req.file.originalname.replace(/\s+/g, '_'));
     await uploadBuffer(key, req.file.buffer, req.file.mimetype);
 
     const exam = await Exam.create({
@@ -209,5 +211,118 @@ router.get(
         res.status(500).json({ error: 'Erreur lors du téléchargement' });
       }
     });
+  })
+);
+
+// ─── Image upload/serving for comments ───
+
+const IMAGE_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/;
+
+/**
+ * @swagger
+ * /files/image:
+ *   post:
+ *     summary: Upload an image for a comment (converted to WebP)
+ *     tags: [Files]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [image]
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file (max 5MB, converted to WebP)
+ *     responses:
+ *       200:
+ *         description: Image uploaded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 key:
+ *                   type: string
+ *                   description: S3 key (e.g. "images/uuid.webp")
+ *       400:
+ *         description: Invalid file
+ *       401:
+ *         description: Not authenticated
+ */
+router.post(
+  '/image',
+  authMiddleware,
+  imageUpload.single('image'),
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image manquante' });
+    }
+
+    if (!req.file.mimetype.startsWith('image/')) {
+      return res.status(400).json({ error: 'Seuls les fichiers image sont acceptés' });
+    }
+
+    const key = await imageService.processAndUpload(req.file.buffer);
+    return res.json({ key });
+  })
+);
+
+/**
+ * @swagger
+ * /files/image/{filename}:
+ *   get:
+ *     summary: Serve a comment image
+ *     tags: [Files]
+ *     parameters:
+ *       - in: path
+ *         name: filename
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Image filename (uuid.webp)
+ *     responses:
+ *       200:
+ *         description: Image file (WebP)
+ *       400:
+ *         description: Invalid filename
+ *       404:
+ *         description: Image not found
+ */
+router.get(
+  '/image/:filename',
+  asyncHandler(async (req, res) => {
+    const { filename } = req.params;
+
+    if (!IMAGE_KEY_PATTERN.test(filename)) {
+      return res.status(400).json({ error: 'Nom de fichier invalide' });
+    }
+
+    const key = objectKey('images', filename);
+
+    try {
+      const { stream, contentLength } = await downloadFile(key);
+
+      res.set({
+        'Content-Type': 'image/webp',
+        'Content-Length': contentLength?.toString(),
+        'Cache-Control': 'public, max-age=86400',
+      });
+
+      stream.pipe(res);
+
+      stream.on('error', error => {
+        console.error('Erreur stream image:', error);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Erreur lors du téléchargement' });
+        }
+      });
+    } catch {
+      return res.status(404).json({ error: 'Image non trouvée' });
+    }
   })
 );

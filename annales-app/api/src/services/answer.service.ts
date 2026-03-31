@@ -3,6 +3,8 @@ import { AnswerModel, Answer, AnswerContent } from '../models/Answer.js';
 import { UserModel } from '../models/User.js';
 import { ServiceError } from './ServiceError.js';
 import { voteService } from './vote.service.js';
+import { imageService } from './image.service.js';
+import { isValidImageKey } from '../constants/content.js';
 
 export interface AuthorInfo {
   firstName: string;
@@ -196,6 +198,15 @@ class AnswerService {
     }
 
     const { content } = data;
+
+    // Supprimer l'ancienne image si le contenu change
+    const oldContent = existingAnswer.content;
+    if (oldContent?.type === 'image' && isValidImageKey(oldContent.data)) {
+      if (content.type !== 'image' || content.data !== oldContent.data) {
+        await imageService.delete(oldContent.data).catch(() => {});
+      }
+    }
+
     const updateData = {
       content: {
         type: content.type,
@@ -230,15 +241,16 @@ class AnswerService {
       throw ServiceError.forbidden('Vous ne pouvez supprimer que vos propres commentaires');
     }
 
-    // Cascade delete des réponses et votes si c'est un commentaire racine
+    // Cascade delete des réponses, votes et images si c'est un commentaire racine
     if (!existingAnswer.parentId) {
-      const replyIds = (
-        await AnswerModel.find({ parentId: existingAnswer._id }).select('_id').lean()
-      ).map(r => r._id);
+      const replies = await AnswerModel.find({ parentId: existingAnswer._id }).select('_id content').lean();
+      const replyIds = replies.map(r => r._id);
       await voteService.deleteByAnswerIds([...replyIds, existingAnswer._id]);
+      await this.deleteAnswerImages([...replies, existingAnswer]);
       await AnswerModel.deleteMany({ parentId: existingAnswer._id });
     } else {
       await voteService.deleteByAnswerIds([existingAnswer._id]);
+      await this.deleteAnswerImages([existingAnswer]);
     }
 
     await AnswerModel.findByIdAndDelete(id);
@@ -249,10 +261,24 @@ class AnswerService {
    * (Utilisé lors de la suppression d'un examen via report)
    */
   async deleteByExamId(examId: Types.ObjectId): Promise<number> {
-    const answerIds = (await AnswerModel.find({ examId }).select('_id').lean()).map(a => a._id);
+    const answers = await AnswerModel.find({ examId }).select('_id content').lean();
+    const answerIds = answers.map(a => a._id);
     await voteService.deleteByAnswerIds(answerIds);
+    await this.deleteAnswerImages(answers);
     const result = await AnswerModel.deleteMany({ examId });
     return result.deletedCount;
+  }
+
+  /**
+   * Supprime les images S3 associées à une liste de commentaires
+   */
+  private async deleteAnswerImages(
+    answers: Array<{ content?: AnswerContent }>
+  ): Promise<void> {
+    const imageKeys = answers
+      .filter(a => a.content?.type === 'image' && isValidImageKey(a.content.data))
+      .map(a => a.content!.data);
+    await Promise.all(imageKeys.map(key => imageService.delete(key).catch(() => {})));
   }
 
   /**
