@@ -18,6 +18,7 @@ import { UserModel, UserRole } from '../models/User.js';
 import { Exam } from '../models/Exam.js';
 import { AnswerModel } from '../models/Answer.js';
 import { ReportModel, ReportType, ReportReason, ReportStatus } from '../models/Report.js';
+import { PDFDocument } from 'pdf-lib';
 import { uploadBuffer, objectKey } from '../services/s3.js';
 import { instanceConfigService } from '../services/instance-config.service.js';
 
@@ -189,12 +190,17 @@ async function createExams(
       // Upload to S3
       await uploadBuffer(fileKey, fileBuffer, 'application/pdf');
 
+      // Extract page count
+      const pdf = await PDFDocument.load(fileBuffer);
+      const pages = pdf.getPageCount();
+
       // Create exam in database
       const exam = await Exam.create({
         title: fileData.title,
         year: fileData.year,
         module: fileData.module,
         fileKey,
+        pages,
         uploadedBy: uploaderId,
       });
 
