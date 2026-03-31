@@ -116,6 +116,7 @@ const containerStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: '2px',
   flexShrink: 0,
+  marginRight: '0.5rem',
 };
 
 const arrowButtonStyle: React.CSSProperties = {
