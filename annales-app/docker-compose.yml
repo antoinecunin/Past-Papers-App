@@ -4,7 +4,8 @@ networks:
 
 volumes:
   mongo_data:
-  minio_data:
+  garage_meta:
+  garage_data:
 
 services:
   reverse-proxy:
@@ -105,46 +106,16 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    image: minio/minio:latest
-    container_name: annales-minio
-    command: server /data --address ":${MINIO_PORT}" --console-address ":${MINIO_CONSOLE_PORT}"
-    environment:
-      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
-      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
+  garage:
+    image: dxflrs/garage:v2.2.0
+    container_name: annales-garage
     volumes:
-      - minio_data:/data
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
     expose:
-      - "${MINIO_PORT}"
-      - "${MINIO_CONSOLE_PORT}"
+      - "3900"
     networks:
       - backend
     restart: unless-stopped
 
-  minio-setup:
-    image: minio/mc:latest
-    container_name: annales-minio-setup
-    depends_on:
-      minio:
-        condition: service_started
-    entrypoint: ["/bin/sh", "/setup.sh"]
-    volumes:
-      - ./docker/minio/setup.sh:/setup.sh:ro
-    environment:
-      - S3_ENDPOINT=minio:${MINIO_PORT}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET=${S3_BUCKET}
-    networks:
-      - backend
-    restart: "no"
-
-  # Service utilitaire pour manipuler MinIO (usage: docker compose run --rm mc ls minio/annales)
-  mc:
-    image: minio/mc:latest
-    profiles: [tools]
-    networks: [backend]
-    entrypoint: ["/bin/sh", "-c", "mc alias set minio http://annales-minio:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY && exec mc \"$$@\"", "--"]
-    environment:
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
