@@ -153,20 +153,25 @@ async function createUsers(
   return userIds;
 }
 
+interface ExamInfo {
+  id: mongoose.Types.ObjectId;
+  pages: number;
+}
+
 async function createExams(
   files: SeedFile[],
   uploaderEmail: string,
   userIds: Map<string, mongoose.Types.ObjectId>,
   configDir: string,
   verbose: boolean
-): Promise<mongoose.Types.ObjectId[]> {
+): Promise<ExamInfo[]> {
   log('📄', `Creating ${files.length} exams...`);
-  const examIds: mongoose.Types.ObjectId[] = [];
+  const exams: ExamInfo[] = [];
 
   const uploaderId = userIds.get(uploaderEmail);
   if (!uploaderId) {
     logError(`Uploader ${uploaderEmail} not found`);
-    return examIds;
+    return exams;
   }
 
   for (const fileData of files) {
@@ -204,15 +209,15 @@ async function createExams(
         uploadedBy: uploaderId,
       });
 
-      examIds.push(exam._id as mongoose.Types.ObjectId);
-      if (verbose) logSuccess(`Exam created: ${fileData.title}`);
+      exams.push({ id: exam._id as mongoose.Types.ObjectId, pages });
+      if (verbose) logSuccess(`Exam created: ${fileData.title} (${pages} pages)`);
     } catch (error) {
       logError(`Error creating exam ${fileData.title}: ${error}`);
     }
   }
 
-  logSuccess(`${examIds.length} exams created`);
-  return examIds;
+  logSuccess(`${exams.length} exams created`);
+  return exams;
 }
 
 // Sample comments for seeding
@@ -251,8 +256,8 @@ const sampleReplies = [
   'I think there might be a missing factor of 2.',
 ];
 
-async function createAnswers(
-  examIds: mongoose.Types.ObjectId[],
+async function createAnswersAndReplies(
+  exams: ExamInfo[],
   userIds: Map<string, mongoose.Types.ObjectId>,
   verbose: boolean
 ): Promise<{ answerIds: mongoose.Types.ObjectId[]; replyCount: number }> {
@@ -270,8 +275,8 @@ async function createAnswers(
   // Create 2-3 root comments per exam
   // The first comment on the first exam is deterministic (page 1, yTop 0.3)
   // to easily locate the 15 test replies
-  for (let examIndex = 0; examIndex < examIds.length; examIndex++) {
-    const examId = examIds[examIndex];
+  for (let examIndex = 0; examIndex < exams.length; examIndex++) {
+    const { id: examId, pages: examPages } = exams[examIndex];
     const numComments = 2 + Math.floor(Math.random() * 2); // 2 or 3 comments
 
     for (let i = 0; i < numComments; i++) {
@@ -283,7 +288,7 @@ async function createAnswers(
         const comment = isFirstComment
           ? sampleComments[0]
           : sampleComments[Math.floor(Math.random() * sampleComments.length)];
-        const page = isFirstComment ? 1 : 1 + Math.floor(Math.random() * 3);
+        const page = isFirstComment ? 1 : 1 + Math.floor(Math.random() * examPages);
         const yTop = isFirstComment ? 0.3 : Math.round((Math.random() * 0.8 + 0.1) * 100) / 100;
 
         const answer = await AnswerModel.create({
@@ -591,10 +596,11 @@ async function main() {
     // Create exams (uploader = first verified user)
     const firstVerified = config.users.find(u => u.isVerified);
     const uploaderEmail = firstVerified ? buildEmail(firstVerified.emailPrefix) : buildEmail(config.users[0].emailPrefix);
-    const examIds = await createExams(config.files, uploaderEmail, userIds, configDir, verbose);
+    const exams = await createExams(config.files, uploaderEmail, userIds, configDir, verbose);
+    const examIds = exams.map(e => e.id);
 
     // Create comments and replies on exams
-    const { answerIds, replyCount } = await createAnswers(examIds, userIds, verbose);
+    const { answerIds, replyCount } = await createAnswersAndReplies(exams, userIds, verbose);
 
     // Create reports (exams + comments)
     const reportStats = await createReports(config.reports, examIds, answerIds, userIds, verbose);
@@ -603,7 +609,7 @@ async function main() {
     console.log('\n' + '='.repeat(50));
     log('🎉', 'Seeding completed successfully!', colors.green);
     console.log(`   - ${userIds.size} users`);
-    console.log(`   - ${examIds.length} exams`);
+    console.log(`   - ${exams.length} exams`);
     console.log(`   - ${answerIds.length} root comments`);
     console.log(`   - ${replyCount} replies (threads)`);
     console.log(
