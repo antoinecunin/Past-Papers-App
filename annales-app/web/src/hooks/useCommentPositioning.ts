@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import Swal from 'sweetalert2';
 import { renderLatex } from '../utils/latex';
+import { apiFetch } from '../utils/api';
 import type { AnswerContent } from '../types/answer';
 
 interface ClickPosition {
@@ -21,7 +22,6 @@ interface UseCommentPositioningReturn {
  */
 export function useCommentPositioning(
   examId: string,
-  token: string | null,
   onCommentAdded: () => void
 ): UseCommentPositioningReturn {
   const [pendingPosition, setPendingPosition] = useState<ClickPosition | null>(null);
@@ -65,11 +65,10 @@ export function useCommentPositioning(
           content: answerContent,
         };
 
-        const response = await fetch('/api/answers', {
+        const response = await apiFetch('/api/answers', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         });
@@ -92,7 +91,7 @@ export function useCommentPositioning(
         });
       }
     },
-    [examId, token, pendingPosition, onCommentAdded]
+    [examId, pendingPosition, onCommentAdded]
   );
 
   const cancelComment = useCallback(() => {

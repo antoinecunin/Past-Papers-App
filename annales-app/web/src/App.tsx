@@ -21,6 +21,7 @@ import { useInstance } from './hooks/useInstance';
 import { PermissionUtils } from './utils/permissions';
 import { showReportModal, showReportSuccess, showReportError } from './utils/reportModal';
 import { showError, showSuccess, showConfirm } from './utils/swal';
+import { apiFetch } from './utils/api';
 import './App.css';
 
 interface Exam {
@@ -37,20 +38,16 @@ interface Exam {
 
 function App() {
   const { currentRoute, navigate, isPage, getExamId } = useRouter();
-  const { user, token, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { name } = useInstance();
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   // Load an exam by its ID (for direct URLs)
   const loadExamById = useCallback(async (examId: string): Promise<Exam | null> => {
-    if (!token) return null;
+    if (!user) return null;
 
     try {
-      const response = await fetch(`/api/exams/${examId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch(`/api/exams/${examId}`);
       if (response.ok) {
         return await response.json();
       }
@@ -58,7 +55,7 @@ function App() {
       console.error("Error loading exam:", error);
     }
     return null;
-  }, [token]);
+  }, [user]);
 
   // Handle exam selection
   const handleExamSelect = (exam: Exam) => {
@@ -74,15 +71,11 @@ function App() {
 
   // Download the selected exam's PDF
   const handleDownloadPdf = async () => {
-    if (!selectedExam || !token) return;
+    if (!selectedExam || !user) return;
 
     try {
       // Download file with authentication
-      const response = await fetch(`/api/files/${selectedExam._id}/download`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch(`/api/files/${selectedExam._id}/download`);
 
       if (!response.ok) {
         throw new Error('Failed to download file');
@@ -112,7 +105,7 @@ function App() {
 
   // Delete the selected exam
   const handleDeleteExam = async () => {
-    if (!selectedExam || !user || !token) return;
+    if (!selectedExam || !user) return;
 
     const confirmed = await showConfirm(
       'Delete this exam?',
@@ -122,11 +115,8 @@ function App() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/exams/${selectedExam._id}`, {
+      const response = await apiFetch(`/api/exams/${selectedExam._id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       if (response.ok) {
@@ -145,17 +135,16 @@ function App() {
 
   // Report the selected exam
   const handleReportExam = async () => {
-    if (!selectedExam || !user || !token) return;
+    if (!selectedExam || !user) return;
 
     const reportData = await showReportModal('Report this exam', 'exam');
     if (!reportData) return;
 
     try {
-      const response = await fetch('/api/reports', {
+      const response = await apiFetch('/api/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           type: 'exam',

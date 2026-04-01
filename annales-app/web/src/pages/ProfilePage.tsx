@@ -8,9 +8,10 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PermissionUtils } from '../utils/permissions';
 import { showSuccessToast } from '../utils/swal';
+import { apiFetch } from '../utils/api';
 
 export default function ProfilePage() {
-  const { user, token, updateProfile, changePassword, deleteAccount, logout, isLoading, error, clearError } =
+  const { user, updateProfile, changePassword, deleteAccount, logout, isLoading, error, clearError } =
     useAuthStore();
   const { navigate } = useRouter();
   const { allowedDomains } = useInstance();
@@ -32,10 +33,10 @@ export default function ProfilePage() {
 
   // Redirect if not logged in
   useEffect(() => {
-    if (!user || !token) {
+    if (!user) {
       navigate('login');
     }
-  }, [user, token, navigate]);
+  }, [user, navigate]);
 
   // Sync form with user data
   useEffect(() => {
@@ -142,11 +143,10 @@ export default function ProfilePage() {
     }
 
     try {
-      const response = await fetch('/api/auth/email', {
+      const response = await apiFetch('/api/auth/email', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           newEmail: newEmail.trim().toLowerCase(),
@@ -199,12 +199,7 @@ export default function ProfilePage() {
   // Export data handler (GDPR)
   const handleExportData = async () => {
     try {
-      const response = await fetch('/api/auth/data-export', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch('/api/auth/data-export');
 
       if (!response.ok) {
         throw new Error('Export failed');

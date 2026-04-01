@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cors, { CorsOptions } from 'cors';
+import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import { router as health } from './routes/health.js';
 import { router as exams } from './routes/exams.js';
@@ -28,6 +29,7 @@ app.use(helmet());
 const morganFormat = process.env.API_LOG_LEVEL || 'dev';
 app.use(morgan(morganFormat));
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
 
 // --- CORS strict, uniquement sur /api ---
 const allowedOrigins = (process.env.CORS_ORIGIN ?? '')
@@ -36,10 +38,10 @@ const allowedOrigins = (process.env.CORS_ORIGIN ?? '')
   .filter(Boolean);
 
 const corsOptions: CorsOptions = {
-  origin: allowedOrigins.length ? allowedOrigins : false, // pas d'en-têtes CORS si vide
-  credentials: false, // mets true s'il y a des cookies/credentials cross-site
+  origin: allowedOrigins.length ? allowedOrigins : false,
+  credentials: true,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type'],
   optionsSuccessStatus: 204,
   preflightContinue: false,
 };

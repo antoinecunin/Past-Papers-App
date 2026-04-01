@@ -21,14 +21,14 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
+    // Read token from cookie first, fallback to Authorization header (for tests)
+    const token = req.cookies?.token
+      || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : null);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       res.status(401).json({ error: 'Token manquant' });
       return;
     }
-
-    const token = authHeader.substring(7);
     const payload: JwtPayload = AuthUtils.verifyToken(token);
 
     const user = await UserModel.findById(payload.userId).select('-password');
@@ -71,14 +71,14 @@ export const optionalAuthMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
+    const token = req.cookies?.token
+      || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : null);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       next();
       return;
     }
 
-    const token = authHeader.substring(7);
     const payload: JwtPayload = AuthUtils.verifyToken(token);
 
     const user = await UserModel.findById(payload.userId).select('-password');

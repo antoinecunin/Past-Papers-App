@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useState } from 'react';
 import { Upload, CheckCircle } from 'lucide-react';
 import FileDrop from '../components/FileDrop';
@@ -6,9 +5,10 @@ import { useAuthStore } from '../stores/authStore';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { showValidationError, showError } from '../utils/swal';
+import { apiFetch } from '../utils/api';
 
 export default function UploadPage() {
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const [title, setTitle] = useState('');
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [module, setModule] = useState('');
@@ -26,7 +26,7 @@ export default function UploadPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!token) {
+    if (!user) {
       await showValidationError('You must be logged in to upload a file');
       return;
     }
@@ -59,11 +59,15 @@ export default function UploadPage() {
       fd.append('year', String(year));
       fd.append('module', module);
 
-      await axios.post('/api/files/upload', fd, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await apiFetch('/api/files/upload', {
+        method: 'POST',
+        body: fd,
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
+      }
 
       setUploadSuccess(true);
       setTitle('');
@@ -74,11 +78,8 @@ export default function UploadPage() {
       setTimeout(() => setUploadSuccess(false), 5000);
     } catch (error) {
       console.error('Upload error:', error);
-      if (axios.isAxiosError(error)) {
-        await showError('Upload error', error.response?.data?.error || error.message);
-      } else {
-        await showError('Error', 'An unexpected error occurred during upload');
-      }
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred during upload';
+      await showError('Upload error', message);
     } finally {
       setIsUploading(false);
     }

@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import { Shield, AlertCircle, RefreshCw, CheckCircle, XCircle, FileText, MessageSquare, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
+import { apiFetch } from '../utils/api';
 import { Button } from '../components/ui/Button';
 import { useRouter } from '../hooks/useRouter';
 
@@ -54,7 +55,7 @@ interface ReportsResponse {
 }
 
 export default function AdminReportsPage() {
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const { navigate } = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +69,7 @@ export default function AdminReportsPage() {
   const [pagination, setPagination] = useState<ReportsResponse['pagination'] | null>(null);
 
   const fetchReports = useCallback(async (fetchOffset: number) => {
-    if (!token) return;
+    if (!user) return;
 
     try {
       setLoading(true);
@@ -78,11 +79,7 @@ export default function AdminReportsPage() {
       params.append('limit', String(REPORTS_PER_PAGE));
       params.append('offset', String(fetchOffset));
 
-      const response = await fetch(`/api/reports?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch(`/api/reports?${params.toString()}`);
 
       if (response.ok) {
         const data: ReportsResponse = await response.json();
@@ -99,10 +96,10 @@ export default function AdminReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, filter]);
+  }, [user, filter]);
 
   const handleReviewReport = async (reportId: string, action: 'approve' | 'reject') => {
-    if (!token) return;
+    if (!user) return;
 
     const result = await Swal.fire({
       title: action === 'approve' ? 'Approve and delete' : 'Reject report',
@@ -130,11 +127,10 @@ export default function AdminReportsPage() {
 
     try {
       setActionLoading(reportId);
-      const response = await fetch(`/api/reports/${reportId}/review`, {
+      const response = await apiFetch(`/api/reports/${reportId}/review`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ action, note: result.value?.note }),
       });
@@ -173,7 +169,7 @@ export default function AdminReportsPage() {
   useEffect(() => {
     setOffset(0);
     fetchReports(0);
-  }, [filter, token, fetchReports]);
+  }, [filter, user, fetchReports]);
 
   // Pagination handlers
   const handlePreviousPage = () => {

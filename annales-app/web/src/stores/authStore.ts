@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { apiFetch } from '../utils/api';
 
 export type UserRole = 'user' | 'admin';
 
@@ -14,7 +15,6 @@ export interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -45,20 +45,17 @@ const API_BASE = '/api/auth';
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
-      token: null,
       isLoading: false,
       error: null,
 
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_BASE}/login`, {
+          const response = await apiFetch(`${API_BASE}/login`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
           });
 
@@ -70,7 +67,6 @@ export const useAuthStore = create<AuthStore>()(
 
           set({
             user: data.user,
-            token: data.token,
             isLoading: false,
             error: null,
           });
@@ -86,11 +82,9 @@ export const useAuthStore = create<AuthStore>()(
       register: async userData => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_BASE}/register`, {
+          const response = await apiFetch(`${API_BASE}/register`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData),
           });
 
@@ -111,29 +105,17 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
-        const { token } = get();
         // Invalidate token server-side (fire and forget)
-        if (token) {
-          fetch(`${API_BASE}/logout`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-          }).catch(() => {});
-        }
-        set({
-          user: null,
-          token: null,
-          error: null,
-        });
+        apiFetch(`${API_BASE}/logout`, { method: 'POST' }).catch(() => {});
+        set({ user: null, error: null });
       },
 
       forgotPassword: async (email: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_BASE}/forgot-password`, {
+          const response = await apiFetch(`${API_BASE}/forgot-password`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }),
           });
 
@@ -156,11 +138,9 @@ export const useAuthStore = create<AuthStore>()(
       resetPassword: async (token: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_BASE}/reset-password`, {
+          const response = await apiFetch(`${API_BASE}/reset-password`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, password }),
           });
 
@@ -183,11 +163,9 @@ export const useAuthStore = create<AuthStore>()(
       verifyEmail: async (token: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_BASE}/verify-email`, {
+          const response = await apiFetch(`${API_BASE}/verify-email`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token }),
           });
 
@@ -210,11 +188,9 @@ export const useAuthStore = create<AuthStore>()(
       resendVerification: async (email: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_BASE}/resend-verification`, {
+          const response = await apiFetch(`${API_BASE}/resend-verification`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }),
           });
 
@@ -237,13 +213,9 @@ export const useAuthStore = create<AuthStore>()(
       updateProfile: async (data: { firstName?: string; lastName?: string }) => {
         set({ isLoading: true, error: null });
         try {
-          const { token } = get();
-          const response = await fetch(`${API_BASE}/profile`, {
+          const response = await apiFetch(`${API_BASE}/profile`, {
             method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
           });
 
@@ -253,7 +225,6 @@ export const useAuthStore = create<AuthStore>()(
             throw new Error(result.error || 'Error updating profile');
           }
 
-          // Update user in the store
           set({ user: result.user, isLoading: false, error: null });
         } catch (error) {
           set({
@@ -267,13 +238,9 @@ export const useAuthStore = create<AuthStore>()(
       changePassword: async (currentPassword: string, newPassword: string) => {
         set({ isLoading: true, error: null });
         try {
-          const { token } = get();
-          const response = await fetch(`${API_BASE}/change-password`, {
+          const response = await apiFetch(`${API_BASE}/change-password`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ currentPassword, newPassword }),
           });
 
@@ -296,13 +263,9 @@ export const useAuthStore = create<AuthStore>()(
       deleteAccount: async (password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const { token } = get();
-          const response = await fetch(`${API_BASE}/account`, {
+          const response = await apiFetch(`${API_BASE}/account`, {
             method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password }),
           });
 
@@ -312,8 +275,7 @@ export const useAuthStore = create<AuthStore>()(
             throw new Error(result.error || 'Error deleting account');
           }
 
-          // Log out after deletion
-          set({ user: null, token: null, isLoading: false, error: null });
+          set({ user: null, isLoading: false, error: null });
         } catch (error) {
           set({
             isLoading: false,
@@ -330,7 +292,6 @@ export const useAuthStore = create<AuthStore>()(
       name: 'auth-storage',
       partialize: state => ({
         user: state.user,
-        token: state.token,
       }),
     }
   )

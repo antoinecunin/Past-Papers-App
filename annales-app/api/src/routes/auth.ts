@@ -9,6 +9,15 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 
 const router = Router();
 
+const COOKIE_NAME = 'token';
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  path: '/',
+};
+
 // Rate limiting for sensitive routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -222,7 +231,8 @@ router.post(
     const { email, password } = result.data;
     const loginResult = await authService.login(email, password);
 
-    res.json(loginResult);
+    res.cookie(COOKIE_NAME, loginResult.token, COOKIE_OPTIONS);
+    res.json({ user: loginResult.user });
   })
 );
 
@@ -733,6 +743,7 @@ router.post(
   authMiddleware,
   asyncHandler(async (req: AuthenticatedRequest, res) => {
     await UserModel.findByIdAndUpdate(req.user!.id, { $inc: { tokenVersion: 1 } });
+    res.clearCookie(COOKIE_NAME, { path: '/' });
     return res.json({ message: 'Déconnexion réussie' });
   })
 );

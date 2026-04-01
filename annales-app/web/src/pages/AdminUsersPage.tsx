@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { apiFetch } from '../utils/api';
 
 interface UserEntry {
   _id: string;
@@ -18,7 +19,7 @@ interface UserEntry {
 }
 
 export default function AdminUsersPage() {
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +31,10 @@ export default function AdminUsersPage() {
   const [sortAsc, setSortAsc] = useState(true);
 
   const fetchUsers = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
       setLoading(true);
-      const response = await fetch('/api/auth/users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiFetch('/api/auth/users');
 
       if (response.ok) {
         const data: { users: UserEntry[]; canManageRoles: boolean } = await response.json();
@@ -51,14 +50,14 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   const handleRoleChange = async (targetUser: UserEntry, newRole: 'user' | 'admin') => {
-    if (!token) return;
+    if (!user) return;
 
     const action = newRole === 'admin' ? 'promote to admin' : 'demote to user';
     const confirmed = window.confirm(
@@ -68,11 +67,10 @@ export default function AdminUsersPage() {
 
     try {
       setActionLoading(targetUser._id);
-      const response = await fetch(`/api/auth/users/${targetUser._id}/role`, {
+      const response = await apiFetch(`/api/auth/users/${targetUser._id}/role`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ role: newRole }),
       });
@@ -99,16 +97,15 @@ export default function AdminUsersPage() {
   };
 
   const handleTogglePermission = async (targetUser: UserEntry, permission: 'canComment' | 'canUpload') => {
-    if (!token) return;
+    if (!user) return;
     const newValue = !targetUser[permission];
 
     try {
       setActionLoading(`${targetUser._id}-${permission}`);
-      const response = await fetch(`/api/auth/users/${targetUser._id}/permissions`, {
+      const response = await apiFetch(`/api/auth/users/${targetUser._id}/permissions`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ [permission]: newValue }),
       });

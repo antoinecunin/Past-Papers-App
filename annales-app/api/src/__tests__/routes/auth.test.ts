@@ -152,7 +152,7 @@ describe('POST /api/auth/login', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('token');
+    expect(response.headers['set-cookie']).toBeDefined();
     expect(response.body).toHaveProperty('user');
     expect(response.body.user.email).toBe(testEmail('verified'));
     expect(response.body.user).not.toHaveProperty('password');
@@ -422,6 +422,6 @@ describe('POST /api/auth/reset-password', () => {
     });
 
     expect(loginResponse.status).toBe(200);
-    expect(loginResponse.body).toHaveProperty('token');
+    expect(loginResponse.headers['set-cookie']).toBeDefined();
   });
 });

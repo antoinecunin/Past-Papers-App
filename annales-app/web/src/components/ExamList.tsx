@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
 import ExamCard from './ExamCard';
 import { AlertCircle, FileX, Search, RotateCcw, ArrowUpDown } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
 import { Input } from './ui/Input';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
+import { apiFetch } from '../utils/api';
 
 interface Exam {
   _id: string;
@@ -28,7 +28,7 @@ interface ExamListProps {
  * Follows best practices: state management, performance, accessibility
  */
 export default function ExamList({ onExamSelect }: ExamListProps) {
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const { navigate } = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   useEffect(() => {
     const loadExams = async () => {
       // Check if the user is logged in
-      if (!token) {
+      if (!user) {
         navigate('login');
         return;
       }
@@ -51,19 +51,18 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get<Exam[]>('/api/exams', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setExams(response.data);
-      } catch (err) {
-        console.error('Error loading exams:', err);
-        // If 401 error, redirect to login
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
+        const response = await apiFetch('/api/exams');
+        if (response.status === 401) {
           navigate('login');
           return;
         }
+        if (!response.ok) {
+          throw new Error('Failed to load exams');
+        }
+        const data: Exam[] = await response.json();
+        setExams(data);
+      } catch (err) {
+        console.error('Error loading exams:', err);
         setError('Unable to load exams. Please try again.');
       } finally {
         setLoading(false);
@@ -71,7 +70,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
     };
 
     loadExams();
-  }, [token, navigate]);
+  }, [user, navigate]);
 
   // Filtering, search and sort with useMemo for performance
   const filteredExams = useMemo(() => {
@@ -121,17 +120,16 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   };
 
   const handleReportExam = async (examId: string) => {
-    if (!token) return;
+    if (!user) return;
 
     const reportData = await showReportModal('Report this exam', 'exam');
     if (!reportData) return;
 
     try {
-      const response = await fetch('/api/reports', {
+      const response = await apiFetch('/api/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           type: 'exam',

@@ -12,6 +12,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useInstance } from '../hooks/useInstance';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
 import { CONTENT_MAX_LENGTH, IMAGE_MAX_SIZE, formatCharCount, getCharCountColor } from '../constants/content';
+import { apiFetch } from '../utils/api';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -29,7 +30,7 @@ type Props = {
  * - Adding a comment: captures the current yTop (center of the visible area).
  */
 export default function PdfAnnotator({ pdfUrl, examId }: Props) {
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const { primaryColor, primaryHoverColor } = useInstance();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
@@ -55,7 +56,6 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   // Hook for click positioning
   const { pendingPosition, handlePageClick, confirmComment, cancelComment } = useCommentPositioning(
     examId,
-    token,
     () => {
       // Reload callback after adding a comment
       loadAllAnswers();
@@ -87,14 +87,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!token) return;
+      if (!user) return;
 
       // Load PDF with authentication
-      const response = await fetch(pdfUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch(pdfUrl);
 
       if (!response.ok) {
         throw new Error('Failed to load PDF');
@@ -111,7 +107,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [pdfUrl, token]);
+  }, [pdfUrl, user]);
 
   // Render pages (canvas) in the container
   useEffect(() => {
@@ -387,12 +383,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   // Upload an image to S3
   const uploadImage = useCallback(
     async (file: File): Promise<string> => {
-      if (!token) throw new Error('Not authenticated');
+      if (!user) throw new Error('Not authenticated');
       const formData = new FormData();
       formData.append('image', file);
-      const res = await fetch('/api/files/image', {
+      const res = await apiFetch('/api/files/image', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       if (!res.ok) {
@@ -402,7 +397,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       const { key } = await res.json();
       return key;
     },
-    [token]
+    [user]
   );
 
   // Handle new comment indicator
@@ -667,21 +662,17 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
   // Function to load all comments
   const loadAllAnswers = useCallback(async () => {
-    if (!examId || !token) return;
+    if (!examId || !user) return;
     try {
       const url = `/api/answers?examId=${encodeURIComponent(examId)}`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await apiFetch(url);
       if (!res.ok) throw new Error('Failed to load all answers');
       const data: Answer[] = await res.json();
       setAllAnswers(data);
     } catch (err) {
       console.error(err);
     }
-  }, [examId, token]);
+  }, [examId, user]);
 
   // Load all comments on mount and when examId changes
   useEffect(() => {
@@ -754,11 +745,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           newContent.rendered = renderLatex(newContent.data);
         }
 
-        const response = await fetch(`/api/answers/${answerId}`, {
+        const response = await apiFetch(`/api/answers/${answerId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ content: newContent }),
         });
@@ -793,18 +783,15 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         throw error;
       }
     },
-    [loadAllAnswers, token, findReplyParent]
+    [loadAllAnswers, findReplyParent]
   );
 
   // Function to delete a comment
   const deleteAnswer = useCallback(
     async (answerId: string) => {
       try {
-        const response = await fetch(`/api/answers/${answerId}`, {
+        const response = await apiFetch(`/api/answers/${answerId}`, {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         });
 
         if (!response.ok) {
@@ -835,23 +822,22 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         throw error;
       }
     },
-    [loadAllAnswers, token, findReplyParent]
+    [loadAllAnswers, findReplyParent]
   );
 
   // Function to report a comment
   const reportAnswer = useCallback(
     async (answerId: string) => {
-      if (!token) return;
+      if (!user) return;
 
       const reportData = await showReportModal('Report this comment', 'comment');
       if (!reportData) return;
 
       try {
-        const response = await fetch('/api/reports', {
+        const response = await apiFetch('/api/reports', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             type: 'comment',
@@ -872,18 +858,17 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         await showReportError();
       }
     },
-    [token]
+    [user]
   );
 
   // Vote on a comment
   const voteOnAnswer = useCallback(
     async (answerId: string, value: 1 | -1) => {
-      if (!token) return;
-      const res = await fetch(`/api/answers/${answerId}/vote`, {
+      if (!user) return;
+      const res = await apiFetch(`/api/answers/${answerId}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ value }),
       });
@@ -911,16 +896,15 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         return updated;
       });
     },
-    [token]
+    [user]
   );
 
   // Toggle best answer (admin only)
   const toggleBestAnswer = useCallback(
     async (answerId: string) => {
-      if (!token) return;
-      const res = await fetch(`/api/answers/${answerId}/best`, {
+      if (!user) return;
+      const res = await apiFetch(`/api/answers/${answerId}/best`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
       const { isBestAnswer } = await res.json();
@@ -928,21 +912,19 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         prev.map(a => (a._id === answerId ? { ...a, isBestAnswer } : a))
       );
     },
-    [token]
+    [user]
   );
 
   // Load replies for a thread
   const loadReplies = useCallback(
     async (parentId: string, cursor?: string) => {
-      if (!token) return;
+      if (!user) return;
       try {
         const params = new URLSearchParams();
         if (cursor) params.set('cursor', cursor);
         params.set('limit', '10');
 
-        const res = await fetch(`/api/answers/${parentId}/replies?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await apiFetch(`/api/answers/${parentId}/replies?${params}`);
         if (!res.ok) throw new Error('Failed to load replies');
         const data: { replies: Answer[]; hasMore: boolean } = await res.json();
 
@@ -965,7 +947,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         console.error(err);
       }
     },
-    [token]
+    [user]
   );
 
   // Toggle thread open/close
@@ -985,7 +967,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   // Create a reply in a thread
   const replyToAnswer = useCallback(
     async (parentId: string, content: AnswerContent, mentionedUserId?: string) => {
-      if (!token) return;
+      if (!user) return;
       // Find parent to inherit page/yTop
       const parent = allAnswers.find(a => a._id === parentId);
       if (!parent) return;
@@ -1006,11 +988,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         body.mentionedUserId = mentionedUserId;
       }
 
-      const res = await fetch('/api/answers', {
+      const res = await apiFetch('/api/answers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       });
@@ -1029,7 +1010,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       // Make sure the thread is open
       setOpenThreads(prev => ({ ...prev, [parentId]: true }));
     },
-    [token, examId, allAnswers, loadReplies, loadAllAnswers]
+    [user, examId, allAnswers, loadReplies, loadAllAnswers]
   );
 
   return (

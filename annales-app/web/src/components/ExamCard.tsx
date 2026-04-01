@@ -1,6 +1,7 @@
 import { BookOpen, FileText, Download, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { showError } from '../utils/swal';
+import { apiFetch } from '../utils/api';
 
 interface Exam {
   _id: string;
@@ -25,7 +26,7 @@ interface ExamCardProps {
  * Follows existing design patterns from the project
  */
 export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleClick = () => {
     onSelect?.(exam);
@@ -34,15 +35,11 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening the exam
 
-    if (!token) return;
+    if (!user) return;
 
     try {
       // Download file with authentication
-      const response = await fetch(`/api/files/${exam._id}/download`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch(`/api/files/${exam._id}/download`);
 
       if (!response.ok) {
         throw new Error('Failed to download file');

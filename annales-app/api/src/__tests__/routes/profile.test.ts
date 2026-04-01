@@ -245,7 +245,7 @@ describe('POST /api/auth/change-password', () => {
     });
 
     expect(loginResponse.status).toBe(200);
-    expect(loginResponse.body).toHaveProperty('token');
+    expect(loginResponse.headers['set-cookie']).toBeDefined();
   });
 
   it('should reject wrong current password', async () => {
