@@ -28,9 +28,9 @@ const authLimiter = rateLimit({
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: process.env.NODE_ENV === 'test' ? 100 : 3,
-  message: { error: 'Registration limit reached, please try again in 1 hour' },
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'test' ? 100 : 10,
+  message: { error: 'Too many registration attempts, please try again in 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
 });
