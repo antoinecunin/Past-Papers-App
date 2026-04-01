@@ -1,5 +1,6 @@
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import DOMPurify from 'dompurify';
 
 /**
  * Renders LaTeX code to HTML string
@@ -34,7 +35,7 @@ const renderMixedLatex = (text: string): string => {
         throwOnError: false,
         displayMode: false,
         strict: 'ignore',
-        trust: true,
+        trust: false,
         output: 'html',
         fleqn: false,
         macros: {
@@ -87,7 +88,7 @@ const renderMixedLatex = (text: string): string => {
               throwOnError: false,
               displayMode: false,
               strict: 'ignore',
-              trust: true,
+              trust: false,
               output: 'html',
               fleqn: false,
               macros: {
@@ -122,7 +123,8 @@ const renderMixedLatex = (text: string): string => {
 export const renderLatex = (latex: string): string => {
   try {
     const processedLatex = preprocessLatex(latex);
-    return renderMixedLatex(processedLatex);
+    const html = renderMixedLatex(processedLatex);
+    return DOMPurify.sanitize(html);
   } catch (error) {
     console.warn('Erreur de rendu LaTeX:', error);
     console.warn('Contenu LaTeX problématique:', latex);
