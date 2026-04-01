@@ -42,6 +42,12 @@ export const authMiddleware = async (
       return;
     }
 
+    // Vérifier que le token n'a pas été révoqué (version mismatch)
+    if (payload.tokenVersion !== undefined && payload.tokenVersion !== (user.tokenVersion ?? 0)) {
+      res.status(401).json({ error: 'Session expirée, veuillez vous reconnecter' });
+      return;
+    }
+
     req.user = {
       id: user._id.toString(),
       email: user.email,

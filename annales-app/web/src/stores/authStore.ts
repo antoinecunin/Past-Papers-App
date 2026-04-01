@@ -111,6 +111,14 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
+        const { token } = get();
+        // Invalidate token server-side (fire and forget)
+        if (token) {
+          fetch(`${API_BASE}/logout`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => {});
+        }
         set({
           user: null,
           token: null,

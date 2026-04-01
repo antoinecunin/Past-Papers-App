@@ -105,6 +105,7 @@ class AuthService {
     const token = AuthUtils.generateToken({
       userId: user._id.toString(),
       email: user.email,
+      tokenVersion: user.tokenVersion ?? 0,
     });
 
     return {
@@ -287,6 +288,7 @@ class AuthService {
 
     // Hasher et sauvegarder le nouveau mot de passe
     user.password = await AuthUtils.hashPassword(newPassword);
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
     await user.save();
   }
 
@@ -317,6 +319,7 @@ class AuthService {
     user.isVerified = false;
     user.verificationToken = AuthUtils.generateRandomToken();
     user.verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
 
     await user.save();
 

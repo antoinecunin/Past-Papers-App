@@ -714,6 +714,29 @@ router.delete(
   })
 );
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout (invalidate all existing tokens)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out
+ *       401:
+ *         description: Not authenticated
+ */
+router.post(
+  '/logout',
+  authMiddleware,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    await UserModel.findByIdAndUpdate(req.user!.id, { $inc: { tokenVersion: 1 } });
+    return res.json({ message: 'Déconnexion réussie' });
+  })
+);
+
 // ─── Admin: user management ───
 
 const updateRoleSchema = z.object({
