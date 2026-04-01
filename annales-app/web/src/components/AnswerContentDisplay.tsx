@@ -184,7 +184,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 {truncated ? '...More' : ' Less'}
               </button>
             )}
-            <details style={{ marginTop: '4px', pointerEvents: 'auto' }}>
+            <details style={{ marginTop: '4px', pointerEvents: 'auto' }} onClick={e => e.stopPropagation()}>
               <summary style={summaryStyle}>LaTeX code</summary>
               <div style={latexCodeStyle}>{latexData}</div>
             </details>
@@ -487,8 +487,9 @@ const latexRenderStyle: React.CSSProperties = {
 
 const summaryStyle: React.CSSProperties = {
   fontSize: '10px',
-  color: '#6b7280',
+  color: '#2563eb',
   cursor: 'pointer',
+  textDecoration: 'underline',
 };
 
 const latexCodeStyle: React.CSSProperties = {
