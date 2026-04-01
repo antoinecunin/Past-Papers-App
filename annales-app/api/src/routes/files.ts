@@ -205,6 +205,7 @@ router.get(
       'Content-Length': contentLength?.toString(),
       'Content-Disposition': `inline; filename="${exam.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`,
       'Cache-Control': 'public, max-age=3600',
+      'X-Content-Type-Options': 'nosniff',
     });
 
     stream.pipe(res);
@@ -319,6 +320,7 @@ router.get(
         'Content-Type': 'image/webp',
         'Content-Length': contentLength?.toString(),
         'Cache-Control': 'public, max-age=86400',
+        'X-Content-Type-Options': 'nosniff',
       });
 
       stream.pipe(res);

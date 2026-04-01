@@ -416,24 +416,22 @@ router.post(
  *       403:
  *         description: Only available in development
  */
-router.post(
-  '/dev/verify-user',
-  asyncHandler(async (req, res) => {
-    if (process.env.NODE_ENV !== 'development') {
-      return res.status(403).json({ error: 'Route disponible uniquement en développement' });
-    }
+if (process.env.NODE_ENV === 'development') {
+  router.post(
+    '/dev/verify-user',
+    asyncHandler(async (req, res) => {
+      const { email } = req.body;
 
-    const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: 'Email requis' });
+      }
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email requis' });
-    }
+      await authService.devVerifyUser(email);
 
-    await authService.devVerifyUser(email);
-
-    res.json({ message: 'Utilisateur marqué comme vérifié', email });
-  })
-);
+      res.json({ message: 'Utilisateur marqué comme vérifié', email });
+    })
+  );
+}
 
 /**
  * @swagger
