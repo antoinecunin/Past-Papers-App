@@ -28,6 +28,7 @@ export interface TargetDetails {
   // Pour les commentaires
   examId?: string;
   page?: number;
+  content?: { type: string; data: string };
   // Indique si le contenu existe encore
   exists: boolean;
 }
@@ -168,13 +169,14 @@ class ReportService {
         exists: true,
       };
     } else if (type === ReportType.COMMENT) {
-      const comment = await AnswerModel.findById(targetId).select('examId page').lean();
+      const comment = await AnswerModel.findById(targetId).select('examId page content').lean();
       if (!comment) {
         return { exists: false };
       }
       return {
         examId: comment.examId.toString(),
         page: comment.page,
+        content: comment.content,
         exists: true,
       };
     }

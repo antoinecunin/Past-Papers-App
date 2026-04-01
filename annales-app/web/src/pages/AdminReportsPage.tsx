@@ -23,6 +23,7 @@ interface TargetDetails {
   // For comments
   examId?: string;
   page?: number;
+  content?: { type: string; data: string };
   // Indicates whether the content still exists
   exists: boolean;
 }
@@ -407,6 +408,24 @@ export default function AdminReportsPage() {
                   {report.description && (
                     <div className="text-sm text-secondary italic bg-bg-secondary p-3 rounded-lg">
                       &quot;{report.description}&quot;
+                    </div>
+                  )}
+
+                  {/* Comment content preview */}
+                  {report.type === 'comment' && report.target.content && (
+                    <div className="text-sm bg-gray-50 border border-gray-200 p-3 rounded-lg">
+                      <span className="text-xs font-medium text-secondary block mb-1">
+                        Comment content ({report.target.content.type}):
+                      </span>
+                      {report.target.content.type === 'image' ? (
+                        <span className="text-xs text-secondary italic">[Image]</span>
+                      ) : (
+                        <p className="text-secondary-dark whitespace-pre-wrap break-words">
+                          {report.target.content.data.length > 300
+                            ? `${report.target.content.data.slice(0, 300)}...`
+                            : report.target.content.data}
+                        </p>
+                      )}
                     </div>
                   )}
 
