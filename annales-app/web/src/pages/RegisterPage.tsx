@@ -133,7 +133,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8">
-      <div className="w-full max-w-md mx-auto">
+      <div className="w-full max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
@@ -303,29 +303,17 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          {/* Separator */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">
-                Already have an account?
-              </span>
-            </div>
-          </div>
-
-          {/* Login button */}
-          <Button
-            type="button"
-            variant="secondary"
-            size="lg"
-            className="w-full gap-2"
-            onClick={() => navigate('login')}
-          >
-            <LogIn className="w-5 h-5" />
-            <span>Sign in</span>
-          </Button>
+          {/* Login link */}
+          <p className="text-center text-sm text-secondary mt-6">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('login')}
+              className="text-primary hover:text-primary-hover font-medium cursor-pointer"
+            >
+              Sign in
+            </button>
+          </p>
         </div>
       </div>
     </div>
