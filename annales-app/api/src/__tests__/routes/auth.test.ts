@@ -104,7 +104,7 @@ describe('POST /api/auth/register', () => {
       expect(user?.password.length).toBeGreaterThan(20);
     });
 
-    it('should reject duplicate email', async () => {
+    it('should allow re-registration with unverified email', async () => {
       const userData = {
         email: testEmail('duplicate'),
         password: 'password123',
@@ -114,6 +114,26 @@ describe('POST /api/auth/register', () => {
 
       await request(app).post('/api/auth/register').send(userData);
       const response = await request(app).post('/api/auth/register').send(userData);
+
+      expect(response.status).toBe(201);
+    });
+
+    it('should reject duplicate verified email', async () => {
+      const email = testEmail('verified-dup');
+      await UserModel.create({
+        email,
+        password: 'hashedpassword123',
+        firstName: 'John',
+        lastName: 'Doe',
+        isVerified: true,
+      });
+
+      const response = await request(app).post('/api/auth/register').send({
+        email,
+        password: 'password123',
+        firstName: 'Jane',
+        lastName: 'Doe',
+      });
 
       expect(response.status).toBe(409);
       expect(response.body.error).toContain('déjà utilisé');
