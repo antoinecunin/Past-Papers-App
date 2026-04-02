@@ -118,7 +118,7 @@ describe('POST /api/auth/register', () => {
       expect(response.status).toBe(201);
     });
 
-    it('should reject duplicate verified email', async () => {
+    it('should silently succeed when email is already verified (no enumeration)', async () => {
       const email = testEmail('verified-dup');
       await UserModel.create({
         email,
@@ -135,8 +135,9 @@ describe('POST /api/auth/register', () => {
         lastName: 'Doe',
       });
 
-      expect(response.status).toBe(409);
-      expect(response.body.error).toContain('déjà utilisé');
+      // Returns success to prevent email enumeration
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('id');
     });
   });
 });

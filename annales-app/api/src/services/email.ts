@@ -243,6 +243,56 @@ class EmailService {
     });
   }
 
+  async sendAccountExistsNotification(email: string): Promise<void> {
+    const config = instanceConfigService.getConfig();
+    const instanceName = config.instance.name;
+    const loginUrl = `${process.env.FRONTEND_URL}/login`;
+    const resetUrl = `${process.env.FRONTEND_URL}/forgot-password`;
+
+    const html = buildEmailHtml({
+      title: 'Registration attempt',
+      headerColor: '#f59e0b',
+      greeting: 'Hello,',
+      bodyText:
+        'Someone tried to create an account with your email address on our exam archive platform. Since you already have an account, no new account was created.',
+      buttonText: 'Sign in',
+      buttonUrl: loginUrl,
+      alerts: [
+        {
+          color: '#92400e',
+          bgColor: '#fef3c7',
+          content: `If you forgot your password, you can <a href="${resetUrl}" style="color: #92400e;">reset it here</a>.`,
+        },
+        {
+          color: '#1e40af',
+          bgColor: '#dbeafe',
+          content: "If you didn't attempt this registration, you can safely ignore this email. Your account is secure.",
+        },
+      ],
+    });
+
+    const text = `
+      ${instanceName} - Registration attempt
+
+      Someone tried to create an account with your email address.
+      Since you already have an account, no new account was created.
+
+      Sign in: ${loginUrl}
+      Forgot your password? ${resetUrl}
+
+      If you didn't attempt this registration, you can safely ignore this email.
+
+      The ${instanceName} team
+    `;
+
+    await this.sendEmail({
+      to: email,
+      subject: `Registration attempt - ${instanceName}`,
+      html,
+      text,
+    });
+  }
+
   async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     const config = instanceConfigService.getConfig();

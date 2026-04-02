@@ -51,7 +51,9 @@ class AuthService {
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       if (existingUser.isVerified) {
-        throw ServiceError.conflict('Cet email est déjà utilisé');
+        // Ne pas révéler que le compte existe — envoyer un email de notification
+        await emailService.sendAccountExistsNotification(email);
+        return { userId: existingUser._id.toString() };
       }
       // Remplacer le compte non vérifié
       await UserModel.findByIdAndDelete(existingUser._id);
