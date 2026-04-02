@@ -97,11 +97,14 @@ export default function ProfilePage() {
 
     try {
       await changePassword(currentPassword, newPassword);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setPasswordErrors([]);
-      showSuccessToast('Password changed');
+      await Swal.fire({
+        title: 'Password changed',
+        text: 'Your password has been updated. You will be redirected to sign in again.',
+        icon: 'success',
+        confirmButtonColor: '#2563eb',
+      });
+      logout();
+      navigate('login');
     } catch {
       // Error handled by store
     }
