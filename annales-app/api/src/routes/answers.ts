@@ -139,6 +139,16 @@ const voteSchema = z.object({
  *                   replyCount:
  *                     type: integer
  *                     description: Number of replies in the thread
+ *                   score:
+ *                     type: integer
+ *                     description: Vote score (sum of upvotes and downvotes)
+ *                   userVote:
+ *                     type: integer
+ *                     nullable: true
+ *                     description: Current user's vote (1, -1, or null)
+ *                   isBestAnswer:
+ *                     type: boolean
+ *                     description: Whether this comment is marked as best answer
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -307,6 +317,13 @@ const voteSchema = z.object({
  *                             type: string
  *                           lastName:
  *                             type: string
+ *                       score:
+ *                         type: integer
+ *                         description: Vote score
+ *                       userVote:
+ *                         type: integer
+ *                         nullable: true
+ *                         description: Current user's vote (1, -1, or null)
  *                       createdAt:
  *                         type: string
  *                         format: date-time
