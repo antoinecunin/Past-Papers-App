@@ -115,8 +115,8 @@ const renderMixedLatex = (text: string): string => {
       })
       .join('');
   } catch (error) {
-    console.warn('Erreur de rendu LaTeX mixte:', error);
-    return `<span style="color: #dc2626; font-family: monospace;">[Erreur LaTeX: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}]</span>`;
+    console.warn('LaTeX rendering error:', error);
+    return `<span style="color: #dc2626; font-family: monospace;">[LaTeX Error: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}]</span>`;
   }
 };
 
@@ -126,8 +126,8 @@ export const renderLatex = (latex: string): string => {
     const html = renderMixedLatex(processedLatex);
     return DOMPurify.sanitize(html);
   } catch (error) {
-    console.warn('Erreur de rendu LaTeX:', error);
+    console.warn('LaTeX rendering error:', error);
     console.warn('Contenu LaTeX problématique:', latex);
-    return `<span style="color: #dc2626; font-family: monospace;">[Erreur LaTeX: ${latex.substring(0, 50)}${latex.length > 50 ? '...' : ''}]</span>`;
+    return `<span style="color: #dc2626; font-family: monospace;">[LaTeX Error: ${latex.substring(0, 50)}${latex.length > 50 ? '...' : ''}]</span>`;
   }
 };

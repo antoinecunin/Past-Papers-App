@@ -37,7 +37,7 @@ describe('POST /api/files/upload', () => {
       .field('module', 'Test Module');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Fichier manquant');
+    expect(response.body.error).toContain('Missing file');
   });
 
   it('should reject non-PDF MIME type', async () => {
@@ -142,7 +142,7 @@ describe('GET /api/files/:examId/download', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('invalide');
+    expect(response.body.error).toContain('Invalid');
   });
 
   it('should return 404 for non-existent exam', async () => {
@@ -154,7 +154,7 @@ describe('GET /api/files/:examId/download', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(404);
-    expect(response.body.error).toContain('non trouvé');
+    expect(response.body.error).toContain('Exam not found');
   });
 
   it('should download PDF file', async () => {

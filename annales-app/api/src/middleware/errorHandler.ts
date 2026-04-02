@@ -21,5 +21,5 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
     return res.status(err.statusCode).json({ error: err.message, ...err.details });
   }
   console.error(err);
-  return res.status(500).json({ error: 'Erreur interne du serveur' });
+  return res.status(500).json({ error: 'Internal server error' });
 }

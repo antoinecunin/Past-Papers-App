@@ -30,12 +30,12 @@ class ExamService {
    */
   async findById(id: string): Promise<ExamData> {
     if (!Types.ObjectId.isValid(id)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const exam = await Exam.findById(id).lean();
     if (!exam) {
-      throw ServiceError.notFound('Examen non trouvé');
+      throw ServiceError.notFound('Exam not found');
     }
 
     return exam as ExamData;
@@ -49,34 +49,34 @@ class ExamService {
    */
   async delete(id: string, userId: string, isAdmin: boolean): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const exam = await Exam.findById(id);
     if (!exam) {
-      throw ServiceError.notFound('Examen non trouvé');
+      throw ServiceError.notFound('Exam not found');
     }
 
     // Vérifier les permissions (propriétaire ou admin)
     const isOwner = exam.uploadedBy.toString() === userId;
     if (!isOwner && !isAdmin) {
-      throw ServiceError.forbidden('Vous ne pouvez supprimer que vos propres examens');
+      throw ServiceError.forbidden('You can only delete your own exams');
     }
 
     // Supprimer le fichier de S3
     try {
       await deleteFile(exam.fileKey);
     } catch (s3Error) {
-      console.error('Erreur suppression S3:', s3Error);
+      console.error('S3 deletion error:', s3Error);
       // On continue même si la suppression S3 échoue
     }
 
     // Supprimer tous les commentaires associés
     try {
       const deletedAnswers = await AnswerModel.deleteMany({ examId: new Types.ObjectId(id) });
-      console.log(`Suppression de ${deletedAnswers.deletedCount} commentaires pour l'examen ${id}`);
+      console.log(`Deleting ${deletedAnswers.deletedCount} comments for exam ${id}`);
     } catch (answerError) {
-      console.error('Erreur suppression commentaires:', answerError);
+      console.error('Comment deletion error:', answerError);
       // On continue même si la suppression des commentaires échoue
     }
 

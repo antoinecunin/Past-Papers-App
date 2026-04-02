@@ -26,25 +26,25 @@ export const authMiddleware = async (
       || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : null);
 
     if (!token) {
-      res.status(401).json({ error: 'Token manquant' });
+      res.status(401).json({ error: 'Missing token' });
       return;
     }
     const payload: JwtPayload = AuthUtils.verifyToken(token);
 
     const user = await UserModel.findById(payload.userId).select('-password');
     if (!user) {
-      res.status(401).json({ error: 'Utilisateur non trouvé' });
+      res.status(401).json({ error: 'User not found' });
       return;
     }
 
     if (!user.isVerified) {
-      res.status(401).json({ error: 'Email non vérifié' });
+      res.status(401).json({ error: 'Email not verified' });
       return;
     }
 
     // Vérifier que le token n'a pas été révoqué (version mismatch)
     if (payload.tokenVersion !== undefined && payload.tokenVersion !== (user.tokenVersion ?? 0)) {
-      res.status(401).json({ error: 'Session expirée, veuillez vous reconnecter' });
+      res.status(401).json({ error: 'Session expired, please log in again' });
       return;
     }
 
@@ -61,7 +61,7 @@ export const authMiddleware = async (
 
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Token invalide' });
+    res.status(401).json({ error: 'Invalid token' });
   }
 };
 
@@ -141,7 +141,7 @@ export const requireAdmin = (
   next: NextFunction
 ): void => {
   if (!AuthorizationUtils.isAdmin(req.user)) {
-    res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+    res.status(403).json({ error: 'Admin access required' });
     return;
   }
   next();

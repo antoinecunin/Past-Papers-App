@@ -39,7 +39,7 @@ export async function downloadFile(key: string) {
   const response = await s3.send(command);
 
   if (!response.Body) {
-    throw new Error('Fichier non trouvé dans S3');
+    throw new Error('File not found in S3');
   }
 
   const stream = response.Body as Readable;

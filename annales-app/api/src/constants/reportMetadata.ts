@@ -6,13 +6,13 @@ import { ReportType, ReportReason, ReportStatus } from '../models/Report.js';
 export const REPORT_TYPE_METADATA = {
   [ReportType.EXAM]: {
     value: ReportType.EXAM,
-    label: 'Examen',
-    description: 'Signaler un examen inapproprié',
+    label: 'Exam',
+    description: 'Report an inappropriate exam',
   },
   [ReportType.COMMENT]: {
     value: ReportType.COMMENT,
-    label: 'Commentaire',
-    description: 'Signaler un commentaire inapproprié',
+    label: 'Comment',
+    description: 'Report an inappropriate comment',
   },
 } as const;
 
@@ -23,46 +23,46 @@ export const REPORT_REASON_METADATA = {
   // Raisons pour commentaires
   [ReportReason.INAPPROPRIATE_CONTENT]: {
     value: ReportReason.INAPPROPRIATE_CONTENT,
-    label: 'Contenu inapproprié',
-    description: 'Contenu offensant, vulgaire ou discriminatoire',
+    label: 'Inappropriate content',
+    description: 'Offensive, vulgar, or discriminatory content',
     forTypes: ['comment'],
   },
   [ReportReason.SPAM]: {
     value: ReportReason.SPAM,
-    label: 'Spam ou publicité',
-    description: 'Contenu publicitaire ou répétitif non sollicité',
+    label: 'Spam or advertising',
+    description: 'Unsolicited advertising or repetitive content',
     forTypes: ['comment'],
   },
   [ReportReason.OFF_TOPIC]: {
     value: ReportReason.OFF_TOPIC,
-    label: 'Hors-sujet',
-    description: "Contenu qui n'a pas sa place ici",
+    label: 'Off-topic',
+    description: 'Content that does not belong here',
     forTypes: ['comment'],
   },
   // Raisons pour examens
   [ReportReason.WRONG_EXAM]: {
     value: ReportReason.WRONG_EXAM,
-    label: 'Mauvais examen',
-    description: 'Année ou module incorrect',
+    label: 'Wrong exam',
+    description: 'Incorrect year or module',
     forTypes: ['exam'],
   },
   [ReportReason.POOR_QUALITY]: {
     value: ReportReason.POOR_QUALITY,
-    label: 'Qualité insuffisante',
-    description: 'Document illisible ou incomplet',
+    label: 'Poor quality',
+    description: 'Unreadable or incomplete document',
     forTypes: ['exam'],
   },
   [ReportReason.DUPLICATE]: {
     value: ReportReason.DUPLICATE,
-    label: 'Doublon',
-    description: 'Cet examen existe déjà',
+    label: 'Duplicate',
+    description: 'This exam already exists',
     forTypes: ['exam'],
   },
   // Raison commune
   [ReportReason.OTHER]: {
     value: ReportReason.OTHER,
-    label: 'Autre',
-    description: 'Autre raison (précisez dans la description)',
+    label: 'Other',
+    description: 'Other reason (please specify in the description)',
     forTypes: ['exam', 'comment'],
   },
 } as const;
@@ -73,18 +73,18 @@ export const REPORT_REASON_METADATA = {
 export const REPORT_STATUS_METADATA = {
   [ReportStatus.PENDING]: {
     value: ReportStatus.PENDING,
-    label: 'En attente',
-    description: 'Signalement en attente de traitement',
+    label: 'Pending',
+    description: 'Report awaiting review',
   },
   [ReportStatus.APPROVED]: {
     value: ReportStatus.APPROVED,
-    label: 'Approuvé',
-    description: 'Signalement approuvé, contenu supprimé',
+    label: 'Approved',
+    description: 'Report approved, content deleted',
   },
   [ReportStatus.REJECTED]: {
     value: ReportStatus.REJECTED,
-    label: 'Rejeté',
-    description: 'Signalement rejeté, contenu conservé',
+    label: 'Rejected',
+    description: 'Report rejected, content kept',
   },
 } as const;
 

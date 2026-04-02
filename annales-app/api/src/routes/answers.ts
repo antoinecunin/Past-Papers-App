@@ -9,29 +9,28 @@ import { CONTENT_MAX_LENGTH, isValidImageKey } from '../constants/content.js';
 
 export const router = Router();
 
-// Schémas Zod
 const contentTypeSchema = z.enum(['text', 'image', 'latex'], {
-  errorMap: () => ({ message: 'content.type doit être text, image ou latex' }),
+  errorMap: () => ({ message: 'content.type must be text, image, or latex' }),
 });
 
 const contentSchema = z
   .object(
     {
       type: contentTypeSchema,
-      data: z.string({ required_error: 'content.data requis' }),
+      data: z.string({ required_error: 'content.data is required' }),
       rendered: z.string().optional(),
     },
-    { required_error: 'content requis' }
+    { required_error: 'content is required' }
   )
-  .refine(content => content.data.trim().length > 0, { message: 'content.data requis' })
+  .refine(content => content.data.trim().length > 0, { message: 'content.data is required' })
   .refine(
     content => content.data.length <= CONTENT_MAX_LENGTH[content.type],
     content => ({
-      message: `Contenu trop long (max ${CONTENT_MAX_LENGTH[content.type].toLocaleString('fr-FR')} caractères pour le type ${content.type})`,
+      message: `Content too long (max ${CONTENT_MAX_LENGTH[content.type].toLocaleString('en-US')} characters for type ${content.type})`,
     })
   )
   .refine(content => content.type !== 'image' || isValidImageKey(content.data), {
-    message: "Clé d'image invalide. Uploadez une image via /api/files/image",
+    message: 'Invalid image key. Upload an image via /api/files/image',
   });
 
 const getAnswersQuerySchema = z.object({
@@ -39,17 +38,17 @@ const getAnswersQuerySchema = z.object({
   page: z
     .string()
     .transform(Number)
-    .pipe(z.number().int().min(1, 'page doit être un entier >= 1'))
+    .pipe(z.number().int().min(1, 'page must be an integer >= 1'))
     .optional(),
 });
 
 const createAnswerSchema = z.object({
   examId: objectIdSchema('examId'),
-  page: z.number({ required_error: 'page requis' }).int().min(1, 'page doit être un entier >= 1'),
+  page: z.number({ required_error: 'page is required' }).int().min(1, 'page must be an integer >= 1'),
   yTop: z
-    .number({ required_error: 'yTop requis' })
-    .min(0, 'yTop doit être >= 0')
-    .max(1, 'yTop doit être <= 1'),
+    .number({ required_error: 'yTop is required' })
+    .min(0, 'yTop must be >= 0')
+    .max(1, 'yTop must be <= 1'),
   content: contentSchema,
   parentId: objectIdSchema('parentId').optional(),
   mentionedUserId: objectIdSchema('mentionedUserId').optional(),
@@ -66,7 +65,7 @@ const getRepliesQuerySchema = z.object({
 
 const voteSchema = z.object({
   value: z.union([z.literal(1), z.literal(-1)], {
-    errorMap: () => ({ message: 'value doit être 1 ou -1' }),
+    errorMap: () => ({ message: 'value must be 1 or -1' }),
   }),
 });
 
@@ -74,7 +73,7 @@ const voteSchema = z.object({
  * @swagger
  * /answers:
  *   get:
- *     summary: Lister les commentaires racines d'un examen
+ *     summary: List root comments for an exam
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -84,17 +83,17 @@ const voteSchema = z.object({
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de l'examen
+ *         description: Exam ID
  *       - in: query
  *         name: page
  *         required: false
  *         schema:
  *           type: integer
  *           minimum: 1
- *         description: Numéro de page (optionnel, filtre les résultats)
+ *         description: Page number (optional, filters results)
  *     responses:
  *       200:
- *         description: Liste des commentaires racines triés par page, position Y et date de création
+ *         description: List of root comments sorted by page, Y position, and creation date
  *         content:
  *           application/json:
  *             schema:
@@ -110,7 +109,7 @@ const voteSchema = z.object({
  *                     type: integer
  *                   yTop:
  *                     type: number
- *                     description: Position Y relative (0 = haut, 1 = bas)
+ *                     description: Relative Y position (0 = top, 1 = bottom)
  *                   content:
  *                     type: object
  *                     properties:
@@ -123,11 +122,11 @@ const voteSchema = z.object({
  *                         type: string
  *                   authorId:
  *                     type: string
- *                     description: ID de l'auteur du commentaire
+ *                     description: Comment author ID
  *                   author:
  *                     type: object
  *                     nullable: true
- *                     description: Informations de l'auteur (prénom et nom)
+ *                     description: Author information (first and last name)
  *                     properties:
  *                       firstName:
  *                         type: string
@@ -136,10 +135,10 @@ const voteSchema = z.object({
  *                   parentId:
  *                     type: string
  *                     nullable: true
- *                     description: Toujours null pour les commentaires racines
+ *                     description: Always null for root comments
  *                   replyCount:
  *                     type: integer
- *                     description: Nombre de réponses dans le thread
+ *                     description: Number of replies in the thread
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -147,18 +146,18 @@ const voteSchema = z.object({
  *                     type: string
  *                     format: date-time
  *       400:
- *         description: Paramètres invalides
+ *         description: Invalid parameters
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 
 /**
  * @swagger
  * /answers:
  *   post:
- *     summary: Créer un commentaire ou une réponse sur un examen
+ *     summary: Create a comment or reply on an exam
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -172,16 +171,16 @@ const voteSchema = z.object({
  *             properties:
  *               examId:
  *                 type: string
- *                 description: ID de l'examen
+ *                 description: Exam ID
  *               page:
  *                 type: integer
  *                 minimum: 1
- *                 description: Numéro de page
+ *                 description: Page number
  *               yTop:
  *                 type: number
  *                 minimum: 0
  *                 maximum: 1
- *                 description: Position Y relative (0 = haut, 1 = bas)
+ *                 description: Relative Y position (0 = top, 1 = bottom)
  *               content:
  *                 type: object
  *                 required: [type, data]
@@ -189,22 +188,22 @@ const voteSchema = z.object({
  *                   type:
  *                     type: string
  *                     enum: [text, image, latex]
- *                     description: Type de contenu
+ *                     description: Content type
  *                   data:
  *                     type: string
- *                     description: Contenu (texte, URL image depuis imgur/ibb/postimg, ou LaTeX)
+ *                     description: Content (text, image URL from imgur/ibb/postimg, or LaTeX)
  *                   rendered:
  *                     type: string
- *                     description: HTML rendu (pour LaTeX)
+ *                     description: Rendered HTML (for LaTeX)
  *               parentId:
  *                 type: string
- *                 description: ID du commentaire parent (pour créer une réponse dans un thread)
+ *                 description: Parent comment ID (to create a reply in a thread)
  *               mentionedUserId:
  *                 type: string
- *                 description: ID de l'utilisateur mentionné (uniquement pour les réponses)
+ *                 description: Mentioned user ID (only for replies)
  *     responses:
  *       200:
- *         description: Commentaire créé
+ *         description: Comment created
  *         content:
  *           application/json:
  *             schema:
@@ -212,22 +211,22 @@ const voteSchema = z.object({
  *               properties:
  *                 id:
  *                   type: string
- *                   description: ID du commentaire créé
+ *                   description: ID of the created comment
  *       400:
- *         description: Paramètres invalides
+ *         description: Invalid parameters
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       404:
- *         description: Commentaire parent non trouvé
+ *         description: Parent comment not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 
 /**
  * @swagger
  * /answers/{id}/replies:
  *   get:
- *     summary: Lister les réponses d'un commentaire (thread)
+ *     summary: List replies to a comment (thread)
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -237,13 +236,13 @@ const voteSchema = z.object({
  *         required: true
  *         schema:
  *           type: string
- *         description: ID du commentaire parent
+ *         description: Parent comment ID
  *       - in: query
  *         name: cursor
  *         required: false
  *         schema:
  *           type: string
- *         description: ID du dernier élément chargé (pour pagination par curseur)
+ *         description: ID of the last loaded item (for cursor pagination)
  *       - in: query
  *         name: limit
  *         required: false
@@ -252,10 +251,10 @@ const voteSchema = z.object({
  *           minimum: 1
  *           maximum: 50
  *           default: 10
- *         description: Nombre de réponses à retourner
+ *         description: Number of replies to return
  *     responses:
  *       200:
- *         description: Liste des réponses paginées
+ *         description: Paginated list of replies
  *         content:
  *           application/json:
  *             schema:
@@ -289,7 +288,7 @@ const voteSchema = z.object({
  *                       author:
  *                         type: object
  *                         nullable: true
- *                         description: Informations de l'auteur (prénom et nom)
+ *                         description: Author information (first and last name)
  *                         properties:
  *                           firstName:
  *                             type: string
@@ -316,15 +315,15 @@ const voteSchema = z.object({
  *                         format: date-time
  *                 hasMore:
  *                   type: boolean
- *                   description: Indique s'il y a plus de réponses à charger
+ *                   description: Indicates if there are more replies to load
  *       400:
- *         description: Paramètres invalides
+ *         description: Invalid parameters
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       404:
- *         description: Commentaire non trouvé
+ *         description: Comment not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 
 router.get(
@@ -375,7 +374,7 @@ router.post(
  * @swagger
  * /answers/{id}/vote:
  *   post:
- *     summary: Voter sur un commentaire (upvote ou downvote)
+ *     summary: Vote on a comment (upvote or downvote)
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -384,7 +383,7 @@ router.post(
  *         name: id
  *         required: true
  *         schema: { type: string }
- *         description: ID du commentaire
+ *         description: Comment ID
  *     requestBody:
  *       required: true
  *       content:
@@ -396,10 +395,10 @@ router.post(
  *               value:
  *                 type: integer
  *                 enum: [1, -1]
- *                 description: "1 pour upvote, -1 pour downvote. Renvoyer la même valeur annule le vote."
+ *                 description: "1 for upvote, -1 for downvote. Sending the same value cancels the vote."
  *     responses:
  *       200:
- *         description: Vote enregistré
+ *         description: Vote recorded
  *         content:
  *           application/json:
  *             schema:
@@ -407,19 +406,19 @@ router.post(
  *               properties:
  *                 score:
  *                   type: integer
- *                   description: Score total du commentaire
+ *                   description: Total comment score
  *                 userVote:
  *                   type: integer
  *                   nullable: true
- *                   description: "Vote actuel de l'utilisateur (1, -1, ou null si annulé)"
+ *                   description: "Current user vote (1, -1, or null if cancelled)"
  *       400:
- *         description: Paramètres invalides
+ *         description: Invalid parameters
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       404:
- *         description: Commentaire non trouvé
+ *         description: Comment not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.post(
   '/:id/vote',
@@ -477,7 +476,7 @@ router.put(
  * @swagger
  * /answers/{id}:
  *   put:
- *     summary: Modifier un commentaire existant (propriétaire uniquement)
+ *     summary: Edit an existing comment (owner only)
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -486,7 +485,7 @@ router.put(
  *         name: id
  *         required: true
  *         schema: { type: string }
- *         description: ID du commentaire
+ *         description: Comment ID
  *     requestBody:
  *       required: true
  *       content:
@@ -502,17 +501,17 @@ router.put(
  *                   rendered: { type: string }
  *     responses:
  *       200:
- *         description: Commentaire modifié avec succès
+ *         description: Comment updated successfully
  *       400:
- *         description: ID invalide ou contenu invalide
+ *         description: Invalid ID or invalid content
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       403:
- *         description: Non autorisé (pas le propriétaire)
+ *         description: Not authorized (not the owner)
  *       404:
- *         description: Commentaire non trouvé
+ *         description: Comment not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.put(
   '/:id',
@@ -540,7 +539,7 @@ router.put(
  * @swagger
  * /answers/{id}:
  *   delete:
- *     summary: Supprimer un commentaire (propriétaire uniquement)
+ *     summary: Delete a comment (owner only)
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []
@@ -549,20 +548,20 @@ router.put(
  *         name: id
  *         required: true
  *         schema: { type: string }
- *         description: ID du commentaire
+ *         description: Comment ID
  *     responses:
  *       200:
- *         description: Commentaire supprimé avec succès
+ *         description: Comment deleted successfully
  *       400:
- *         description: ID invalide
+ *         description: Invalid ID
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       403:
- *         description: Non autorisé (pas le propriétaire)
+ *         description: Not authorized (not the owner)
  *       404:
- *         description: Commentaire non trouvé
+ *         description: Comment not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.delete(
   '/:id',
@@ -573,7 +572,7 @@ router.delete(
 
     await answerService.delete(id, req.user!.id, isAdmin);
 
-    return res.json({ success: true, message: 'Commentaire supprimé' });
+    return res.json({ success: true, message: 'Comment deleted' });
   })
 );
 

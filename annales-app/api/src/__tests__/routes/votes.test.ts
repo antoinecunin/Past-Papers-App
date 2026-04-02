@@ -53,7 +53,7 @@ describe('POST /api/answers/:id/vote', () => {
       .send({ value: 2 });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('1 ou -1');
+    expect(response.body.error).toContain('1 or -1');
   });
 
   it('should reject missing value', async () => {

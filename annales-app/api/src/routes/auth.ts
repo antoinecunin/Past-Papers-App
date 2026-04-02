@@ -265,12 +265,12 @@ router.post(
     const { token } = req.body;
 
     if (!token) {
-      return res.status(400).json({ error: 'Token manquant' });
+      return res.status(400).json({ error: 'Missing token' });
     }
 
     await authService.verifyEmail(token);
 
-    res.json({ message: 'Email vérifié avec succès' });
+    res.json({ message: 'Email verified successfully' });
   })
 );
 
@@ -311,7 +311,7 @@ router.post(
     await authService.forgotPassword(email);
 
     // Always return the same message (security)
-    res.json({ message: 'Si cet email existe, un lien de réinitialisation a été envoyé' });
+    res.json({ message: 'If this email exists, a reset link has been sent' });
   })
 );
 
@@ -353,7 +353,7 @@ router.post(
     const { token, password } = result.data;
     await authService.resetPassword(token, password);
 
-    res.json({ message: 'Mot de passe réinitialisé avec succès' });
+    res.json({ message: 'Password reset successfully' });
   })
 );
 
@@ -388,12 +388,12 @@ router.post(
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: 'Email manquant' });
+      return res.status(400).json({ error: 'Missing email' });
     }
 
     await authService.resendVerification(email);
 
-    res.json({ message: 'Email de vérification renvoyé' });
+    res.json({ message: 'Verification email resent' });
   })
 );
 
@@ -433,12 +433,12 @@ if (process.env.NODE_ENV === 'development') {
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({ error: 'Email requis' });
+        return res.status(400).json({ error: 'Email required' });
       }
 
       await authService.devVerifyUser(email);
 
-      res.json({ message: 'Utilisateur marqué comme vérifié', email });
+      res.json({ message: 'User marked as verified', email });
     })
   );
 }
@@ -524,7 +524,7 @@ router.patch(
     }
 
     const user = await authService.updateProfile(req.user!.id, result.data);
-    res.json({ message: 'Profil mis à jour', user });
+    res.json({ message: 'Profile updated', user });
   })
 );
 
@@ -574,7 +574,7 @@ router.post(
     const { currentPassword, newPassword } = result.data;
     await authService.changePassword(req.user!.id, currentPassword, newPassword);
 
-    res.json({ message: 'Mot de passe modifié avec succès' });
+    res.json({ message: 'Password changed successfully' });
   })
 );
 
@@ -630,7 +630,7 @@ router.put(
     await authService.changeEmail(req.user!.id, newEmail, password);
 
     res.json({
-      message: 'Email modifié avec succès. Veuillez vérifier votre nouvelle adresse email.',
+      message: 'Email changed successfully. Please verify your new email address.',
     });
   })
 );
@@ -720,7 +720,7 @@ router.delete(
 
     await authService.deleteAccount(req.user!.id, result.data.password);
 
-    res.json({ message: 'Compte supprimé avec succès' });
+    res.json({ message: 'Account deleted successfully' });
   })
 );
 
@@ -744,7 +744,7 @@ router.post(
   asyncHandler(async (req: AuthenticatedRequest, res) => {
     await UserModel.findByIdAndUpdate(req.user!.id, { $inc: { tokenVersion: 1 } });
     res.clearCookie(COOKIE_NAME, { path: '/' });
-    return res.json({ message: 'Déconnexion réussie' });
+    return res.json({ message: 'Logged out successfully' });
   })
 );
 

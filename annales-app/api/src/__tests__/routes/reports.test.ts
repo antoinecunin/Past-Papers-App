@@ -119,7 +119,7 @@ describe('POST /api/reports', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Type de signalement invalide');
+    expect(response.body.error).toContain('Invalid report type');
   });
 
   it('should reject invalid targetId', async () => {
@@ -135,7 +135,7 @@ describe('POST /api/reports', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('(ObjectId) invalide');
+    expect(response.body.error).toContain('Invalid targetId (ObjectId)');
   });
 
   it('should reject invalid reason', async () => {
@@ -151,7 +151,7 @@ describe('POST /api/reports', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Raison de signalement invalide');
+    expect(response.body.error).toContain('Invalid report reason');
   });
 
   it('should return 404 for non-existent exam', async () => {
@@ -168,7 +168,7 @@ describe('POST /api/reports', () => {
       });
 
     expect(response.status).toBe(404);
-    expect(response.body.error).toContain('Examen non trouvé');
+    expect(response.body.error).toContain('Exam not found');
   });
 
   it('should return 404 for non-existent comment', async () => {
@@ -185,7 +185,7 @@ describe('POST /api/reports', () => {
       });
 
     expect(response.status).toBe(404);
-    expect(response.body.error).toContain('Commentaire non trouvé');
+    expect(response.body.error).toContain('Comment not found');
   });
 
   it('should create report for exam', async () => {
@@ -294,7 +294,7 @@ describe('POST /api/reports', () => {
       .send(reportData);
 
     expect(response.status).toBe(409);
-    expect(response.body.error).toContain('déjà signalé');
+    expect(response.body.error).toContain('already reported');
   });
 });
 
@@ -320,7 +320,7 @@ describe('GET /api/reports', () => {
     const response = await request(app).get('/api/reports').set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(403);
-    expect(response.body.error).toContain('administrateurs');
+    expect(response.body.error).toContain('Admin access required');
   });
 
   it('should return reports list for admin', async () => {
@@ -499,7 +499,7 @@ describe('PUT /api/reports/:id/review', () => {
       .send({ action: 'invalid_action' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Action invalide');
+    expect(response.body.error).toContain('Invalid action');
   });
 
   it('should approve and delete content', async () => {
@@ -532,7 +532,7 @@ describe('PUT /api/reports/:id/review', () => {
       .send({ action: 'approve' });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('approuvé');
+    expect(response.body.message).toContain('approved');
 
     // Vérifier que le signalement a été mis à jour
     const updatedReport = await ReportModel.findById(report._id);
@@ -574,7 +574,7 @@ describe('PUT /api/reports/:id/review', () => {
       .send({ action: 'reject' });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('rejeté');
+    expect(response.body.message).toContain('rejected');
 
     // Vérifier que le signalement a été rejeté
     const updatedReport = await ReportModel.findById(report._id);

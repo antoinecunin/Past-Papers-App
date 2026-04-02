@@ -16,12 +16,12 @@ class VoteService {
     value: 1 | -1
   ): Promise<{ score: number; userVote: number | null }> {
     if (!Types.ObjectId.isValid(answerId)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const answer = await AnswerModel.findById(answerId);
     if (!answer) {
-      throw ServiceError.notFound('Commentaire non trouvé');
+      throw ServiceError.notFound('Comment not found');
     }
 
     const existingVote = await VoteModel.findOne({ answerId, userId });

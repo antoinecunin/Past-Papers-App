@@ -29,7 +29,7 @@ export class AdminInitService {
       // Vérifier si un admin existe déjà
       const hasAdmin = await this.hasAnyAdmin();
       if (hasAdmin) {
-        console.log('[admin-init] Admin déjà existant, initialisation ignorée');
+        console.log('[admin-init] Admin already exists, skipping initialization');
         return;
       }
 
@@ -42,7 +42,7 @@ export class AdminInitService {
       // Vérifier que toutes les variables sont définies
       if (!email || !password || !firstName || !lastName) {
         console.log(
-          '[admin-init] Variables INITIAL_ADMIN_* non définies, initialisation admin ignorée'
+          '[admin-init] INITIAL_ADMIN_* variables not set, skipping admin initialization'
         );
         return;
       }
@@ -50,7 +50,7 @@ export class AdminInitService {
       // Valider l'email
       if (!AuthUtils.isValidEmail(email)) {
         console.error(
-          `[admin-init] Email invalide ou domaine non autorisé: ${email}`
+          `[admin-init] Invalid email or unauthorized domain: ${email}`
         );
         return;
       }
@@ -58,7 +58,7 @@ export class AdminInitService {
       // Valider le mot de passe
       if (!AuthUtils.isValidPassword(password)) {
         console.error(
-          '[admin-init] Mot de passe invalide (minimum 8 caractères, avec au moins une lettre et un chiffre)'
+          '[admin-init] Invalid password (minimum 8 characters, with at least one letter and one number)'
         );
         return;
       }
@@ -67,7 +67,7 @@ export class AdminInitService {
       const existingUser = await UserModel.findOne({ email });
       if (existingUser) {
         console.log(
-          `[admin-init] Utilisateur avec email ${email} existe déjà, initialisation ignorée`
+          `[admin-init] User with email ${email} already exists, skipping initialization`
         );
         return;
       }
@@ -86,13 +86,13 @@ export class AdminInitService {
       });
 
       console.log(
-        `[admin-init] Premier utilisateur admin créé avec succès: ${admin.email}`
+        `[admin-init] First admin user created successfully: ${admin.email}`
       );
       console.log(
-        '[admin-init] Pour plus de sécurité, vous pouvez maintenant supprimer les variables INITIAL_ADMIN_* de votre .env'
+        '[admin-init] For better security, you can now remove the INITIAL_ADMIN_* variables from your .env'
       );
     } catch (error) {
-      console.error('[admin-init] Erreur lors de la création du premier admin:', error);
+      console.error('[admin-init] Error creating first admin:', error);
       // Ne pas throw l'erreur pour ne pas empêcher le démarrage de l'API
       // Si l'admin n'est pas créé, l'utilisateur devra le faire manuellement
     }

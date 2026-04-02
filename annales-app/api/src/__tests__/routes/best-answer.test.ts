@@ -96,7 +96,7 @@ describe('PUT /api/answers/:id/best', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('racines');
+    expect(response.body.error).toContain('root comments');
   });
 
   it('should return 404 for non-existent answer', async () => {

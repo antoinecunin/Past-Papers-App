@@ -70,12 +70,12 @@ class ReportService {
     if (type === ReportType.EXAM) {
       const exam = await Exam.findById(targetId);
       if (!exam) {
-        throw ServiceError.notFound('Examen non trouvé');
+        throw ServiceError.notFound('Exam not found');
       }
     } else if (type === ReportType.COMMENT) {
       const comment = await AnswerModel.findById(targetId);
       if (!comment) {
-        throw ServiceError.notFound('Commentaire non trouvé');
+        throw ServiceError.notFound('Comment not found');
       }
     }
 
@@ -92,7 +92,7 @@ class ReportService {
     } catch (error) {
       // Gestion de l'erreur de doublon (index unique)
       if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
-        throw ServiceError.conflict('Vous avez déjà signalé ce contenu');
+        throw ServiceError.conflict('You have already reported this content');
       }
       throw error;
     }
@@ -197,16 +197,16 @@ class ReportService {
     note?: string
   ): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const report = await ReportModel.findById(id);
     if (!report) {
-      throw ServiceError.notFound('Signalement non trouvé');
+      throw ServiceError.notFound('Report not found');
     }
 
     if (report.status !== ReportStatus.PENDING) {
-      throw ServiceError.badRequest('Ce signalement a déjà été traité');
+      throw ServiceError.badRequest('This report has already been reviewed');
     }
 
     // Si approuvé, supprimer le contenu signalé
@@ -218,7 +218,7 @@ class ReportService {
           try {
             await deleteFile(exam.fileKey);
           } catch (s3Error) {
-            console.error('Erreur suppression S3:', s3Error);
+            console.error('S3 deletion error:', s3Error);
           }
 
           // Supprimer les commentaires associés

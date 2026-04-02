@@ -186,7 +186,7 @@ describe('POST /api/auth/login', () => {
     });
 
     expect(response.status).toBe(401);
-    expect(response.body.error).toContain('Email ou mot de passe incorrect');
+    expect(response.body.error).toContain('Incorrect email or password');
   });
 
   it('should reject non-existent user', async () => {
@@ -216,7 +216,7 @@ describe('POST /api/auth/login', () => {
     });
 
     expect(response.status).toBe(401);
-    expect(response.body.error).toContain('Email non vérifié');
+    expect(response.body.error).toContain('Email not verified');
   });
 
   it('should return user data without sensitive fields', async () => {
@@ -260,7 +260,7 @@ describe('POST /api/auth/verify-email', () => {
     const response = await request(app).post('/api/auth/verify-email').send({ token });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('vérifié');
+    expect(response.body.message).toContain('verified');
 
     const user = await UserModel.findOne({ email: testEmail('toverify') });
     expect(user?.isVerified).toBe(true);
@@ -273,7 +273,7 @@ describe('POST /api/auth/verify-email', () => {
       .send({ token: 'invalid-token' });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('invalide ou expiré');
+    expect(response.body.error).toContain('Invalid or expired token');
   });
 
   it('should reject already verified user', async () => {
@@ -351,7 +351,7 @@ describe('POST /api/auth/forgot-password', () => {
 
     // Même message pour ne pas révéler si l'email existe
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('Si cet email existe');
+    expect(response.body.message).toContain('If this email exists');
   });
 });
 
@@ -380,7 +380,7 @@ describe('POST /api/auth/reset-password', () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('invalide ou expiré');
+    expect(response.body.error).toContain('Invalid or expired token');
   });
 
   it('should return 400 for expired token', async () => {
@@ -404,7 +404,7 @@ describe('POST /api/auth/reset-password', () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('invalide ou expiré');
+    expect(response.body.error).toContain('Invalid or expired token');
   });
 
   it('should reset password with valid token', async () => {
@@ -428,7 +428,7 @@ describe('POST /api/auth/reset-password', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('réinitialisé');
+    expect(response.body.message).toContain('reset successfully');
 
     // Vérifier que le mot de passe a été changé et les tokens supprimés
     const user = await UserModel.findOne({ email: testEmail('resetvalid') });

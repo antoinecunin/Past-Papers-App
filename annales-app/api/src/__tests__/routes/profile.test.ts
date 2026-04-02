@@ -120,7 +120,7 @@ describe('PATCH /api/auth/profile', () => {
       .send({ firstName: 'NewFirst' });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Profil mis à jour');
+    expect(response.body).toHaveProperty('message', 'Profile updated');
     expect(response.body.user).toHaveProperty('firstName', 'NewFirst');
     expect(response.body.user).toHaveProperty('lastName', 'Update');
 
@@ -236,7 +236,7 @@ describe('POST /api/auth/change-password', () => {
       });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('modifié');
+    expect(response.body.message).toContain('changed successfully');
 
     // Vérifier qu'on peut se connecter avec le nouveau mot de passe
     const loginResponse = await request(app).post('/api/auth/login').send({
@@ -258,7 +258,7 @@ describe('POST /api/auth/change-password', () => {
       });
 
     expect(response.status).toBe(401);
-    expect(response.body.error).toContain('actuel incorrect');
+    expect(response.body.error).toContain('Incorrect current password');
   });
 
   it('should reject weak new password', async () => {
@@ -354,7 +354,7 @@ describe('DELETE /api/auth/account', () => {
       .send({ password: 'deleteMe123' });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('supprimé');
+    expect(response.body.message).toContain('deleted successfully');
 
     // Vérifier que l'utilisateur n'existe plus
     const user = await UserModel.findById(testUser._id);
@@ -443,7 +443,7 @@ describe('DELETE /api/auth/account', () => {
       .send({ password: 'wrongPassword123' });
 
     expect(response.status).toBe(401);
-    expect(response.body.error).toContain('incorrect');
+    expect(response.body.error).toContain('Incorrect password');
 
     // Vérifier que l'utilisateur existe toujours
     const user = await UserModel.findById(testUser._id);
@@ -627,7 +627,7 @@ describe('PUT /api/auth/email', () => {
       });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('Email modifié');
+    expect(response.body.message).toContain('Email changed successfully');
 
     // Vérifier que l'email a été changé
     const user = await UserModel.findById(testUser._id);
@@ -688,7 +688,7 @@ describe('PUT /api/auth/email', () => {
       });
 
     expect(response.status).toBe(401);
-    expect(response.body.error).toContain('incorrect');
+    expect(response.body.error).toContain('Incorrect password');
 
     // Vérifier que l'email n'a pas changé
     const user = await UserModel.findById(testUser._id);
@@ -714,7 +714,7 @@ describe('PUT /api/auth/email', () => {
       });
 
     expect(response.status).toBe(409);
-    expect(response.body.error).toContain('déjà utilisée');
+    expect(response.body.error).toContain('already in use');
   });
 
   it('should return 400 for missing fields', async () => {

@@ -113,7 +113,7 @@ describe('GET /api/exams/:id', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('ID invalide');
+    expect(response.body.error).toContain('Invalid ID');
   });
 
   it('should return 404 for non-existent exam', async () => {
@@ -125,7 +125,7 @@ describe('GET /api/exams/:id', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(404);
-    expect(response.body.error).toContain('Examen non trouvé');
+    expect(response.body.error).toContain('Exam not found');
   });
 });
 
@@ -155,7 +155,7 @@ describe('DELETE /api/exams/:id', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toContain('supprimé');
+    expect(response.body.message).toContain('deleted');
 
     // Vérifier que l'examen a été supprimé
     const deletedExam = await ExamModel.findById(exam._id);
@@ -192,7 +192,7 @@ describe('DELETE /api/exams/:id', () => {
       .set('Authorization', `Bearer ${otherToken}`);
 
     expect(response.status).toBe(403);
-    expect(response.body.error).toContain('propres examens');
+    expect(response.body.error).toContain('only delete your own exams');
 
     // Vérifier que l'examen n'a pas été supprimé
     const stillExists = await ExamModel.findById(exam._id);

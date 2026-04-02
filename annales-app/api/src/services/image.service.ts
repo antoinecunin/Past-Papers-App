@@ -13,13 +13,13 @@ class ImageService {
    */
   async processAndUpload(buffer: Buffer): Promise<string> {
     if (buffer.length > MAX_INPUT_SIZE) {
-      throw new Error('Image trop volumineuse (max 5 Mo)');
+      throw new Error('Image too large (max 5 MB)');
     }
 
     // Valider le format via magic bytes (sharp parse le header)
     const metadata = await sharp(buffer).metadata();
     if (!metadata.format || !ALLOWED_FORMATS.has(metadata.format)) {
-      throw new Error("Format d'image non supporté");
+      throw new Error('Unsupported image format');
     }
 
     // Convertir en WebP, auto-rotate depuis EXIF puis strip metadata

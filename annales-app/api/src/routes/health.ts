@@ -4,11 +4,11 @@ export const router = Router();
  * @swagger
  * /health:
  *   get:
- *     summary: Vérifier l'état de l'API
+ *     summary: Check the API status
  *     tags: [Health]
  *     responses:
  *       200:
- *         description: Service en fonctionnement
+ *         description: Service is running
  *         content:
  *           application/json:
  *             schema:

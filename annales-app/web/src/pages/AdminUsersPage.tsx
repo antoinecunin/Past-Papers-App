@@ -116,10 +116,10 @@ export default function AdminUsersPage() {
         );
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Erreur lors du changement de permission');
+        alert(errorData.error || 'Error changing permission');
       }
     } catch {
-      alert('Erreur réseau');
+      alert('Network error');
     } finally {
       setActionLoading(null);
     }
@@ -341,7 +341,7 @@ export default function AdminUsersPage() {
                           className={`w-8 h-5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
                             (u.canComment ?? true) ? 'bg-green-500' : 'bg-red-400'
                           }`}
-                          title={(u.canComment ?? true) ? 'Désactiver les commentaires' : 'Réactiver les commentaires'}
+                          title={(u.canComment ?? true) ? 'Disable commenting' : 'Enable commenting'}
                         >
                           <span className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
                             (u.canComment ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'
@@ -359,7 +359,7 @@ export default function AdminUsersPage() {
                           className={`w-8 h-5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
                             (u.canUpload ?? true) ? 'bg-green-500' : 'bg-red-400'
                           }`}
-                          title={(u.canUpload ?? true) ? "Désactiver l'upload" : "Réactiver l'upload"}
+                          title={(u.canUpload ?? true) ? 'Disable upload' : 'Enable upload'}
                         >
                           <span className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
                             (u.canUpload ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'

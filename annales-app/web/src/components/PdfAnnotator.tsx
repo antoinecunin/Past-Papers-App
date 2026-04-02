@@ -392,7 +392,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Erreur lors de l'upload de l'image");
+        throw new Error(err.error || 'Image upload failed');
       }
       const { key } = await res.json();
       return key;

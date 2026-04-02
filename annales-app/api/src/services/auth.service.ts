@@ -91,18 +91,18 @@ class AuthService {
     // Trouver l'utilisateur
     const user = await UserModel.findOne({ email });
     if (!user) {
-      throw ServiceError.unauthorized('Email ou mot de passe incorrect');
+      throw ServiceError.unauthorized('Incorrect email or password');
     }
 
     // Vérifier le mot de passe
     const isValidPassword = await AuthUtils.comparePassword(password, user.password);
     if (!isValidPassword) {
-      throw ServiceError.unauthorized('Email ou mot de passe incorrect');
+      throw ServiceError.unauthorized('Incorrect email or password');
     }
 
     // Vérifier que l'email est vérifié
     if (!user.isVerified) {
-      throw new ServiceError('Email non vérifié. Vérifiez votre boîte mail.', 401, {
+      throw new ServiceError('Email not verified. Please check your inbox.', 401, {
         requiresVerification: true,
       });
     }
@@ -137,7 +137,7 @@ class AuthService {
     });
 
     if (!user) {
-      throw ServiceError.badRequest('Token invalide ou expiré');
+      throw ServiceError.badRequest('Invalid or expired token');
     }
 
     user.isVerified = true;
@@ -177,7 +177,7 @@ class AuthService {
     });
 
     if (!user) {
-      throw ServiceError.badRequest('Token invalide ou expiré');
+      throw ServiceError.badRequest('Invalid or expired token');
     }
 
     const hashedPassword = await AuthUtils.hashPassword(newPassword);
@@ -194,11 +194,11 @@ class AuthService {
   async resendVerification(email: string): Promise<void> {
     const user = await UserModel.findOne({ email });
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     if (user.isVerified) {
-      throw ServiceError.badRequest('Email déjà vérifié');
+      throw ServiceError.badRequest('Email already verified');
     }
 
     const verificationToken = AuthUtils.generateRandomToken();
@@ -217,7 +217,7 @@ class AuthService {
   async devVerifyUser(email: string): Promise<void> {
     const user = await UserModel.findOne({ email });
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     user.isVerified = true;
@@ -232,7 +232,7 @@ class AuthService {
   async getProfile(userId: string): Promise<UserProfile> {
     const user = await UserModel.findById(userId);
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     return {
@@ -255,7 +255,7 @@ class AuthService {
   ): Promise<Omit<UserProfile, 'createdAt'>> {
     const user = await UserModel.findById(userId);
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     if (data.firstName) user.firstName = data.firstName;
@@ -283,13 +283,13 @@ class AuthService {
   ): Promise<void> {
     const user = await UserModel.findById(userId);
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     // Vérifier le mot de passe actuel
     const isValid = await AuthUtils.comparePassword(currentPassword, user.password);
     if (!isValid) {
-      throw ServiceError.unauthorized('Mot de passe actuel incorrect');
+      throw ServiceError.unauthorized('Incorrect current password');
     }
 
     // Hasher et sauvegarder le nouveau mot de passe
@@ -304,20 +304,20 @@ class AuthService {
   async changeEmail(userId: string, newEmail: string, password: string): Promise<void> {
     const user = await UserModel.findById(userId);
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     // Vérifier le mot de passe
     const isValid = await AuthUtils.comparePassword(password, user.password);
     if (!isValid) {
-      throw ServiceError.unauthorized('Mot de passe incorrect');
+      throw ServiceError.unauthorized('Incorrect password');
     }
 
     // Vérifier que le nouvel email n'est pas déjà utilisé
     const normalizedEmail = newEmail.toLowerCase().trim();
     const existingUser = await UserModel.findOne({ email: normalizedEmail });
     if (existingUser && existingUser._id.toString() !== userId) {
-      throw ServiceError.conflict('Cette adresse email est déjà utilisée');
+      throw ServiceError.conflict('This email address is already in use');
     }
 
     // Mettre à jour l'email et réinitialiser la vérification
@@ -340,7 +340,7 @@ class AuthService {
   async exportUserData(userId: string): Promise<object> {
     const user = await UserModel.findById(userId);
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     // 1. Données du profil
@@ -393,13 +393,13 @@ class AuthService {
   async deleteAccount(userId: string, password: string): Promise<void> {
     const user = await UserModel.findById(userId);
     if (!user) {
-      throw ServiceError.notFound('Utilisateur non trouvé');
+      throw ServiceError.notFound('User not found');
     }
 
     // Vérifier le mot de passe
     const isValid = await AuthUtils.comparePassword(password, user.password);
     if (!isValid) {
-      throw ServiceError.unauthorized('Mot de passe incorrect');
+      throw ServiceError.unauthorized('Incorrect password');
     }
 
     // 1. Anonymiser les examens (on garde le contenu)

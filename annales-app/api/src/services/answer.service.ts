@@ -83,12 +83,12 @@ class AnswerService {
     userId?: string
   ): Promise<{ replies: ReplyWithAuthor[]; hasMore: boolean }> {
     if (!Types.ObjectId.isValid(parentId)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const parent = await AnswerModel.findById(parentId);
     if (!parent) {
-      throw ServiceError.notFound('Commentaire non trouvé');
+      throw ServiceError.notFound('Comment not found');
     }
 
     const filter: Record<string, unknown> = { parentId: new Types.ObjectId(parentId) };
@@ -136,25 +136,25 @@ class AnswerService {
     if (parentId) {
       const parent = await AnswerModel.findById(parentId);
       if (!parent) {
-        throw ServiceError.notFound('Commentaire parent non trouvé');
+        throw ServiceError.notFound('Parent comment not found');
       }
 
       // Pas de réponse à une réponse (un seul niveau de nesting)
       if (parent.parentId) {
         throw ServiceError.badRequest(
-          'Impossible de répondre à une réponse (un seul niveau autorisé)'
+          'Cannot reply to a reply (only one level of nesting allowed)'
         );
       }
 
       // Le parent doit appartenir au même examen
       if (parent.examId.toString() !== examId) {
-        throw ServiceError.badRequest("Le commentaire parent n'appartient pas au même examen");
+        throw ServiceError.badRequest('Parent comment does not belong to the same exam');
       }
     }
 
     // Validation de mentionedUserId
     if (mentionedUserId && !parentId) {
-      throw ServiceError.badRequest('mentionedUserId ne peut être utilisé que pour les réponses');
+      throw ServiceError.badRequest('mentionedUserId can only be used for replies');
     }
 
     const docData = {
@@ -183,18 +183,18 @@ class AnswerService {
    */
   async update(id: string, data: UpdateAnswerData, userId: string): Promise<Answer> {
     if (!Types.ObjectId.isValid(id)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const existingAnswer = await AnswerModel.findById(id);
     if (!existingAnswer) {
-      throw ServiceError.notFound('Commentaire non trouvé');
+      throw ServiceError.notFound('Comment not found');
     }
 
     // Seul le propriétaire peut modifier (pas les admins)
     const isOwner = existingAnswer.authorId?.toString() === userId;
     if (!isOwner) {
-      throw ServiceError.forbidden('Vous ne pouvez modifier que vos propres commentaires');
+      throw ServiceError.forbidden('You can only edit your own comments');
     }
 
     const { content } = data;
@@ -224,16 +224,16 @@ class AnswerService {
    */
   async toggleBestAnswer(id: string): Promise<{ isBestAnswer: boolean }> {
     if (!Types.ObjectId.isValid(id)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const answer = await AnswerModel.findById(id);
     if (!answer) {
-      throw ServiceError.notFound('Commentaire non trouvé');
+      throw ServiceError.notFound('Comment not found');
     }
 
     if (answer.parentId) {
-      throw ServiceError.badRequest('Seuls les commentaires racines peuvent être marqués');
+      throw ServiceError.badRequest('Only root comments can be marked as best answer');
     }
 
     answer.isBestAnswer = !answer.isBestAnswer;
@@ -249,18 +249,18 @@ class AnswerService {
    */
   async delete(id: string, userId: string, isAdmin: boolean): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
-      throw ServiceError.badRequest('ID invalide');
+      throw ServiceError.badRequest('Invalid ID');
     }
 
     const existingAnswer = await AnswerModel.findById(id);
     if (!existingAnswer) {
-      throw ServiceError.notFound('Commentaire non trouvé');
+      throw ServiceError.notFound('Comment not found');
     }
 
     // Propriétaire ou admin peut supprimer
     const isOwner = existingAnswer.authorId?.toString() === userId;
     if (!isOwner && !isAdmin) {
-      throw ServiceError.forbidden('Vous ne pouvez supprimer que vos propres commentaires');
+      throw ServiceError.forbidden('You can only delete your own comments');
     }
 
     // Cascade delete des réponses, votes et images si c'est un commentaire racine

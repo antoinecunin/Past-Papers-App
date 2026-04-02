@@ -9,13 +9,13 @@ export const router = Router();
  * @swagger
  * /exams:
  *   get:
- *     summary: Lister tous les examens disponibles
+ *     summary: List all available exams
  *     tags: [Exams]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Liste des examens triés par date de création (plus récent en premier)
+ *         description: List of exams sorted by creation date (newest first)
  *         content:
  *           application/json:
  *             schema:
@@ -33,12 +33,12 @@ export const router = Router();
  *                     type: string
  *                   fileKey:
  *                     type: string
- *                     description: Chemin S3 du fichier PDF
+ *                     description: S3 path to the PDF file
  *                   pages:
  *                     type: integer
  *                   uploadedBy:
  *                     type: string
- *                     description: ID de l'utilisateur qui a uploadé
+ *                     description: ID of the user who uploaded
  *                   createdAt:
  *                     type: string
  *                     format: date-time
@@ -46,9 +46,9 @@ export const router = Router();
  *                     type: string
  *                     format: date-time
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.get(
   '/',
@@ -63,7 +63,7 @@ router.get(
  * @swagger
  * /exams/{id}:
  *   get:
- *     summary: Récupérer un examen par son ID
+ *     summary: Get an exam by ID
  *     tags: [Exams]
  *     security:
  *       - bearerAuth: []
@@ -73,10 +73,10 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de l'examen (ObjectId MongoDB)
+ *         description: Exam ID (MongoDB ObjectId)
  *     responses:
  *       200:
- *         description: Examen trouvé
+ *         description: Exam found
  *         content:
  *           application/json:
  *             schema:
@@ -92,12 +92,12 @@ router.get(
  *                   type: string
  *                 fileKey:
  *                   type: string
- *                   description: Chemin S3 du fichier PDF
+ *                   description: S3 path to the PDF file
  *                 pages:
  *                   type: integer
  *                 uploadedBy:
  *                   type: string
- *                   description: ID de l'utilisateur qui a uploadé
+ *                   description: ID of the user who uploaded
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -105,13 +105,13 @@ router.get(
  *                   type: string
  *                   format: date-time
  *       400:
- *         description: ID invalide
+ *         description: Invalid ID
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       404:
- *         description: Examen non trouvé
+ *         description: Exam not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.get(
   '/:id',
@@ -127,7 +127,7 @@ router.get(
  * @swagger
  * /exams/{id}:
  *   delete:
- *     summary: Supprimer un examen (propriétaire ou admin)
+ *     summary: Delete an exam (owner or admin)
  *     tags: [Exams]
  *     security:
  *       - bearerAuth: []
@@ -137,20 +137,20 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de l'examen
+ *         description: Exam ID
  *     responses:
  *       200:
- *         description: Examen supprimé avec succès
+ *         description: Exam deleted successfully
  *       400:
- *         description: ID invalide
+ *         description: Invalid ID
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       403:
- *         description: Non autorisé (pas le propriétaire)
+ *         description: Not authorized (not the owner)
  *       404:
- *         description: Examen non trouvé
+ *         description: Exam not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.delete(
   '/:id',
@@ -161,6 +161,6 @@ router.delete(
 
     await examService.delete(id, req.user!.id, isAdmin);
 
-    res.json({ message: 'Examen supprimé avec succès' });
+    res.json({ message: 'Exam deleted successfully' });
   })
 );

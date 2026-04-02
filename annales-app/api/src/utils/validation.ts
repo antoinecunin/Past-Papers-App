@@ -8,6 +8,6 @@ import { Types } from 'mongoose';
 export const objectIdSchema = (field: string) =>
   z
     .string({
-      required_error: `${field} (ObjectId) requis`,
+      required_error: `${field} (ObjectId) is required`,
     })
-    .refine(val => Types.ObjectId.isValid(val), { message: `${field} (ObjectId) invalide` });
+    .refine(val => Types.ObjectId.isValid(val), { message: `Invalid ${field} (ObjectId)` });

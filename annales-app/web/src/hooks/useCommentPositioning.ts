@@ -75,16 +75,16 @@ export function useCommentPositioning(
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Erreur lors de la création du commentaire');
+          throw new Error(errorData.error || 'Error creating comment');
         }
 
         setPendingPosition(null);
         onCommentAdded();
       } catch (error) {
-        console.error('Erreur lors de la création du commentaire:', error);
-        const message = error instanceof Error ? error.message : 'Erreur lors de la création du commentaire';
+        console.error('Error creating comment:', error);
+        const message = error instanceof Error ? error.message : 'Error creating comment';
         await Swal.fire({
-          title: 'Erreur',
+          title: 'Error',
           text: message,
           icon: 'error',
           confirmButtonColor: '#ef4444',

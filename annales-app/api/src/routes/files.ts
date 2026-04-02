@@ -13,13 +13,12 @@ export const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 const imageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Schémas Zod
 const currentYear = new Date().getFullYear();
 
 const uploadSchema = z.object({
   title: z
-    .string({ required_error: 'Le titre est obligatoire' })
-    .min(1, 'Le titre est obligatoire'),
+    .string({ required_error: 'Title is required' })
+    .min(1, 'Title is required'),
   year: z
     .string()
     .transform(Number)
@@ -27,12 +26,12 @@ const uploadSchema = z.object({
       z
         .number()
         .int()
-        .min(1900, 'Année invalide')
-        .max(currentYear + 1, 'Année invalide')
+        .min(1900, 'Invalid year')
+        .max(currentYear + 1, 'Invalid year')
     ),
   module: z
-    .string({ required_error: 'Le module est obligatoire' })
-    .min(1, 'Le module est obligatoire'),
+    .string({ required_error: 'Module is required' })
+    .min(1, 'Module is required'),
 });
 
 const examIdParamSchema = z.object({
@@ -43,7 +42,7 @@ const examIdParamSchema = z.object({
  * @swagger
  * /files/upload:
  *   post:
- *     summary: Uploader un PDF d'annales
+ *     summary: Upload an exam PDF
  *     tags: [Files]
  *     security:
  *       - bearerAuth: []
@@ -58,19 +57,19 @@ const examIdParamSchema = z.object({
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: Fichier PDF à télécharger (max 50MB)
+ *                 description: PDF file to upload (max 50MB)
  *               title:
  *                 type: string
- *                 description: Titre de l'examen
+ *                 description: Exam title
  *               year:
  *                 type: integer
- *                 description: Année de l'examen (requis)
+ *                 description: Exam year (required)
  *               module:
  *                 type: string
- *                 description: Module ou matière (requis)
+ *                 description: Module or subject (required)
  *     responses:
  *       200:
- *         description: Upload réussi
+ *         description: Upload successful
  *         content:
  *           application/json:
  *             schema:
@@ -78,19 +77,19 @@ const examIdParamSchema = z.object({
  *               properties:
  *                 id:
  *                   type: string
- *                   description: ID de l'examen créé
+ *                   description: ID of the created exam
  *                 key:
  *                   type: string
  *                 pages:
  *                   type: integer
  *       400:
- *         description: Fichier manquant ou invalide
+ *         description: Missing or invalid file
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       413:
- *         description: Fichier trop volumineux (>50MB)
+ *         description: File too large (>50MB)
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.post(
   '/upload',
@@ -101,12 +100,12 @@ router.post(
       return res.status(403).json({ error: 'Your upload permission has been revoked' });
     }
 
-    if (!req.file) return res.status(400).json({ error: 'Fichier manquant' });
+    if (!req.file) return res.status(400).json({ error: 'Missing file' });
 
     // Validation du type MIME
     const ALLOWED_MIME_TYPES = ['application/pdf'];
     if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype)) {
-      return res.status(400).json({ error: 'Seuls les fichiers PDF sont acceptés' });
+      return res.status(400).json({ error: 'Only PDF files are accepted' });
     }
 
     // Validation des champs avec Zod
@@ -123,7 +122,7 @@ router.post(
       const pdf = await PDFDocument.load(req.file.buffer);
       pages = pdf.getPageCount();
     } catch {
-      return res.status(400).json({ error: "Le fichier n'est pas un PDF valide" });
+      return res.status(400).json({ error: 'The file is not a valid PDF' });
     }
 
     const key = objectKey('exams', `${year}`, req.file.originalname.replace(/\s+/g, '_'));
@@ -145,7 +144,7 @@ router.post(
  * @swagger
  * /files/{examId}/download:
  *   get:
- *     summary: Télécharger le PDF d'un examen
+ *     summary: Download an exam PDF
  *     tags: [Files]
  *     security:
  *       - bearerAuth: []
@@ -155,10 +154,10 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: ID de l'examen
+ *         description: Exam ID
  *     responses:
  *       200:
- *         description: Fichier PDF
+ *         description: PDF file
  *         content:
  *           application/pdf:
  *             schema:
@@ -174,13 +173,13 @@ router.post(
  *               type: string
  *               example: public, max-age=3600
  *       401:
- *         description: Non authentifié
+ *         description: Not authenticated
  *       400:
- *         description: ID invalide
+ *         description: Invalid ID
  *       404:
- *         description: Examen non trouvé
+ *         description: Exam not found
  *       500:
- *         description: Erreur serveur
+ *         description: Server error
  */
 router.get(
   '/:examId/download',
@@ -195,7 +194,7 @@ router.get(
 
     const exam = await Exam.findById(examId);
     if (!exam) {
-      return res.status(404).json({ error: 'Examen non trouvé' });
+      return res.status(404).json({ error: 'Exam not found' });
     }
 
     const { stream, contentType, contentLength } = await downloadFile(exam.fileKey);
@@ -211,9 +210,9 @@ router.get(
     stream.pipe(res);
 
     stream.on('error', error => {
-      console.error('Erreur stream S3:', error);
+      console.error('S3 stream error:', error);
       if (!res.headersSent) {
-        res.status(500).json({ error: 'Erreur lors du téléchargement' });
+        res.status(500).json({ error: 'Error during download' });
       }
     });
   })
@@ -269,11 +268,11 @@ router.post(
     }
 
     if (!req.file) {
-      return res.status(400).json({ error: 'Image manquante' });
+      return res.status(400).json({ error: 'Missing image' });
     }
 
     if (!req.file.mimetype.startsWith('image/')) {
-      return res.status(400).json({ error: 'Seuls les fichiers image sont acceptés' });
+      return res.status(400).json({ error: 'Only image files are accepted' });
     }
 
     const key = await imageService.processAndUpload(req.file.buffer);
@@ -308,7 +307,7 @@ router.get(
     const { filename } = req.params;
 
     if (!IMAGE_KEY_PATTERN.test(filename)) {
-      return res.status(400).json({ error: 'Nom de fichier invalide' });
+      return res.status(400).json({ error: 'Invalid filename' });
     }
 
     const key = objectKey('images', filename);
@@ -326,13 +325,13 @@ router.get(
       stream.pipe(res);
 
       stream.on('error', error => {
-        console.error('Erreur stream image:', error);
+        console.error('Image stream error:', error);
         if (!res.headersSent) {
-          res.status(500).json({ error: 'Erreur lors du téléchargement' });
+          res.status(500).json({ error: 'Error during download' });
         }
       });
     } catch {
-      return res.status(404).json({ error: 'Image non trouvée' });
+      return res.status(404).json({ error: 'Image not found' });
     }
   })
 );
