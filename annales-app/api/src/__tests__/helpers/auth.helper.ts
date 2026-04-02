@@ -46,6 +46,7 @@ export async function createAuthenticatedUser(
     {
       userId: user._id.toString(),
       email: user.email,
+      tokenVersion: 0,
     },
     JWT_SECRET,
     { expiresIn: '7d' }
