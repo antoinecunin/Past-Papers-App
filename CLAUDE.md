@@ -4,7 +4,7 @@ Self-hosted exam archive for universities — PDF upload, annotations (text/imag
 
 Stack: Docker Compose, Nginx, React 19, Express, MongoDB, Garage S3.
 
-See @annales-app/README.md for setup and architecture.
+See @README.md for setup and architecture.
 
 ## Commands
 
