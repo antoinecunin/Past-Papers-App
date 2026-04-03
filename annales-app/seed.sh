@@ -6,7 +6,7 @@
 #
 # This script runs the Node.js seeding inside the API container to:
 # - Create test users
-# - Upload exam PDFs to MinIO
+# - Upload exam PDFs to Garage (S3)
 # - Create test reports
 
 set -euo pipefail

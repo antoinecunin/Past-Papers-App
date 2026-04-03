@@ -165,7 +165,7 @@ export default function PrivacyPage() {
               <ul className="space-y-2 list-disc list-inside text-secondary">
                 <li>
                   <strong>Hosting:</strong> our servers are self-hosted. We use MongoDB for the
-                  database and MinIO for PDF file storage
+                  database and Garage for file storage
                 </li>
                 <li>
                   <strong>Email service:</strong> an SMTP provider for sending verification and
