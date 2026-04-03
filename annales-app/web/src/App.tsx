@@ -342,8 +342,8 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       {shouldShowNavigation && (
         <nav className="bg-white shadow-sm border-b p-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-6">
+          <div className="max-w-6xl mx-auto flex items-center justify-end gap-4">
+            <div className="flex items-center gap-4 mr-auto">
               <h1 className="text-lg font-semibold text-gray-900">{name}</h1>
               <div className="flex space-x-2">
                 <button
@@ -393,12 +393,12 @@ function App() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 flex-shrink-0">
               {user && (
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => navigate('profile')}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer whitespace-nowrap"
                     title={t('nav.profile_title')}
                   >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
