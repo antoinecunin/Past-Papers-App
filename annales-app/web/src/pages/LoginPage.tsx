@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, X, LogIn, UserPlus } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
 import { useInstance } from '../hooks/useInstance';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { LanguageSwitch } from '../components/LanguageSwitch';
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading, error, clearError } = useAuthStore();
@@ -34,14 +37,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitch />
+      </div>
       <div className="w-full max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
             <LogIn className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">Welcome</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">{t('auth.login.title')}</h1>
           <p className="text-sm md:text-base text-secondary">{name}</p>
         </div>
 
@@ -57,7 +63,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={clearError}
                   className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded"
-                  aria-label="Close error message"
+                  aria-label={t('common.close_error')}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -66,7 +72,7 @@ export default function LoginPage() {
 
             {/* Email */}
             <Input
-              label="Email address"
+              label={t('auth.login.email_label')}
               id="email"
               name="email"
               type="email"
@@ -79,7 +85,7 @@ export default function LoginPage() {
 
             {/* Password */}
             <Input
-              label="Password"
+              label={t('auth.login.password_label')}
               id="password"
               name="password"
               type="password"
@@ -97,7 +103,7 @@ export default function LoginPage() {
                 onClick={() => navigate('forgot-password')}
                 className="text-sm font-medium text-primary hover:text-primary-hover transition-colors hover:underline cursor-pointer"
               >
-                Forgot password?
+                {t('auth.login.forgot_password')}
               </button>
             </div>
 
@@ -112,12 +118,12 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Signing in...</span>
+                  <span>{t('auth.login.signing_in')}</span>
                 </>
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
-                  <span>Sign in</span>
+                  <span>{t('auth.login.button')}</span>
                 </>
               )}
             </Button>
@@ -130,7 +136,7 @@ export default function LoginPage() {
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 bg-white text-sm text-secondary font-medium">
-                New to the platform?
+                {t('auth.login.new_user')}
               </span>
             </div>
           </div>
@@ -144,7 +150,7 @@ export default function LoginPage() {
             onClick={() => navigate('register')}
           >
             <UserPlus className="w-5 h-5" />
-            <span>Create account</span>
+            <span>{t('auth.login.create_account')}</span>
           </Button>
         </div>
       </div>

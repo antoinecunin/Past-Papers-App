@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import ExamCard from './ExamCard';
 import { AlertCircle, FileX, Search, RotateCcw, ArrowUpDown } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
@@ -28,6 +29,7 @@ interface ExamListProps {
  * Follows best practices: state management, performance, accessibility
  */
 export default function ExamList({ onExamSelect }: ExamListProps) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { navigate } = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
@@ -63,14 +65,14 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
         setExams(data);
       } catch (err) {
         console.error('Error loading exams:', err);
-        setError('Unable to load exams. Please try again.');
+        setError(t('exams.load_error'));
       } finally {
         setLoading(false);
       }
     };
 
     loadExams();
-  }, [user, navigate]);
+  }, [user, navigate, t]);
 
   // Filtering, search and sort with useMemo for performance
   const filteredExams = useMemo(() => {
@@ -122,7 +124,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   const handleReportExam = async (examId: string) => {
     if (!user) return;
 
-    const reportData = await showReportModal('Report this exam', 'exam');
+    const reportData = await showReportModal(t('exams.card.report_title'), 'exam');
     if (!reportData) return;
 
     try {
@@ -156,7 +158,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          <span className="text-secondary">Loading exams...</span>
+          <span className="text-secondary">{t('exams.loading')}</span>
         </div>
       </div>
     );
@@ -178,10 +180,12 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
       {/* Header with statistics */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">Available exams</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">{t('exams.title')}</h1>
           <p className="text-secondary text-sm md:text-base mt-1">
-            {filteredExams.length} exam{filteredExams.length !== 1 ? 's' : ''}
-            {filteredExams.length !== exams.length && ` out of ${exams.length}`}
+            {filteredExams.length === 1
+              ? t('exams.exam_count', { count: filteredExams.length })
+              : t('exams.exam_count_plural', { count: filteredExams.length })}
+            {filteredExams.length !== exams.length && ` ${t('common.out_of')} ${exams.length}`}
           </p>
         </div>
 
@@ -191,7 +195,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
             className="flex items-center gap-2 text-primary hover:text-primary-hover text-sm font-medium transition-colors cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>Reset filters</span>
+            <span>{t('common.reset_filters')}</span>
           </button>
         )}
       </div>
@@ -204,10 +208,10 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
             <Input
               id="search"
               type="text"
-              placeholder="Search by title or module..."
+              placeholder={t('exams.search_placeholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              label="Search"
+              label={t('exams.search_label')}
             />
             <Search className="absolute right-3 top-9 w-4 h-4 text-secondary pointer-events-none" />
           </div>
@@ -218,7 +222,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
               htmlFor="year-filter"
               className="block text-sm font-medium text-secondary-dark mb-1"
             >
-              Year
+              {t('exams.year_filter')}
             </label>
             <select
               id="year-filter"
@@ -226,7 +230,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
               onChange={e => setSelectedYear(e.target.value)}
               className="w-full py-2 px-3 border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
             >
-              <option value="">All years</option>
+              <option value="">{t('exams.all_years')}</option>
               {availableYears.map(year => (
                 <option key={year} value={year}>
                   {year}
@@ -241,7 +245,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
               htmlFor="module-filter"
               className="block text-sm font-medium text-secondary-dark mb-1"
             >
-              Module
+              {t('exams.module_filter')}
             </label>
             <select
               id="module-filter"
@@ -249,7 +253,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
               onChange={e => setSelectedModule(e.target.value)}
               className="w-full py-2 px-3 border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
             >
-              <option value="">All modules</option>
+              <option value="">{t('exams.all_modules')}</option>
               {availableModules.map(module => (
                 <option key={module} value={module}>
                   {module}
@@ -261,7 +265,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
           {/* Sort */}
           <div>
             <label htmlFor="sort" className="block text-sm font-medium text-secondary-dark mb-1">
-              Sort by
+              {t('common.sort_by')}
             </label>
             <div className="flex gap-2">
               <select
@@ -270,15 +274,15 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
                 onChange={e => setSortField(e.target.value)}
                 className="flex-1 py-2 px-3 border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
               >
-                <option value="date">Date</option>
-                <option value="title">Title</option>
-                <option value="module">Module</option>
-                <option value="year">Year</option>
+                <option value="date">{t('exams.sort_date')}</option>
+                <option value="title">{t('exams.sort_title')}</option>
+                <option value="module">{t('exams.sort_module')}</option>
+                <option value="year">{t('exams.sort_year')}</option>
               </select>
               <button
                 onClick={() => setSortAsc(prev => !prev)}
                 className="px-2.5 py-2 border border-border rounded-input hover:bg-gray-50 transition-colors cursor-pointer"
-                title={sortAsc ? 'Ascending' : 'Descending'}
+                title={sortAsc ? t('common.sort_ascending') : t('common.sort_descending')}
               >
                 <ArrowUpDown className="w-4 h-4 text-secondary" />
               </button>
@@ -293,11 +297,11 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
             <FileX className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-secondary-dark mb-2">No exams found</h3>
+          <h3 className="text-lg font-semibold text-secondary-dark mb-2">{t('exams.no_results_title')}</h3>
           <p className="text-sm text-secondary">
             {exams.length === 0
-              ? 'No exams available. Start by uploading one!'
-              : 'Try adjusting your search criteria.'}
+              ? t('exams.no_exams')
+              : t('exams.no_results')}
           </p>
         </div>
       ) : (

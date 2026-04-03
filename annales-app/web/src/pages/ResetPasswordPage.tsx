@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, X, Key, CheckCircle, LogIn } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
@@ -7,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -36,15 +38,15 @@ export default function ResetPasswordPage() {
     const errors: string[] = [];
 
     if (!password) {
-      errors.push('Password is required');
+      errors.push(t('auth.reset_password.validation.password_required'));
     } else if (password.length < 8) {
-      errors.push('Password must contain at least 8 characters');
+      errors.push(t('auth.reset_password.validation.password_too_short'));
     } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
-      errors.push('Password must contain at least one letter and one number');
+      errors.push(t('auth.reset_password.validation.password_weak'));
     }
 
     if (password !== confirmPassword) {
-      errors.push('Passwords do not match');
+      errors.push(t('auth.reset_password.validation.passwords_mismatch'));
     }
 
     setValidationErrors(errors);
@@ -85,10 +87,9 @@ export default function ResetPasswordPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
                 <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Password changed</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">{t('auth.reset_password.success_title')}</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                Your password has been changed successfully. You can now sign in with your new
-                password.
+                {t('auth.reset_password.success_message')}
               </p>
               <Button
                 type="button"
@@ -98,7 +99,7 @@ export default function ResetPasswordPage() {
                 onClick={() => navigate('login')}
               >
                 <LogIn className="w-5 h-5" />
-                <span>Sign in</span>
+                <span>{t('auth.reset_password.success_button')}</span>
               </Button>
             </div>
           </div>
@@ -119,9 +120,9 @@ export default function ResetPasswordPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
             <Key className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">New password</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">{t('auth.reset_password.title')}</h1>
           <p className="text-sm md:text-base text-secondary">{name}</p>
-          <p className="text-xs md:text-sm text-secondary/80 mt-2">Choose a new secure password</p>
+          <p className="text-xs md:text-sm text-secondary/80 mt-2">{t('auth.reset_password.subtitle')}</p>
         </div>
 
         {/* Reset password card */}
@@ -146,7 +147,7 @@ export default function ResetPasswordPage() {
                     setValidationErrors([]);
                   }}
                   className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
-                  aria-label="Close error message"
+                  aria-label={t('common.close_error')}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -155,7 +156,7 @@ export default function ResetPasswordPage() {
 
             {/* New password */}
             <Input
-              label="New password"
+              label={t('auth.reset_password.password_label')}
               id="password"
               name="password"
               type="password"
@@ -164,12 +165,12 @@ export default function ResetPasswordPage() {
               value={password}
               onChange={handleInputChange(setPassword)}
               placeholder="••••••••"
-              helperText="At least 8 characters with one letter and one number"
+              helperText={t('auth.register.password_helper')}
             />
 
             {/* Confirm password */}
             <Input
-              label="Confirm password"
+              label={t('auth.reset_password.confirm_password_label')}
               id="confirmPassword"
               name="confirmPassword"
               type="password"
@@ -191,12 +192,12 @@ export default function ResetPasswordPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Changing...</span>
+                  <span>{t('auth.reset_password.changing')}</span>
                 </>
               ) : (
                 <>
                   <Key className="w-5 h-5" />
-                  <span>Change password</span>
+                  <span>{t('auth.reset_password.button')}</span>
                 </>
               )}
             </Button>
@@ -208,7 +209,7 @@ export default function ResetPasswordPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">or</span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">{t('common.or')}</span>
             </div>
           </div>
 
@@ -221,7 +222,7 @@ export default function ResetPasswordPage() {
             onClick={() => navigate('login')}
           >
             <LogIn className="w-5 h-5" />
-            <span>Back to login</span>
+            <span>{t('auth.reset_password.back_to_login')}</span>
           </Button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface VoteButtonsProps {
   answerId: string;
@@ -8,6 +9,7 @@ interface VoteButtonsProps {
 }
 
 export const VoteButtons: React.FC<VoteButtonsProps> = ({ answerId, score, userVote, onVote }) => {
+  const { t } = useTranslation();
   const [optimisticScore, setOptimisticScore] = useState<number | null>(null);
   const [optimisticVote, setOptimisticVote] = useState<number | null | undefined>(undefined);
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ export const VoteButtons: React.FC<VoteButtonsProps> = ({ answerId, score, userV
           ...arrowButtonStyle,
           color: displayVote === 1 ? '#2563eb' : '#9ca3af',
         }}
-        title="Upvote"
+        title={t('comments.vote.upvote')}
         disabled={loading}
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
@@ -95,7 +97,7 @@ export const VoteButtons: React.FC<VoteButtonsProps> = ({ answerId, score, userV
           ...arrowButtonStyle,
           color: displayVote === -1 ? '#dc2626' : '#9ca3af',
         }}
-        title="Downvote"
+        title={t('comments.vote.downvote')}
         disabled={loading}
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">

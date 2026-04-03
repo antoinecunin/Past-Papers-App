@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, X, CheckCircle, LogIn, UserPlus, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
@@ -7,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
 export default function VerifyEmailPage() {
+  const { t } = useTranslation();
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>(
     'pending'
   );
@@ -69,10 +71,10 @@ export default function VerifyEmailPage() {
                 <div className="w-8 h-8 border-2 border-info/30 border-t-info rounded-full animate-spin"></div>
               </div>
               <h3 className="text-2xl font-bold text-secondary-dark mb-3">
-                Verification in progress...
+                {t('auth.verify_email.pending_title')}
               </h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed">
-                We are verifying your email address, please wait.
+                {t('auth.verify_email.pending_message')}
               </p>
             </div>
           </div>
@@ -90,10 +92,9 @@ export default function VerifyEmailPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
                 <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Email verified!</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">{t('auth.verify_email.success_title')}</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                Your email address has been verified successfully. You can now sign in to your
-                account.
+                {t('auth.verify_email.success_message')}
               </p>
               <Button
                 type="button"
@@ -103,7 +104,7 @@ export default function VerifyEmailPage() {
                 onClick={() => navigate('login')}
               >
                 <LogIn className="w-5 h-5" />
-                <span>Sign in</span>
+                <span>{t('auth.verify_email.success_button')}</span>
               </Button>
             </div>
           </div>
@@ -122,10 +123,10 @@ export default function VerifyEmailPage() {
             <AlertCircle className="w-8 h-8 text-error" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
-            Verification problem
+            {t('auth.verify_email.error_title')}
           </h1>
           <p className="text-sm md:text-base text-secondary">
-            The verification link is invalid or has expired
+            {t('auth.verify_email.error_subtitle')}
           </p>
         </div>
 
@@ -140,7 +141,7 @@ export default function VerifyEmailPage() {
                 type="button"
                 onClick={clearError}
                 className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
-                aria-label="Close error message"
+                aria-label={t('common.close_error')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -149,18 +150,17 @@ export default function VerifyEmailPage() {
 
           <div className="text-center mb-6">
             <h3 className="text-lg font-semibold text-secondary-dark mb-2">
-              Expired or invalid link
+              {t('auth.verify_email.error_heading')}
             </h3>
             <p className="text-sm text-secondary">
-              This verification link is no longer valid. You can request a new verification link
-              below.
+              {t('auth.verify_email.error_message')}
             </p>
           </div>
 
           <form onSubmit={handleResendVerification} className="space-y-5">
             {/* Email input */}
             <Input
-              label="Email address"
+              label={t('auth.verify_email.email_label')}
               id="email"
               name="email"
               type="email"
@@ -182,12 +182,12 @@ export default function VerifyEmailPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Sending...</span>
+                  <span>{t('auth.verify_email.sending')}</span>
                 </>
               ) : (
                 <>
                   <RotateCcw className="w-5 h-5" />
-                  <span>Resend verification email</span>
+                  <span>{t('auth.verify_email.resend_button')}</span>
                 </>
               )}
             </Button>
@@ -199,7 +199,7 @@ export default function VerifyEmailPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">or</span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">{t('common.or')}</span>
             </div>
           </div>
 
@@ -213,7 +213,7 @@ export default function VerifyEmailPage() {
               onClick={() => navigate('login')}
             >
               <LogIn className="w-5 h-5" />
-              <span>Back to login</span>
+              <span>{t('auth.verify_email.back_to_login')}</span>
             </Button>
 
             <Button
@@ -224,7 +224,7 @@ export default function VerifyEmailPage() {
               onClick={() => navigate('register')}
             >
               <UserPlus className="w-5 h-5" />
-              <span>Create a new account</span>
+              <span>{t('auth.verify_email.create_account')}</span>
             </Button>
           </div>
         </div>

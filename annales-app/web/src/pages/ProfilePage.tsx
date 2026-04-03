@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   User,
   Key,
@@ -22,6 +23,7 @@ import { showSuccessToast } from '../utils/swal';
 import { apiFetch } from '../utils/api';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const {
     user,
     updateProfile,
@@ -76,7 +78,7 @@ export default function ProfilePage() {
 
     try {
       await updateProfile({ firstName, lastName });
-      showSuccessToast('Profile updated');
+      showSuccessToast(t('common.success'));
     } catch {
       // Error handled by store
     }
@@ -87,19 +89,19 @@ export default function ProfilePage() {
     const errors: string[] = [];
 
     if (!currentPassword) {
-      errors.push('Current password is required');
+      errors.push(t('auth.reset_password.validation.password_required'));
     }
 
     if (!newPassword) {
-      errors.push('New password is required');
+      errors.push(t('auth.reset_password.validation.password_required'));
     } else if (newPassword.length < 8) {
-      errors.push('New password must contain at least 8 characters');
+      errors.push(t('auth.reset_password.validation.password_too_short'));
     } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/.test(newPassword)) {
-      errors.push('Password must contain at least one letter and one number');
+      errors.push(t('auth.reset_password.validation.password_weak'));
     }
 
     if (newPassword !== confirmPassword) {
-      errors.push('Passwords do not match');
+      errors.push(t('auth.reset_password.validation.passwords_mismatch'));
     }
 
     setPasswordErrors(errors);
@@ -117,8 +119,8 @@ export default function ProfilePage() {
     try {
       await changePassword(currentPassword, newPassword);
       await Swal.fire({
-        title: 'Password changed',
-        text: 'Your password has been updated. You will be redirected to sign in again.',
+        title: t('profile.change_password.success_title'),
+        text: t('profile.change_password.success_message'),
         icon: 'success',
         confirmButtonColor: '#2563eb',
       });
@@ -142,16 +144,16 @@ export default function ProfilePage() {
     const errors: string[] = [];
 
     if (!newEmail.trim()) {
-      errors.push('New email address is required');
+      errors.push(t('auth.register.validation.email_required'));
     } else if (
       !allowedDomains.some(domain => newEmail.toLowerCase().endsWith(domain.toLowerCase()))
     ) {
       const domains = allowedDomains.join(', ');
-      errors.push(`Email must end with one of the allowed domains: ${domains}`);
+      errors.push(t('auth.register.validation.invalid_domain', { domains }));
     }
 
     if (!emailPassword) {
-      errors.push('Password is required to confirm the change');
+      errors.push(t('profile.danger_zone.password_required'));
     }
 
     setEmailErrors(errors);
@@ -181,7 +183,7 @@ export default function ProfilePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setEmailErrors([data.error || 'Error changing email']);
+        setEmailErrors([data.error || t('common.error')]);
         return;
       }
 
@@ -191,16 +193,16 @@ export default function ProfilePage() {
       setEmailErrors([]);
 
       await Swal.fire({
-        title: 'Email changed',
-        text: data.message || 'A verification email has been sent to your new address.',
+        title: t('profile.change_email.success_title'),
+        text: data.message || t('profile.change_email.success_message'),
         icon: 'success',
         confirmButtonColor: '#10b981',
       });
 
       // Log out the user so they verify their new email
       await Swal.fire({
-        title: 'Verification required',
-        text: 'You will be logged out. Please verify your new email address before signing in again.',
+        title: t('profile.change_email.verification_title'),
+        text: t('profile.change_email.verification_message'),
         icon: 'info',
         confirmButtonColor: '#3b82f6',
       });
@@ -208,7 +210,7 @@ export default function ProfilePage() {
       logout();
       navigate('login');
     } catch {
-      setEmailErrors(['Server connection error']);
+      setEmailErrors([t('common.error')]);
     }
   };
 
@@ -248,15 +250,15 @@ export default function ProfilePage() {
       window.URL.revokeObjectURL(url);
 
       await Swal.fire({
-        title: 'Export successful',
-        text: 'Your data has been exported successfully.',
+        title: t('profile.gdpr.export_success_title'),
+        text: t('profile.gdpr.export_success_message'),
         icon: 'success',
         confirmButtonColor: '#10b981',
       });
     } catch {
       await Swal.fire({
-        title: 'Error',
-        text: 'Unable to export your data.',
+        title: t('common.error'),
+        text: t('profile.gdpr.export_error'),
         icon: 'error',
         confirmButtonColor: '#ef4444',
       });
@@ -266,34 +268,34 @@ export default function ProfilePage() {
   // Delete account handler
   const handleDeleteAccount = async () => {
     const firstConfirm = await Swal.fire({
-      title: 'Delete your account?',
+      title: t('profile.danger_zone.confirm_title'),
       html: `
-        <p class="text-gray-600 mb-2">This action is <strong>irreversible</strong>.</p>
-        <p class="text-gray-600 text-sm">All your data will be deleted: exams, comments, reports.</p>
+        <p class="text-gray-600 mb-2">${t('profile.danger_zone.confirm_irreversible')}</p>
+        <p class="text-gray-600 text-sm">${t('profile.danger_zone.confirm_data_loss')}</p>
       `,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Continue',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('profile.danger_zone.confirm_continue'),
+      cancelButtonText: t('common.cancel'),
     });
 
     if (!firstConfirm.isConfirmed) return;
 
     const { value: password } = await Swal.fire({
-      title: 'Confirm deletion',
+      title: t('profile.danger_zone.confirm_password_title'),
       input: 'password',
-      inputLabel: 'Enter your password to confirm',
-      inputPlaceholder: 'Password',
+      inputLabel: t('profile.danger_zone.confirm_password_label'),
+      inputPlaceholder: t('common.password_placeholder'),
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Delete permanently',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('profile.danger_zone.confirm_password_button'),
+      cancelButtonText: t('common.cancel'),
       inputValidator: value => {
         if (!value) {
-          return 'Password is required';
+          return t('profile.danger_zone.password_required');
         }
         return null;
       },
@@ -304,8 +306,8 @@ export default function ProfilePage() {
     try {
       await deleteAccount(password);
       await Swal.fire({
-        title: 'Account deleted',
-        text: 'Your account has been deleted successfully.',
+        title: t('profile.danger_zone.success_title'),
+        text: t('profile.danger_zone.success_message'),
         icon: 'success',
         confirmButtonColor: '#10b981',
       });
@@ -313,8 +315,8 @@ export default function ProfilePage() {
     } catch {
       // Error handled by store, but show a toast
       await Swal.fire({
-        title: 'Error',
-        text: error || 'Unable to delete account',
+        title: t('common.error'),
+        text: error || t('profile.danger_zone.error'),
         icon: 'error',
         confirmButtonColor: '#ef4444',
       });
@@ -333,8 +335,8 @@ export default function ProfilePage() {
           <User className="w-7 h-7 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-secondary-dark">My profile</h1>
-          <p className="text-secondary">Manage your personal information</p>
+          <h1 className="text-2xl font-bold text-secondary-dark">{t('profile.title')}</h1>
+          <p className="text-secondary">{t('profile.subtitle')}</p>
         </div>
       </div>
 
@@ -346,31 +348,31 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
-              Account information
+              {t('profile.account_info')}
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1.5">Email</label>
+                <label className="block text-sm font-medium text-secondary mb-1.5">{t('profile.email_label')}</label>
                 <div className="px-4 py-3 bg-bg-tertiary rounded-xl text-secondary-dark border border-border">
                   {user.email}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Role</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">{t('profile.role_label')}</label>
                   <div className="px-4 py-3 bg-bg-tertiary rounded-xl text-secondary-dark border border-border flex items-center gap-2">
                     <Shield className="w-4 h-4 text-primary" />
                     {PermissionUtils.getRoleLabel(user.role)}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Status</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">{t('profile.status_label')}</label>
                   <div className="px-4 py-3 bg-bg-tertiary rounded-xl border border-border flex items-center gap-2">
                     <div
                       className={`w-2.5 h-2.5 rounded-full ${user.isVerified ? 'bg-success' : 'bg-warning'}`}
                     />
                     <span className="text-secondary-dark">
-                      {user.isVerified ? 'Verified' : 'Not verified'}
+                      {user.isVerified ? t('profile.verified') : t('profile.not_verified')}
                     </span>
                   </div>
                 </div>
@@ -382,7 +384,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
-              Edit my information
+              {t('profile.edit_info')}
             </h2>
 
             <form onSubmit={handleProfileSubmit} className="space-y-4">
@@ -402,17 +404,17 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="First name"
+                  label={t('profile.first_name_label')}
                   value={firstName}
                   onChange={e => setFirstName(e.target.value)}
-                  placeholder="Your first name"
+                  placeholder={t('profile.first_name_placeholder')}
                   required
                 />
                 <Input
-                  label="Last name"
+                  label={t('profile.last_name_label')}
                   value={lastName}
                   onChange={e => setLastName(e.target.value)}
-                  placeholder="Your last name"
+                  placeholder={t('profile.last_name_placeholder')}
                   required
                 />
               </div>
@@ -426,12 +428,12 @@ export default function ProfilePage() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Saving...
+                    {t('profile.saving')}
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Save
+                    {t('profile.save_button')}
                   </>
                 )}
               </Button>
@@ -442,7 +444,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
-              Change email address
+              {t('profile.change_email.title')}
             </h2>
 
             <form onSubmit={handleEmailSubmit} className="space-y-4">
@@ -469,34 +471,33 @@ export default function ProfilePage() {
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
                 <p className="font-medium mb-1">⚠️ Important</p>
                 <p className="text-xs leading-relaxed">
-                  After the change, you will need to verify your new email address before you can
-                  sign in again. You will be automatically logged out.
+                  {t('profile.change_email.warning')}
                 </p>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-3">
                 <label className="block text-xs font-medium text-secondary mb-1">
-                  Current email
+                  {t('profile.change_email.current_label')}
                 </label>
                 <p className="text-sm text-secondary-dark">{user?.email}</p>
               </div>
 
               <Input
-                label="New email address"
+                label={t('profile.change_email.new_label')}
                 type="email"
                 value={newEmail}
                 onChange={handleEmailInputChange(setNewEmail)}
                 placeholder={`new.address${allowedDomains[0] || '@example.com'}`}
-                helperText={`Only ${allowedDomains.join(', ')} emails are accepted`}
+                helperText={t('auth.register.email_helper', { domains: allowedDomains.join(', ') })}
                 autoComplete="email"
               />
 
               <Input
-                label="Current password (confirmation)"
+                label={t('profile.change_email.password_label')}
                 type="password"
                 value={emailPassword}
                 onChange={handleEmailInputChange(setEmailPassword)}
-                placeholder="Your current password"
+                placeholder={t('common.password_placeholder')}
                 autoComplete="current-password"
               />
 
@@ -509,12 +510,12 @@ export default function ProfilePage() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Changing...
+                    {t('profile.change_email.changing')}
                   </>
                 ) : (
                   <>
                     <Mail className="w-4 h-4" />
-                    Change email
+                    {t('profile.change_email.button')}
                   </>
                 )}
               </Button>
@@ -528,7 +529,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-4 flex items-center gap-2">
               <Key className="w-5 h-5 text-primary" />
-              Change password
+              {t('profile.change_password.title')}
             </h2>
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -556,30 +557,30 @@ export default function ProfilePage() {
               )}
 
               <Input
-                label="Current password"
+                label={t('profile.change_password.current_label')}
                 type="password"
                 value={currentPassword}
                 onChange={handlePasswordInputChange(setCurrentPassword)}
-                placeholder="Your current password"
+                placeholder={t('common.password_placeholder')}
                 autoComplete="current-password"
               />
 
               <Input
-                label="New password"
+                label={t('profile.change_password.new_label')}
                 type="password"
                 value={newPassword}
                 onChange={handlePasswordInputChange(setNewPassword)}
-                placeholder="New password"
-                helperText="At least 8 characters with one letter and one number"
+                placeholder={t('common.password_placeholder')}
+                helperText={t('auth.register.password_helper')}
                 autoComplete="new-password"
               />
 
               <Input
-                label="Confirm new password"
+                label={t('profile.change_password.confirm_label')}
                 type="password"
                 value={confirmPassword}
                 onChange={handlePasswordInputChange(setConfirmPassword)}
-                placeholder="Confirm password"
+                placeholder={t('common.password_placeholder')}
                 autoComplete="new-password"
               />
 
@@ -592,12 +593,12 @@ export default function ProfilePage() {
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Changing...
+                    {t('profile.change_password.changing')}
                   </>
                 ) : (
                   <>
                     <Key className="w-4 h-4" />
-                    Change password
+                    {t('profile.change_password.button')}
                   </>
                 )}
               </Button>
@@ -608,10 +609,10 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-border p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-secondary-dark mb-2 flex items-center gap-2">
               <Shield className="w-5 h-5" />
-              Personal data (GDPR)
+              {t('profile.gdpr.title')}
             </h2>
             <p className="text-sm text-secondary mb-4">
-              In accordance with GDPR, you can export all your data in JSON format.
+              {t('profile.gdpr.description')}
             </p>
             <div className="space-y-3">
               <Button
@@ -621,20 +622,20 @@ export default function ProfilePage() {
                 className="gap-2 w-full sm:w-auto"
               >
                 <Download className="w-4 h-4" />
-                Export my data
+                {t('profile.gdpr.export_button')}
               </Button>
               <div className="flex items-start gap-2 text-xs text-secondary">
                 <FileJson className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p>
-                  The export includes: profile, uploaded exams, comments, reports. See our{' '}
+                  {t('profile.gdpr.export_description')}{' '}
                   <button
                     type="button"
                     onClick={() => navigate('privacy')}
                     className="text-primary hover:underline cursor-pointer"
                   >
-                    Privacy Policy
+                    {t('profile.gdpr.privacy_link')}
                   </button>{' '}
-                  for more information.
+                  {t('profile.gdpr.export_more_info')}
                 </p>
               </div>
             </div>
@@ -644,10 +645,10 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-error/30 p-6 shadow-lg shadow-black/5">
             <h2 className="text-lg font-semibold text-error mb-2 flex items-center gap-2">
               <Trash2 className="w-5 h-5" />
-              Danger zone
+              {t('profile.danger_zone.title')}
             </h2>
             <p className="text-sm text-secondary mb-4">
-              Permanently delete your account and all your data.
+              {t('profile.danger_zone.description')}
             </p>
             <Button
               type="button"
@@ -657,7 +658,7 @@ export default function ProfilePage() {
               className="gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Delete my account
+              {t('profile.danger_zone.delete_button')}
             </Button>
           </div>
         </div>

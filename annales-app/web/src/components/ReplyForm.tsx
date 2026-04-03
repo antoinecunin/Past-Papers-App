@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 import { useInstance } from '../hooks/useInstance';
@@ -24,6 +25,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
   mentionLabel,
   onClearMention,
 }) => {
+  const { t } = useTranslation();
   const { primaryHoverColor } = useInstance();
   const [contentType, setContentType] = useState<ContentType>('text');
   const [data, setData] = useState('');
@@ -51,14 +53,14 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
     }
 
     if (!file.type.startsWith('image/')) {
-      setImageError('Only image files are accepted');
+      setImageError(t('comments.reply_form.file_type_error'));
       setImageFile(null);
       setImagePreview(null);
       return;
     }
 
     if (file.size > IMAGE_MAX_SIZE) {
-      setImageError(`Image too large (max ${IMAGE_MAX_SIZE / 1024 / 1024} MB)`);
+      setImageError(t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 }));
       setImageFile(null);
       setImagePreview(null);
       return;
@@ -123,7 +125,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
                 onClearMention();
               }}
               style={mentionClearButtonStyle}
-              title="Remove mention"
+              title={t('comments.reply_form.remove_mention')}
             >
               ×
             </button>
@@ -135,9 +137,9 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
         onChange={e => handleTypeChange(e.target.value as ContentType)}
         style={selectStyle}
       >
-        <option value="text">Text</option>
-        <option value="image">Image</option>
-        <option value="latex">LaTeX</option>
+        <option value="text">{t('comments.reply_form.type_text')}</option>
+        <option value="image">{t('comments.reply_form.type_image')}</option>
+        <option value="latex">{t('comments.reply_form.type_latex')}</option>
       </select>
 
       {contentType === 'image' ? (
@@ -158,7 +160,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
             value={data}
             onChange={e => setData(e.target.value)}
             placeholder={
-              contentType === 'latex' ? 'LaTeX code (e.g.: \\int_0^1 x^2 dx)' : 'Your reply...'
+              contentType === 'latex' ? t('comments.reply_form.latex_placeholder') : t('comments.reply_form.text_placeholder')
             }
             maxLength={maxLength}
             rows={2}
@@ -190,7 +192,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
             cursor: canSubmit ? 'pointer' : 'not-allowed',
           }}
         >
-          {submitting ? '...' : 'Send'}
+          {submitting ? '...' : t('comments.reply_form.send')}
         </button>
         <button
           type="button"
@@ -200,7 +202,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
           }}
           style={cancelButtonStyle}
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     </form>

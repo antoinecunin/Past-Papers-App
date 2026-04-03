@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import UploadPage from './pages/UploadPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import { LanguageSwitch } from './components/LanguageSwitch';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
@@ -37,6 +39,7 @@ interface Exam {
 }
 
 function App() {
+  const { t } = useTranslation();
   const { currentRoute, navigate, isPage, getExamId } = useRouter();
   const { user, logout } = useAuthStore();
   const { name } = useInstance();
@@ -102,7 +105,7 @@ function App() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading file:', error);
-      await showError('Error', 'Unable to download the file');
+      await showError(t('common.error'), t('exams.card.download_error'));
     }
   };
 
@@ -111,9 +114,9 @@ function App() {
     if (!selectedExam || !user) return;
 
     const confirmed = await showConfirm(
-      'Delete this exam?',
-      `"${selectedExam.title}" will be permanently deleted.`,
-      { confirmText: 'Delete', cancelText: 'Cancel' }
+      t('exams.viewer.delete_confirm'),
+      t('exams.viewer.delete_confirm_message', { title: selectedExam.title }),
+      { confirmText: t('exams.viewer.delete_confirm_button'), cancelText: t('common.cancel') }
     );
     if (!confirmed) return;
 
@@ -123,16 +126,16 @@ function App() {
       });
 
       if (response.ok) {
-        await showSuccess('Exam deleted', 'The exam has been successfully deleted.');
+        await showSuccess(t('exams.viewer.delete_success_title'), t('exams.viewer.delete_success_message'));
         navigate('exams');
         setSelectedExam(null);
       } else {
         const errorData = await response.json();
-        await showError('Error', errorData.error || 'Unable to delete the exam');
+        await showError(t('common.error'), errorData.error || t('exams.viewer.delete_error'));
       }
     } catch (error) {
       console.error('Error deleting exam:', error);
-      await showError('Error', 'An error occurred while deleting');
+      await showError(t('common.error'), t('exams.viewer.delete_error_generic'));
     }
   };
 
@@ -140,7 +143,7 @@ function App() {
   const handleReportExam = async () => {
     if (!selectedExam || !user) return;
 
-    const reportData = await showReportModal('Report this exam', 'exam');
+    const reportData = await showReportModal(t('exams.viewer.report_title'), 'exam');
     if (!reportData) return;
 
     try {
@@ -228,7 +231,7 @@ function App() {
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                <span className="text-secondary">Loading exam...</span>
+                <span className="text-secondary">{t('exams.viewer.loading')}</span>
               </div>
             </div>
           );
@@ -243,7 +246,7 @@ function App() {
                   <button
                     onClick={navigateBack}
                     className="flex items-center gap-2 text-primary hover:text-primary-hover transition-colors cursor-pointer mt-1"
-                    title="Back to exams"
+                    title={t('exams.viewer.back_title')}
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
@@ -259,7 +262,9 @@ function App() {
                         <>
                           <span>•</span>
                           <span>
-                            {selectedExam.pages} page{selectedExam.pages > 1 ? 's' : ''}
+                            {selectedExam.pages === 1
+                              ? t('exams.card.page_count', { count: selectedExam.pages })
+                              : t('exams.card.page_count_plural', { count: selectedExam.pages })}
                           </span>
                         </>
                       )}
@@ -275,20 +280,20 @@ function App() {
                     variant="secondary"
                     size="md"
                     className="gap-2"
-                    title="Download PDF"
+                    title={t('exams.viewer.download_title')}
                   >
                     <Download className="w-4 h-4" />
-                    <span className="hidden md:inline">Download</span>
+                    <span className="hidden md:inline">{t('exams.viewer.download_button')}</span>
                   </Button>
 
                   {/* Report button */}
                   <button
                     onClick={handleReportExam}
                     className="flex items-center gap-2 px-3 md:px-4 h-10 bg-warning/10 hover:bg-warning/20 text-warning rounded-lg transition-colors cursor-pointer"
-                    title="Report this exam"
+                    title={t('exams.viewer.report_title')}
                   >
                     <AlertTriangle className="w-4 h-4" />
-                    <span className="text-sm font-medium hidden md:inline">Report</span>
+                    <span className="text-sm font-medium hidden md:inline">{t('exams.viewer.report_button')}</span>
                   </button>
 
                   {/* Delete button (owner or admin) */}
@@ -298,10 +303,10 @@ function App() {
                       variant="danger"
                       size="md"
                       className="gap-2"
-                      title="Delete this exam"
+                      title={t('exams.viewer.delete_title')}
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span className="hidden md:inline">Delete</span>
+                      <span className="hidden md:inline">{t('exams.viewer.delete_button')}</span>
                     </Button>
                   )}
                 </div>
@@ -349,7 +354,7 @@ function App() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Exams
+                  {t('nav.exams')}
                 </button>
                 <button
                   onClick={() => navigate('upload')}
@@ -359,7 +364,7 @@ function App() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Upload
+                  {t('nav.upload')}
                 </button>
                 {PermissionUtils.isAdmin(user) && (
                   <>
@@ -371,7 +376,7 @@ function App() {
                           : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                       }`}
                     >
-                      Reports
+                      {t('nav.reports')}
                     </button>
                     <button
                       onClick={() => navigate('admin-users')}
@@ -381,7 +386,7 @@ function App() {
                           : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                       }`}
                     >
-                      Users
+                      {t('nav.users')}
                     </button>
                   </>
                 )}
@@ -392,7 +397,9 @@ function App() {
               {isPage('viewer') && selectedExam && (
                 <div className="text-sm text-gray-500">
                   {selectedExam.pages &&
-                    `${selectedExam.pages} page${selectedExam.pages > 1 ? 's' : ''}`}
+                    (selectedExam.pages === 1
+                      ? t('exams.card.page_count', { count: selectedExam.pages })
+                      : t('exams.card.page_count_plural', { count: selectedExam.pages }))}
                 </div>
               )}
 
@@ -401,7 +408,7 @@ function App() {
                   <button
                     onClick={() => navigate('profile')}
                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
-                    title="My profile"
+                    title={t('nav.profile_title')}
                   >
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-sm font-medium text-gray-900">
@@ -409,7 +416,7 @@ function App() {
                     </span>
                     {PermissionUtils.isAdmin(user) && (
                       <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">
-                        Admin
+                        {t('nav.admin_badge')}
                       </span>
                     )}
                   </button>
@@ -420,8 +427,9 @@ function App() {
                     }}
                     className="text-sm text-red-600 hover:text-red-700 font-medium cursor-pointer"
                   >
-                    Sign out
+                    {t('nav.sign_out')}
                   </button>
+                  <LanguageSwitch />
                 </div>
               )}
             </div>

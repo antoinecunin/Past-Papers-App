@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import i18n from '../i18n';
 
 /**
  * Standardized colors for SweetAlert2
@@ -66,8 +67,8 @@ export async function showConfirm(
     text,
     icon: options?.icon ?? 'warning',
     showCancelButton: true,
-    confirmButtonText: options?.confirmText ?? 'Confirm',
-    cancelButtonText: options?.cancelText ?? 'Cancel',
+    confirmButtonText: options?.confirmText ?? i18n.t('common.save'),
+    cancelButtonText: options?.cancelText ?? i18n.t('common.cancel'),
     confirmButtonColor: options?.confirmColor ?? colors.error,
     cancelButtonColor: colors.secondary,
   });
@@ -80,7 +81,7 @@ export async function showConfirm(
  */
 export async function showValidationError(text: string): Promise<void> {
   await Swal.fire({
-    title: 'Missing field',
+    title: i18n.t('common.error'),
     text,
     icon: 'warning',
     confirmButtonColor: colors.primary,

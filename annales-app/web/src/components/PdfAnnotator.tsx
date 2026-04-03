@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as pdfjs from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { useCommentPositioning } from '../hooks/useCommentPositioning';
@@ -35,6 +36,7 @@ type Props = {
  * - Adding a comment: captures the current yTop (center of the visible area).
  */
 export default function PdfAnnotator({ pdfUrl, examId }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { primaryColor, primaryHoverColor } = useInstance();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -399,12 +401,12 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Image upload failed');
+        throw new Error(err.error || t('comments.image_upload_failed'));
       }
       const { key } = await res.json();
       return key;
     },
-    [user]
+    [user, t]
   );
 
   // Handle new comment indicator
@@ -479,13 +481,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         indicator.innerHTML = `
           <form class="new-comment-form" style="display: flex; flex-direction: column; gap: 8px;">
             <select class="content-type-select" style="padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
-              <option value="text">💬 Text</option>
-              <option value="image">🖼️ Image</option>
-              <option value="latex">📐 LaTeX</option>
+              <option value="text">${t('comments.content.type_text')}</option>
+              <option value="image">${t('comments.content.type_image')}</option>
+              <option value="latex">${t('comments.content.type_latex')}</option>
             </select>
             <textarea
               class="content-input"
-              placeholder="Your comment..."
+              placeholder="${t('comments.your_comment')}"
               style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; resize: none; font-size: 12px;"
               rows="3"
               maxlength="${defaultMaxLength}"
@@ -503,10 +505,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             </div>
             <div style="display: flex; gap: 8px;">
               <button type="submit" style="padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                Add
+                ${t('comments.add_button')}
               </button>
               <button type="button" class="cancel-btn" style="padding: 4px 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                Cancel
+                ${t('common.cancel')}
               </button>
             </div>
           </form>
@@ -565,10 +567,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             updateCharCounter();
 
             if (selectedType === 'text') {
-              textarea.placeholder = 'Your comment...';
+              textarea.placeholder = t('comments.your_comment');
               latexPreview.style.display = 'none';
             } else {
-              textarea.placeholder = 'LaTeX code (e.g.: \\int_0^1 x^2 dx = \\frac{1}{3})';
+              textarea.placeholder = t('comments.reply_form.latex_placeholder');
               const content = textarea.value.trim();
               latexPreview.style.display = 'block';
               latexPreview.innerHTML = content
@@ -590,13 +592,13 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             return;
           }
           if (!file.type.startsWith('image/')) {
-            imageErrorDiv.textContent = 'Only image files are accepted';
+            imageErrorDiv.textContent = t('comments.reply_form.file_type_error');
             imageErrorDiv.style.display = 'block';
             selectedImageFile = null;
             return;
           }
           if (file.size > IMAGE_MAX_SIZE) {
-            imageErrorDiv.textContent = `Image too large (max ${IMAGE_MAX_SIZE / 1024 / 1024} MB)`;
+            imageErrorDiv.textContent = t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 });
             imageErrorDiv.style.display = 'block';
             selectedImageFile = null;
             return;
@@ -635,7 +637,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
               imageErrorDiv.textContent = err instanceof Error ? err.message : 'Upload failed';
               imageErrorDiv.style.display = 'block';
               submitBtn.disabled = false;
-              submitBtn.textContent = 'Add';
+              submitBtn.textContent = t('comments.add_button');
             }
           } else {
             const content = textarea.value.trim();
@@ -669,7 +671,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         }
       }
     }
-  }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment, uploadImage]);
+  }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment, uploadImage, t]);
 
   // Function to load all comments
   const loadAllAnswers = useCallback(async () => {
@@ -841,7 +843,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     async (answerId: string) => {
       if (!user) return;
 
-      const reportData = await showReportModal('Report this comment', 'comment');
+      const reportData = await showReportModal(t('comments.content.report_title'), 'comment');
       if (!reportData) return;
 
       try {
@@ -869,7 +871,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         await showReportError();
       }
     },
-    [user]
+    [user, t]
   );
 
   // Vote on a comment
@@ -1031,11 +1033,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       </div>
       <aside style={sidebarStyle} aria-label="Comments">
         <div style={sidebarHeaderStyle}>
-          <strong>Comments</strong>
+          <strong>{t('comments.sidebar_title')}</strong>
           <span style={{ opacity: 0.7 }}>
             {selectedGroup
-              ? `Selected group (${selectedGroup.length})`
-              : `Page ${visiblePage}/${numPages || '…'}`}
+              ? t('comments.selected_group', { count: selectedGroup.length })
+              : t('comments.page_indicator', { current: visiblePage, total: numPages || '…' })}
           </span>
         </div>
 
@@ -1053,7 +1055,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                 color: '#374151',
               }}
             >
-              Back to page
+              {t('comments.back_to_page')}
             </button>
           </div>
         )}
@@ -1161,17 +1163,17 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                           background: a.isBestAnswer ? '#16a34a' : '#d1d5db',
                           cursor: 'pointer',
                         }}
-                        title={a.isBestAnswer ? 'Remove best answer' : 'Mark as best answer'}
+                        title={a.isBestAnswer ? t('comments.best_answer.unmark') : t('comments.best_answer.mark')}
                       >
                         ✓
                       </button>
                     ) : a.isBestAnswer ? (
-                      <span style={bestAnswerBadgeStyle} title="Best answer">
+                      <span style={bestAnswerBadgeStyle} title={t('comments.best_answer.title')}>
                         ✓
                       </span>
                     ) : null}
-                    {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonymous'} •
-                    Page {a.page}
+                    {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : t('comments.anonymous')} •
+                    {t('common.page')} {a.page}
                   </div>
                   <VoteButtons
                     answerId={a._id}
@@ -1216,8 +1218,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                     style={threadToggleStyle}
                   >
                     {openThreads[a._id]
-                      ? 'Hide replies'
-                      : `View ${a.replyCount} repl${(a.replyCount || 0) > 1 ? 'ies' : 'y'}`}
+                      ? t('comments.hide_replies')
+                      : (a.replyCount || 0) === 1
+                        ? t('comments.view_replies', { count: a.replyCount })
+                        : t('comments.view_replies_plural', { count: a.replyCount })}
                   </button>
                 )}
 
@@ -1242,7 +1246,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                             )}
                             {reply.author
                               ? `${reply.author.firstName} ${reply.author.lastName[0]}.`
-                              : 'Anonymous'}
+                              : t('comments.anonymous')}
                           </div>
                           <VoteButtons
                             answerId={reply._id}
@@ -1286,7 +1290,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                         }}
                         style={getLoadMoreStyle(primaryColor)}
                       >
-                        Load more replies
+                        {t('comments.load_more')}
                       </button>
                     )}
                   </div>
@@ -1295,7 +1299,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             ))}
           {!(selectedGroup || answers).length && (
             <li style={{ opacity: 0.6, padding: '8px 0' }}>
-              {selectedGroup ? 'No comments in this group.' : 'No comments on this page.'}
+              {selectedGroup ? t('comments.no_group_comments') : t('comments.no_comments')}
             </li>
           )}
         </ul>
@@ -1309,7 +1313,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             color: '#6b7280',
           }}
         >
-          Tip: Click directly on the PDF to add a comment at the exact location
+          {t('comments.tip')}
         </div>
       </aside>
     </div>

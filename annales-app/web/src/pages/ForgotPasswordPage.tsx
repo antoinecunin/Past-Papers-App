@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, X, Mail, LogIn, UserPlus, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
@@ -7,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -46,12 +48,11 @@ export default function ForgotPasswordPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-info/10 mb-4">
                 <Mail className="w-8 h-8 text-info" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Email sent</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">{t('auth.forgot_password.success_title')}</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-2">
-                If this email address is associated with an account, you will receive a link to
-                reset your password.
+                {t('auth.forgot_password.success_message')}
               </p>
-              <p className="text-xs text-secondary/80 mb-6">Check your inbox and spam folder.</p>
+              <p className="text-xs text-secondary/80 mb-6">{t('auth.forgot_password.check_email')}</p>
               <div className="space-y-3">
                 <Button
                   type="button"
@@ -61,7 +62,7 @@ export default function ForgotPasswordPage() {
                   onClick={() => navigate('login')}
                 >
                   <LogIn className="w-5 h-5" />
-                  <span>Back to login</span>
+                  <span>{t('auth.forgot_password.back_to_login')}</span>
                 </Button>
                 <Button
                   type="button"
@@ -74,7 +75,7 @@ export default function ForgotPasswordPage() {
                   }}
                 >
                   <RotateCcw className="w-5 h-5" />
-                  <span>Resend email</span>
+                  <span>{t('auth.forgot_password.resend')}</span>
                 </Button>
               </div>
             </div>
@@ -93,11 +94,11 @@ export default function ForgotPasswordPage() {
             <Mail className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
-            Forgot password
+            {t('auth.forgot_password.title')}
           </h1>
           <p className="text-sm md:text-base text-secondary">{name}</p>
           <p className="text-xs md:text-sm text-secondary/80 mt-2">
-            Enter your email address to receive a reset link
+            {t('auth.forgot_password.subtitle')}
           </p>
         </div>
 
@@ -113,7 +114,7 @@ export default function ForgotPasswordPage() {
                   type="button"
                   onClick={clearError}
                   className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
-                  aria-label="Close error message"
+                  aria-label={t('common.close_error')}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -122,7 +123,7 @@ export default function ForgotPasswordPage() {
 
             {/* Email */}
             <Input
-              label="Email address"
+              label={t('auth.forgot_password.email_label')}
               id="email"
               name="email"
               type="email"
@@ -144,12 +145,12 @@ export default function ForgotPasswordPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Sending...</span>
+                  <span>{t('auth.forgot_password.sending')}</span>
                 </>
               ) : (
                 <>
                   <Mail className="w-5 h-5" />
-                  <span>Send reset link</span>
+                  <span>{t('auth.forgot_password.button')}</span>
                 </>
               )}
             </Button>
@@ -161,7 +162,7 @@ export default function ForgotPasswordPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">or</span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">{t('common.or')}</span>
             </div>
           </div>
 
@@ -175,7 +176,7 @@ export default function ForgotPasswordPage() {
               onClick={() => navigate('login')}
             >
               <LogIn className="w-5 h-5" />
-              <span>Back to login</span>
+              <span>{t('auth.forgot_password.back_to_login')}</span>
             </Button>
 
             <Button
@@ -186,7 +187,7 @@ export default function ForgotPasswordPage() {
               onClick={() => navigate('register')}
             >
               <UserPlus className="w-5 h-5" />
-              <span>Create account</span>
+              <span>{t('auth.forgot_password.create_account')}</span>
             </Button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 import { TrashIcon, CopyIcon } from './ui/Icon';
@@ -27,6 +28,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
   onReply,
   onUploadImage,
 }) => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [editContent, setEditContent] = useState<AnswerContent | null>(null);
@@ -141,7 +143,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 }}
                 style={toggleButtonStyle}
               >
-                {truncated ? '...More' : ' Less'}
+                {truncated ? t('comments.content.more') : t('comments.content.less')}
               </button>
             )}
           </div>
@@ -159,7 +161,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 const img = e.target as HTMLImageElement;
                 const errorDiv = img.nextElementSibling as HTMLDivElement;
                 img.style.display = 'none';
-                errorDiv.textContent = '[Image not found]';
+                errorDiv.textContent = t('comments.content.image_not_found');
                 errorDiv.style.display = 'block';
               }}
             />
@@ -187,14 +189,14 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 }}
                 style={{ ...toggleButtonStyle, marginTop: '4px', pointerEvents: 'auto' }}
               >
-                {truncated ? '...More' : ' Less'}
+                {truncated ? t('comments.content.more') : t('comments.content.less')}
               </button>
             )}
             <details
               style={{ marginTop: '4px', pointerEvents: 'auto' }}
               onClick={e => e.stopPropagation()}
             >
-              <summary style={summaryStyle}>LaTeX code</summary>
+              <summary style={summaryStyle}>{t('comments.content.latex_code')}</summary>
               <div style={latexCodeStyle}>{latexData}</div>
             </details>
           </div>
@@ -230,9 +232,9 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
           }}
           style={selectStyle}
         >
-          <option value="text">💬 Text</option>
-          <option value="image">🖼️ Image</option>
-          <option value="latex">📐 LaTeX</option>
+          <option value="text">{t('comments.content.type_text')}</option>
+          <option value="image">{t('comments.content.type_image')}</option>
+          <option value="latex">{t('comments.content.type_latex')}</option>
         </select>
         {editContent.type === 'image' ? (
           <div>
@@ -256,11 +258,11 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                   return;
                 }
                 if (!file.type.startsWith('image/')) {
-                  setEditImageError('Only image files are accepted');
+                  setEditImageError(t('comments.reply_form.file_type_error'));
                   return;
                 }
                 if (file.size > IMAGE_MAX_SIZE) {
-                  setEditImageError(`Image too large (max ${IMAGE_MAX_SIZE / 1024 / 1024} MB)`);
+                  setEditImageError(t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 }));
                   return;
                 }
                 setEditImageFile(file);
@@ -310,10 +312,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
         )}
         <div style={buttonContainerStyle}>
           <button onClick={saveEdit} style={saveButtonStyle}>
-            ✓ Save
+            {t('comments.content.save')}
           </button>
           <button onClick={cancelEdit} style={cancelButtonStyle}>
-            ✕ Cancel
+            {t('comments.content.cancel')}
           </button>
         </div>
       </div>
@@ -336,14 +338,14 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
         onClick={e => e.stopPropagation()} // Prevent propagation to parent
       >
         <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#dc2626' }}>
-          Are you sure you want to delete this comment?
+          {t('comments.content.delete_confirm')}
         </p>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={handleDelete} style={deleteButtonStyle}>
-            Delete
+            {t('common.delete')}
           </button>
           <button onClick={cancelDelete} style={cancelButtonStyle}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>
@@ -387,7 +389,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
               handleCopy();
             }}
             style={actionButtonStyle}
-            title="Copy content"
+            title={t('comments.content.copy_title')}
           >
             <CopyIcon className="text-gray-500 hover:text-gray-700" />
           </button>
@@ -400,7 +402,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 startEdit();
               }}
               style={actionButtonStyle}
-              title="Edit"
+              title={t('comments.content.edit_title')}
             >
               ✏️
             </button>
@@ -414,7 +416,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 onReport(answer._id.toString());
               }}
               style={actionButtonStyle}
-              title="Report this comment"
+              title={t('comments.content.report_title')}
             >
               <svg
                 className="w-3 h-3 text-orange-500 hover:text-orange-700"
@@ -440,7 +442,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 onReply(answer._id.toString());
               }}
               style={actionButtonStyle}
-              title="Reply"
+              title={t('comments.content.reply_title')}
             >
               <svg
                 className="w-3 h-3 text-blue-500 hover:text-blue-700"
@@ -466,7 +468,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 confirmDelete();
               }}
               style={actionButtonStyle}
-              title="Delete"
+              title={t('comments.content.delete_title')}
             >
               <TrashIcon className="text-red-500 hover:text-red-700" />
             </button>

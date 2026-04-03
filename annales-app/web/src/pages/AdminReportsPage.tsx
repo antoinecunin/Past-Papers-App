@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Swal from 'sweetalert2';
 import {
   Shield,
@@ -73,6 +74,7 @@ interface ReportsResponse {
 }
 
 export default function AdminReportsPage() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { navigate } = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
@@ -123,19 +125,19 @@ export default function AdminReportsPage() {
     if (!user) return;
 
     const result = await Swal.fire({
-      title: action === 'approve' ? 'Approve and delete' : 'Reject report',
+      title: action === 'approve' ? t('admin.reports.approve_title') : t('admin.reports.reject_title'),
       html: `
         <div style="text-align: left;">
           <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
-            Note (optional)
+            ${t('admin.reports.note_label')}
           </label>
-          <textarea id="swal-note" class="swal2-textarea" placeholder="Add a note..." style="margin: 0; width: 100%; min-height: 80px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
+          <textarea id="swal-note" class="swal2-textarea" placeholder="${t('admin.reports.note_placeholder')}" style="margin: 0; width: 100%; min-height: 80px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;"></textarea>
         </div>
       `,
       icon: action === 'approve' ? 'warning' : 'question',
       showCancelButton: true,
-      confirmButtonText: action === 'approve' ? 'Approve & Delete' : 'Reject',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: action === 'approve' ? t('admin.reports.approve_confirm') : t('admin.reports.reject_confirm'),
+      cancelButtonText: t('common.cancel'),
       confirmButtonColor: action === 'approve' ? '#ef4444' : '#64748b',
       cancelButtonColor: '#64748b',
       preConfirm: () => {
@@ -158,8 +160,8 @@ export default function AdminReportsPage() {
 
       if (response.ok) {
         await Swal.fire({
-          title: 'Success',
-          text: action === 'approve' ? 'Report approved and content deleted' : 'Report rejected',
+          title: t('common.success'),
+          text: action === 'approve' ? t('admin.reports.approve_success') : t('admin.reports.reject_success'),
           icon: 'success',
           confirmButtonColor: '#10b981',
         });
@@ -167,8 +169,8 @@ export default function AdminReportsPage() {
       } else {
         const errorData = await response.json();
         await Swal.fire({
-          title: 'Error',
-          text: `Error: ${errorData.error}`,
+          title: t('common.error'),
+          text: `${t('common.error')}: ${errorData.error}`,
           icon: 'error',
           confirmButtonColor: '#ef4444',
         });
@@ -176,8 +178,8 @@ export default function AdminReportsPage() {
     } catch (err) {
       console.error('Error processing report:', err);
       await Swal.fire({
-        title: 'Error',
-        text: 'Error while processing the report',
+        title: t('common.error'),
+        text: t('admin.reports.review_error'),
         icon: 'error',
         confirmButtonColor: '#ef4444',
       });
@@ -217,8 +219,8 @@ export default function AdminReportsPage() {
         <div className="flex items-start gap-3">
           <AlertCircle className="w-6 h-6 text-error flex-shrink-0 mt-0.5" />
           <div>
-            <h1 className="text-lg font-semibold text-error mb-1">Access denied</h1>
-            <p className="text-error">This page is restricted to administrators.</p>
+            <h1 className="text-lg font-semibold text-error mb-1">{t('common.error')}</h1>
+            <p className="text-error">{t('admin.reports.access_denied')}</p>
           </div>
         </div>
       </div>
@@ -226,14 +228,14 @@ export default function AdminReportsPage() {
   }
 
   const getReasonLabel = (reason: Report['reason']) => {
-    const labels = {
-      inappropriate_content: 'Inappropriate content',
-      spam: 'Spam',
-      off_topic: 'Off-topic',
-      wrong_exam: 'Wrong exam',
-      poor_quality: 'Poor quality',
-      duplicate: 'Duplicate',
-      other: 'Other',
+    const labels: Record<string, string> = {
+      inappropriate_content: t('admin.reports.reason_inappropriate'),
+      spam: t('admin.reports.reason_spam'),
+      off_topic: t('admin.reports.reason_off_topic'),
+      wrong_exam: t('admin.reports.reason_wrong_exam'),
+      poor_quality: t('admin.reports.reason_poor_quality'),
+      duplicate: t('admin.reports.reason_duplicate'),
+      other: t('admin.reports.reason_other'),
     };
     return labels[reason];
   };
@@ -241,8 +243,8 @@ export default function AdminReportsPage() {
   const handleViewTarget = (report: Report) => {
     if (!report.target.exists) {
       Swal.fire({
-        title: 'Content deleted',
-        text: 'This content has been deleted following report approval.',
+        title: t('admin.reports.content_deleted'),
+        text: t('admin.reports.content_deleted_message'),
         icon: 'info',
         confirmButtonColor: '#2563eb',
       });
@@ -258,12 +260,12 @@ export default function AdminReportsPage() {
 
   const getTargetLabel = (report: Report): string => {
     if (!report.target.exists) {
-      return 'Content deleted';
+      return t('admin.reports.content_deleted');
     }
     if (report.type === 'exam') {
-      return report.target.title || 'Exam';
+      return t('admin.reports.target_exam', { title: report.target.title || t('admin.reports.label_exam') });
     }
-    return `Comment page ${report.target.page || '?'}`;
+    return t('admin.reports.target_comment', { page: report.target.page || '?' });
   };
 
   const getStatusBadge = (status: Report['status']) => {
@@ -273,10 +275,10 @@ export default function AdminReportsPage() {
       rejected: 'bg-error-bg text-error border border-error/20',
     };
 
-    const labels = {
-      pending: 'Pending',
-      approved: 'Approved',
-      rejected: 'Rejected',
+    const labels: Record<string, string> = {
+      pending: t('admin.reports.status_pending'),
+      approved: t('admin.reports.status_approved'),
+      rejected: t('admin.reports.status_rejected'),
     };
 
     return (
@@ -287,7 +289,7 @@ export default function AdminReportsPage() {
   };
 
   const getTypeLabel = (type: Report['type']) => {
-    return type === 'exam' ? 'Exam' : 'Comment';
+    return type === 'exam' ? t('admin.reports.label_exam') : t('admin.reports.label_comment');
   };
 
   if (loading) {
@@ -295,7 +297,7 @@ export default function AdminReportsPage() {
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          <span className="text-secondary">Loading reports...</span>
+          <span className="text-secondary">{t('admin.reports.loading')}</span>
         </div>
       </div>
     );
@@ -311,10 +313,10 @@ export default function AdminReportsPage() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">
-              Report management
+              {t('admin.reports.title')}
             </h1>
             <p className="text-sm md:text-base text-secondary mt-1">
-              Manage reports of inappropriate content
+              {t('admin.reports.subtitle')}
             </p>
           </div>
         </div>
@@ -347,10 +349,10 @@ export default function AdminReportsPage() {
             onChange={e => setFilter({ ...filter, status: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
-            <option value="">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+            <option value="">{t('admin.reports.all_statuses')}</option>
+            <option value="pending">{t('admin.reports.status_pending')}</option>
+            <option value="approved">{t('admin.reports.status_approved')}</option>
+            <option value="rejected">{t('admin.reports.status_rejected')}</option>
           </select>
 
           <select
@@ -358,9 +360,9 @@ export default function AdminReportsPage() {
             onChange={e => setFilter({ ...filter, type: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
-            <option value="">All types</option>
-            <option value="exam">Exams</option>
-            <option value="comment">Comments</option>
+            <option value="">{t('admin.reports.all_types')}</option>
+            <option value="exam">{t('admin.reports.type_exam')}</option>
+            <option value="comment">{t('admin.reports.type_comment')}</option>
           </select>
 
           <Button
@@ -370,7 +372,7 @@ export default function AdminReportsPage() {
             className="gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>Refresh</span>
+            <span>{t('common.refresh')}</span>
           </Button>
         </div>
       </div>
@@ -381,8 +383,8 @@ export default function AdminReportsPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
             <CheckCircle className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-secondary-dark mb-2">No reports</h3>
-          <p className="text-sm text-secondary">No reports match the selected filters.</p>
+          <h3 className="text-lg font-semibold text-secondary-dark mb-2">{t('admin.reports.no_results_title')}</h3>
+          <p className="text-sm text-secondary">{t('admin.reports.no_results_message')}</p>
         </div>
       ) : (
         <>
@@ -415,7 +417,7 @@ export default function AdminReportsPage() {
                             ? 'text-primary hover:bg-primary/10 cursor-pointer'
                             : 'text-secondary/50 cursor-not-allowed'
                         }`}
-                        title={report.target.exists ? 'View content' : 'Content deleted'}
+                        title={report.target.exists ? t('admin.reports.view_content') : t('admin.reports.content_deleted')}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         <span>{getTargetLabel(report)}</span>
@@ -424,7 +426,7 @@ export default function AdminReportsPage() {
 
                     {/* Reason */}
                     <div>
-                      <span className="text-sm font-medium text-secondary">Reason: </span>
+                      <span className="text-sm font-medium text-secondary">{t('admin.reports.reason_label')} </span>
                       <span className="text-sm text-secondary-dark">
                         {getReasonLabel(report.reason)}
                       </span>
@@ -441,10 +443,10 @@ export default function AdminReportsPage() {
                     {report.type === 'comment' && report.target.content && (
                       <div className="text-sm bg-gray-50 border border-gray-200 p-3 rounded-lg">
                         <span className="text-xs font-medium text-secondary block mb-1">
-                          Comment content ({report.target.content.type}):
+                          {t('admin.reports.comment_preview', { type: report.target.content.type })}
                         </span>
                         {report.target.content.type === 'image' ? (
-                          <span className="text-xs text-secondary italic">[Image]</span>
+                          <span className="text-xs text-secondary italic">{t('admin.reports.comment_image')}</span>
                         ) : (
                           <p className="text-secondary-dark whitespace-pre-wrap break-words">
                             {report.target.content.data.length > 300
@@ -457,7 +459,7 @@ export default function AdminReportsPage() {
 
                     {/* Reporter */}
                     <div className="flex items-center gap-2 pt-2 border-t border-border">
-                      <span className="text-xs text-secondary">Reported by:</span>
+                      <span className="text-xs text-secondary">{t('admin.reports.reported_by')}</span>
                       <span className="text-xs font-medium text-secondary-dark">
                         {report.reportedBy.firstName} {report.reportedBy.lastName}
                       </span>
@@ -485,10 +487,10 @@ export default function AdminReportsPage() {
                     {report.reviewedBy && (
                       <div className="text-xs text-secondary">
                         <div>
-                          By: {report.reviewedBy.firstName} {report.reviewedBy.lastName}
+                          {t('admin.reports.reviewed_by')} {report.reviewedBy.firstName} {report.reviewedBy.lastName}
                         </div>
                         {report.reviewNote && (
-                          <div className="mt-1 italic">Note: {report.reviewNote}</div>
+                          <div className="mt-1 italic">{t('admin.reports.review_note')} {report.reviewNote}</div>
                         )}
                         <div className="mt-1">
                           {new Date(report.reviewedAt!).toLocaleDateString('en-US')}
@@ -511,7 +513,7 @@ export default function AdminReportsPage() {
                           ) : (
                             <>
                               <CheckCircle className="w-4 h-4" />
-                              <span>Approve</span>
+                              <span>{t('admin.reports.approve_button')}</span>
                             </>
                           )}
                         </Button>
@@ -527,7 +529,7 @@ export default function AdminReportsPage() {
                           ) : (
                             <>
                               <XCircle className="w-4 h-4" />
-                              <span>Reject</span>
+                              <span>{t('admin.reports.reject_button')}</span>
                             </>
                           )}
                         </Button>
@@ -550,7 +552,7 @@ export default function AdminReportsPage() {
                 className="gap-1.5"
               >
                 <ChevronLeft className="w-4 h-4" />
-                <span>Previous</span>
+                <span>{t('common.previous')}</span>
               </Button>
 
               <span className="text-sm text-secondary">
@@ -564,7 +566,7 @@ export default function AdminReportsPage() {
                 size="sm"
                 className="gap-1.5"
               >
-                <span>Next</span>
+                <span>{t('common.next')}</span>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

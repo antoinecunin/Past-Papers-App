@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Swal from 'sweetalert2';
 import { renderLatex } from '../utils/latex';
 import { apiFetch } from '../utils/api';
@@ -24,6 +25,7 @@ export function useCommentPositioning(
   examId: string,
   onCommentAdded: () => void
 ): UseCommentPositioningReturn {
+  const { t } = useTranslation();
   const [pendingPosition, setPendingPosition] = useState<ClickPosition | null>(null);
 
   const handlePageClick = useCallback(
@@ -75,23 +77,23 @@ export function useCommentPositioning(
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Error creating comment');
+          throw new Error(errorData.error || t('comments.error_creating'));
         }
 
         setPendingPosition(null);
         onCommentAdded();
       } catch (error) {
         console.error('Error creating comment:', error);
-        const message = error instanceof Error ? error.message : 'Error creating comment';
+        const message = error instanceof Error ? error.message : t('comments.error_creating');
         await Swal.fire({
-          title: 'Error',
+          title: t('common.error'),
           text: message,
           icon: 'error',
           confirmButtonColor: '#ef4444',
         });
       }
     },
-    [examId, pendingPosition, onCommentAdded]
+    [examId, pendingPosition, onCommentAdded, t]
   );
 
   const cancelComment = useCallback(() => {

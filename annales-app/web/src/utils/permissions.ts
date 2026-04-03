@@ -1,4 +1,5 @@
 import type { User, UserRole } from '../stores/authStore';
+import i18n from '../i18n';
 
 /**
  * Frontend permission utilities
@@ -33,6 +34,6 @@ export class PermissionUtils {
    * Returns the user role label
    */
   static getRoleLabel(role: UserRole): string {
-    return role === 'admin' ? 'Administrator' : 'User';
+    return role === 'admin' ? i18n.t('admin.users.role_admin') : i18n.t('admin.users.role_user');
   }
 }

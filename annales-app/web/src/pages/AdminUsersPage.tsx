@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Shield,
   AlertCircle,
@@ -29,6 +30,7 @@ interface UserEntry {
 }
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,9 +71,9 @@ export default function AdminUsersPage() {
   const handleRoleChange = async (targetUser: UserEntry, newRole: 'user' | 'admin') => {
     if (!user) return;
 
-    const action = newRole === 'admin' ? 'promote to admin' : 'demote to user';
+    const action = newRole === 'admin' ? t('admin.users.promote_action') : t('admin.users.demote_action');
     const confirmed = window.confirm(
-      `Are you sure you want to ${action} ${targetUser.firstName} ${targetUser.lastName} (${targetUser.email})?`
+      t('admin.users.role_change_confirm', { action, name: `${targetUser.firstName} ${targetUser.lastName}`, email: targetUser.email })
     );
     if (!confirmed) return;
 
@@ -103,10 +105,10 @@ export default function AdminUsersPage() {
         if (response.status === 403) {
           setIsInitialAdmin(false);
         }
-        alert(errorData.error || 'Error changing role');
+        alert(errorData.error || t('admin.users.error_role'));
       }
     } catch {
-      alert('Network error');
+      alert(t('admin.users.network_error'));
     } finally {
       setActionLoading(null);
     }
@@ -135,10 +137,10 @@ export default function AdminUsersPage() {
         );
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Error changing permission');
+        alert(errorData.error || t('admin.users.error_permission'));
       }
     } catch {
-      alert('Network error');
+      alert(t('admin.users.network_error'));
     } finally {
       setActionLoading(null);
     }
@@ -180,7 +182,7 @@ export default function AdminUsersPage() {
       <div className="max-w-4xl mx-auto p-6">
         <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
           <AlertCircle className="w-5 h-5 text-red-500" />
-          <p className="text-red-700">Admin access required.</p>
+          <p className="text-red-700">{t('admin.users.admin_required')}</p>
         </div>
       </div>
     );
@@ -192,11 +194,11 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-purple-600" />
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin.users.title')}</h1>
         </div>
         <Button onClick={() => fetchUsers()} variant="secondary" size="sm" disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -204,7 +206,7 @@ export default function AdminUsersPage() {
         <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
           <AlertCircle className="w-5 h-5 text-yellow-600" />
           <p className="text-yellow-700">
-            Only the initial admin can change user roles. You can view users but not modify roles.
+            {t('admin.users.role_warning')}
           </p>
         </div>
       )}
@@ -221,12 +223,14 @@ export default function AdminUsersPage() {
         <div className="flex gap-4">
           <div className="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
             <span className="text-sm text-gray-500">
-              {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
-              {filteredUsers.length !== users.length && ` out of ${users.length}`}
+              {filteredUsers.length === 1
+                ? t('admin.users.user_count', { count: filteredUsers.length })
+                : t('admin.users.user_count_plural', { count: filteredUsers.length })}
+              {filteredUsers.length !== users.length && ` ${t('common.out_of')} ${users.length}`}
             </span>
           </div>
           <div className="px-4 py-2 bg-purple-50 rounded-lg border border-purple-200">
-            <span className="text-sm text-purple-600">Admins: </span>
+            <span className="text-sm text-purple-600">{t('admin.users.admins_label')} </span>
             <span className="font-semibold text-purple-700">
               {users.filter(u => u.role === 'admin').length}
             </span>
@@ -238,7 +242,7 @@ export default function AdminUsersPage() {
             className="flex items-center gap-2 text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>Reset filters</span>
+            <span>{t('common.reset_filters')}</span>
           </button>
         )}
       </div>
@@ -250,16 +254,16 @@ export default function AdminUsersPage() {
             <Input
               id="user-search"
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={t('admin.users.search_placeholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              label="Search"
+              label={t('admin.users.search_label')}
             />
             <Search className="absolute right-3 top-9 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
           <div>
             <label htmlFor="role-filter" className="block text-sm font-medium text-gray-700 mb-1">
-              Role
+              {t('admin.users.role_filter')}
             </label>
             <select
               id="role-filter"
@@ -267,14 +271,14 @@ export default function AdminUsersPage() {
               onChange={e => setSelectedRole(e.target.value)}
               className="w-full py-2 px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 bg-white transition-colors cursor-pointer"
             >
-              <option value="">All roles</option>
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
+              <option value="">{t('admin.users.all_roles')}</option>
+              <option value="admin">{t('admin.users.role_admin')}</option>
+              <option value="user">{t('admin.users.role_user')}</option>
             </select>
           </div>
           <div>
             <label htmlFor="user-sort" className="block text-sm font-medium text-gray-700 mb-1">
-              Sort by
+              {t('common.sort_by')}
             </label>
             <div className="flex gap-2">
               <select
@@ -283,13 +287,13 @@ export default function AdminUsersPage() {
                 onChange={e => setSortField(e.target.value)}
                 className="flex-1 py-2 px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 bg-white transition-colors cursor-pointer"
               >
-                <option value="name">Name</option>
-                <option value="date">Date</option>
+                <option value="name">{t('admin.users.sort_name')}</option>
+                <option value="date">{t('admin.users.sort_date')}</option>
               </select>
               <button
                 onClick={() => setSortAsc(prev => !prev)}
                 className="px-2.5 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                title={sortAsc ? 'Ascending' : 'Descending'}
+                title={sortAsc ? t('common.sort_ascending') : t('common.sort_descending')}
               >
                 <ArrowUpDown className="w-4 h-4 text-gray-500" />
               </button>
@@ -303,7 +307,7 @@ export default function AdminUsersPage() {
         <div className="flex items-center justify-center py-12">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin"></div>
-            <span className="text-gray-600">Loading users...</span>
+            <span className="text-gray-600">{t('admin.users.loading')}</span>
           </div>
         </div>
       ) : (
@@ -311,13 +315,13 @@ export default function AdminUsersPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">User</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Email</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Role</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">Comment</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">Upload</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_user')}</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_email')}</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_role')}</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_comment')}</th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_upload')}</th>
                 {isInitialAdmin && (
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Role</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_actions')}</th>
                 )}
               </tr>
             </thead>
@@ -338,7 +342,7 @@ export default function AdminUsersPage() {
                         </span>
                         {isSelf && (
                           <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
-                            you
+                            {t('admin.users.you_label')}
                           </span>
                         )}
                       </div>
@@ -347,11 +351,11 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3">
                       {u.role === 'admin' ? (
                         <span className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
-                          <Shield className="w-3 h-3" /> Admin
+                          <Shield className="w-3 h-3" /> {t('admin.users.role_admin')}
                         </span>
                       ) : (
                         <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
-                          User
+                          {t('admin.users.role_user')}
                         </span>
                       )}
                     </td>
@@ -366,7 +370,7 @@ export default function AdminUsersPage() {
                             (u.canComment ?? true) ? 'bg-green-500' : 'bg-red-400'
                           }`}
                           title={
-                            (u.canComment ?? true) ? 'Disable commenting' : 'Enable commenting'
+                            (u.canComment ?? true) ? t('admin.users.disable_comment') : t('admin.users.enable_comment')
                           }
                         >
                           <span
@@ -387,7 +391,7 @@ export default function AdminUsersPage() {
                           className={`w-8 h-5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
                             (u.canUpload ?? true) ? 'bg-green-500' : 'bg-red-400'
                           }`}
-                          title={(u.canUpload ?? true) ? 'Disable upload' : 'Enable upload'}
+                          title={(u.canUpload ?? true) ? t('admin.users.disable_upload') : t('admin.users.enable_upload')}
                         >
                           <span
                             className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
@@ -408,7 +412,7 @@ export default function AdminUsersPage() {
                             className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <ChevronUp className="w-3 h-3" />
-                            {actionLoading === u._id ? 'Promoting...' : 'Promote'}
+                            {actionLoading === u._id ? t('admin.users.promoting') : t('admin.users.promote')}
                           </button>
                         ) : (
                           <button
@@ -417,7 +421,7 @@ export default function AdminUsersPage() {
                             className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <ChevronDown className="w-3 h-3" />
-                            {actionLoading === u._id ? 'Demoting...' : 'Demote'}
+                            {actionLoading === u._id ? t('admin.users.demoting') : t('admin.users.demote')}
                           </button>
                         )}
                       </td>

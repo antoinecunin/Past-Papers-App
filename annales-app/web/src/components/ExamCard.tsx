@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BookOpen, FileText, Download, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { showError } from '../utils/swal';
@@ -26,6 +27,7 @@ interface ExamCardProps {
  * Follows existing design patterns from the project
  */
 export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
 
   const handleClick = () => {
@@ -63,7 +65,7 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading file:', error);
-      await showError('Error', 'Unable to download the file');
+      await showError(t('common.error'), t('exams.card.download_error'));
     }
   };
 
@@ -119,7 +121,9 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-secondary flex-shrink-0" />
             <span className="text-xs md:text-sm text-secondary">
-              {exam.pages} page{exam.pages > 1 ? 's' : ''}
+              {exam.pages === 1
+                ? t('exams.card.page_count', { count: exam.pages })
+                : t('exams.card.page_count_plural', { count: exam.pages })}
             </span>
           </div>
         )}
@@ -133,10 +137,10 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
           <button
             onClick={handleDownload}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/10 hover:bg-primary/10 text-secondary hover:text-primary transition-all cursor-pointer"
-            title="Download PDF"
+            title={t('exams.card.download_title')}
           >
             <Download className="w-4 h-4" />
-            <span className="text-xs font-medium">PDF</span>
+            <span className="text-xs font-medium">{t('exams.card.download_label')}</span>
           </button>
 
           {/* Report button */}
@@ -144,7 +148,7 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
             <button
               onClick={handleReport}
               className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 hover:bg-warning/20 text-warning hover:text-warning transition-all cursor-pointer"
-              title="Report this exam"
+              title={t('exams.card.report_title')}
             >
               <AlertTriangle className="w-4 h-4" />
             </button>

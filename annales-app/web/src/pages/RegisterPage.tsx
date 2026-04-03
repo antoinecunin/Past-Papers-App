@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, X, UserPlus, CheckCircle, LogIn } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
 import { useInstance } from '../hooks/useInstance';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { LanguageSwitch } from '../components/LanguageSwitch';
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -33,36 +36,36 @@ export default function RegisterPage() {
     const errors: string[] = [];
 
     if (!formData.firstName.trim()) {
-      errors.push('First name is required');
+      errors.push(t('auth.register.validation.first_name_required'));
     }
 
     if (!formData.lastName.trim()) {
-      errors.push('Last name is required');
+      errors.push(t('auth.register.validation.last_name_required'));
     }
 
     if (!formData.email.trim()) {
-      errors.push('Email is required');
+      errors.push(t('auth.register.validation.email_required'));
     } else if (
       !allowedDomains.some(domain => formData.email.toLowerCase().endsWith(domain.toLowerCase()))
     ) {
       const domains = allowedDomains.join(', ');
-      errors.push(`Email must end with one of the allowed domains: ${domains}`);
+      errors.push(t('auth.register.validation.invalid_domain', { domains }));
     }
 
     if (!formData.password) {
-      errors.push('Password is required');
+      errors.push(t('auth.register.validation.password_required'));
     } else if (formData.password.length < 8) {
-      errors.push('Password must contain at least 8 characters');
+      errors.push(t('auth.register.validation.password_too_short'));
     } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/.test(formData.password)) {
-      errors.push('Password must contain at least one letter and one number');
+      errors.push(t('auth.register.validation.password_weak'));
     }
 
     if (formData.password !== formData.confirmPassword) {
-      errors.push('Passwords do not match');
+      errors.push(t('auth.register.validation.passwords_mismatch'));
     }
 
     if (!acceptedTerms) {
-      errors.push('You must accept the Terms of Service and Privacy Policy');
+      errors.push(t('auth.register.validation.terms_not_accepted'));
     }
 
     setValidationErrors(errors);
@@ -112,11 +115,10 @@ export default function RegisterPage() {
                 <CheckCircle className="w-8 h-8 text-success" />
               </div>
               <h3 className="text-2xl font-bold text-secondary-dark mb-3">
-                Registration successful!
+                {t('auth.register.success_title')}
               </h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                A verification email has been sent to your email address. Please click the link in
-                the email to activate your account.
+                {t('auth.register.success_message')}
               </p>
               <Button
                 type="button"
@@ -126,7 +128,7 @@ export default function RegisterPage() {
                 onClick={() => navigate('login')}
               >
                 <LogIn className="w-5 h-5" />
-                <span>Go to login page</span>
+                <span>{t('auth.register.success_button')}</span>
               </Button>
             </div>
           </div>
@@ -136,7 +138,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-bg-secondary via-white to-primary-light/20 flex flex-col justify-center p-4 md:p-6 lg:p-8 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitch />
+      </div>
       <div className="w-full max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -144,7 +149,7 @@ export default function RegisterPage() {
             <UserPlus className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
-            Create account
+            {t('auth.register.title')}
           </h1>
           <p className="text-sm md:text-base text-secondary">{name}</p>
         </div>
@@ -171,7 +176,7 @@ export default function RegisterPage() {
                     setValidationErrors([]);
                   }}
                   className="text-error hover:text-error/80 transition-colors p-0.5 hover:bg-error/10 rounded cursor-pointer"
-                  aria-label="Close error message"
+                  aria-label={t('common.close_error')}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -181,7 +186,7 @@ export default function RegisterPage() {
             {/* First name and Last name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="First name"
+                label={t('auth.register.first_name_label')}
                 id="firstName"
                 name="firstName"
                 type="text"
@@ -191,7 +196,7 @@ export default function RegisterPage() {
                 placeholder="John"
               />
               <Input
-                label="Last name"
+                label={t('auth.register.last_name_label')}
                 id="lastName"
                 name="lastName"
                 type="text"
@@ -204,7 +209,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <Input
-              label="University email address"
+              label={t('auth.register.email_label')}
               id="email"
               name="email"
               type="email"
@@ -213,12 +218,12 @@ export default function RegisterPage() {
               value={formData.email}
               onChange={handleInputChange('email')}
               placeholder={`your.email${allowedDomains[0] || '@example.com'}`}
-              helperText={`Only ${allowedDomains.join(', ')} emails are accepted`}
+              helperText={t('auth.register.email_helper', { domains: allowedDomains.join(', ') })}
             />
 
             {/* Password */}
             <Input
-              label="Password"
+              label={t('auth.register.password_label')}
               id="password"
               name="password"
               type="password"
@@ -227,12 +232,12 @@ export default function RegisterPage() {
               value={formData.password}
               onChange={handleInputChange('password')}
               placeholder="••••••••"
-              helperText="At least 8 characters with one letter and one number"
+              helperText={t('auth.register.password_helper')}
             />
 
             {/* Confirm password */}
             <Input
-              label="Confirm password"
+              label={t('auth.register.confirm_password_label')}
               id="confirmPassword"
               name="confirmPassword"
               type="password"
@@ -261,21 +266,21 @@ export default function RegisterPage() {
                 htmlFor="acceptTerms"
                 className="text-sm text-secondary leading-relaxed cursor-pointer"
               >
-                I accept the{' '}
+                {t('auth.register.terms_text')}{' '}
                 <button
                   type="button"
                   onClick={() => navigate('terms')}
                   className="text-primary hover:text-primary-hover underline font-medium cursor-pointer"
                 >
-                  Terms of Service
+                  {t('auth.register.terms_link')}
                 </button>{' '}
-                and the{' '}
+                {t('auth.register.and_the')}{' '}
                 <button
                   type="button"
                   onClick={() => navigate('privacy')}
                   className="text-primary hover:text-primary-hover underline font-medium cursor-pointer"
                 >
-                  Privacy Policy
+                  {t('auth.register.privacy_link')}
                 </button>
               </label>
             </div>
@@ -299,12 +304,12 @@ export default function RegisterPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Registering...</span>
+                  <span>{t('auth.register.registering')}</span>
                 </>
               ) : (
                 <>
                   <UserPlus className="w-5 h-5" />
-                  <span>Create account</span>
+                  <span>{t('auth.register.button')}</span>
                 </>
               )}
             </Button>
@@ -312,13 +317,13 @@ export default function RegisterPage() {
 
           {/* Login link */}
           <p className="text-center text-sm text-secondary mt-6">
-            Already have an account?{' '}
+            {t('auth.register.existing_user')}{' '}
             <button
               type="button"
               onClick={() => navigate('login')}
               className="text-primary hover:text-primary-hover font-medium cursor-pointer"
             >
-              Sign in
+              {t('auth.register.sign_in')}
             </button>
           </p>
         </div>

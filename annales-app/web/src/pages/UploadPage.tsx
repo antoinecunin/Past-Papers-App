@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, CheckCircle } from 'lucide-react';
 import FileDrop from '../components/FileDrop';
 import { useAuthStore } from '../stores/authStore';
@@ -8,6 +9,7 @@ import { showValidationError, showError } from '../utils/swal';
 import { apiFetch } from '../utils/api';
 
 export default function UploadPage() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [title, setTitle] = useState('');
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -27,27 +29,27 @@ export default function UploadPage() {
     e.preventDefault();
 
     if (!user) {
-      await showValidationError('You must be logged in to upload a file');
+      await showValidationError(t('exams.upload.validation.not_logged_in'));
       return;
     }
 
     if (!selectedFile) {
-      await showValidationError('Please select a PDF file');
+      await showValidationError(t('exams.upload.validation.no_file'));
       return;
     }
 
     if (!title.trim()) {
-      await showValidationError('Please enter a title');
+      await showValidationError(t('exams.upload.validation.no_title'));
       return;
     }
 
     if (!year) {
-      await showValidationError('Please enter a year');
+      await showValidationError(t('exams.upload.validation.no_year'));
       return;
     }
 
     if (!module.trim()) {
-      await showValidationError('Please enter a module');
+      await showValidationError(t('exams.upload.validation.no_module'));
       return;
     }
 
@@ -66,7 +68,7 @@ export default function UploadPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Upload failed');
+        throw new Error(errorData.error || t('exams.upload.error_message'));
       }
 
       setUploadSuccess(true);
@@ -79,8 +81,8 @@ export default function UploadPage() {
     } catch (error) {
       console.error('Upload error:', error);
       const message =
-        error instanceof Error ? error.message : 'An unexpected error occurred during upload';
-      await showError('Upload error', message);
+        error instanceof Error ? error.message : t('exams.upload.error_message');
+      await showError(t('exams.upload.error_title'), message);
     } finally {
       setIsUploading(false);
     }
@@ -93,8 +95,8 @@ export default function UploadPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
           <Upload className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">Upload an exam</h1>
-        <p className="text-sm md:text-base text-secondary">Share your exams with the community</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">{t('exams.upload.title')}</h1>
+        <p className="text-sm md:text-base text-secondary">{t('exams.upload.subtitle')}</p>
       </div>
 
       {/* Success message */}
@@ -102,7 +104,7 @@ export default function UploadPage() {
         <div className="bg-success-bg border border-success/20 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2 duration-200">
           <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
           <p className="text-sm text-success font-medium">
-            Upload successful! Your exam has been added.
+            {t('exams.upload.success')}
           </p>
         </div>
       )}
@@ -112,20 +114,20 @@ export default function UploadPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Title */}
           <Input
-            label="Exam title"
+            label={t('exams.upload.title_label')}
             id="title"
             name="title"
             type="text"
             required
             value={title}
             onChange={e => setTitle(e.target.value)}
-            placeholder="E.g.: Final exam Mathematics"
+            placeholder={t('exams.upload.title_placeholder')}
           />
 
           {/* Year and Module */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Year"
+              label={t('exams.upload.year_label')}
               id="year"
               name="year"
               type="number"
@@ -144,27 +146,27 @@ export default function UploadPage() {
                   }
                 }
               }}
-              placeholder="E.g.: 2024"
+              placeholder={t('exams.upload.year_placeholder')}
             />
             <Input
-              label="Module"
+              label={t('exams.upload.module_label')}
               id="module"
               name="module"
               type="text"
               required
               value={module}
               onChange={e => setModule(e.target.value)}
-              placeholder="E.g.: M12 - Algebra"
+              placeholder={t('exams.upload.module_placeholder')}
             />
           </div>
 
           {/* File drop */}
           <div>
-            <label className="block text-sm font-medium text-secondary-dark mb-2">PDF file</label>
+            <label className="block text-sm font-medium text-secondary-dark mb-2">{t('exams.upload.file_label')}</label>
             <FileDrop onFiles={handleFileSelect} />
             {selectedFile && (
               <p className="mt-2 text-sm text-secondary">
-                Selected file: <span className="font-medium">{selectedFile.name}</span>
+                {t('exams.upload.selected_file', { name: selectedFile.name })}
               </p>
             )}
           </div>
@@ -188,12 +190,12 @@ export default function UploadPage() {
             {isUploading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Uploading...</span>
+                <span>{t('exams.upload.uploading')}</span>
               </>
             ) : (
               <>
                 <Upload className="w-5 h-5" />
-                <span>Upload exam</span>
+                <span>{t('exams.upload.button')}</span>
               </>
             )}
           </Button>
