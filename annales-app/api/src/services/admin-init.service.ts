@@ -49,9 +49,7 @@ export class AdminInitService {
 
       // Valider l'email
       if (!AuthUtils.isValidEmail(email)) {
-        console.error(
-          `[admin-init] Invalid email or unauthorized domain: ${email}`
-        );
+        console.error(`[admin-init] Invalid email or unauthorized domain: ${email}`);
         return;
       }
 
@@ -85,9 +83,7 @@ export class AdminInitService {
         isVerified: true, // Admin créé automatiquement est déjà vérifié
       });
 
-      console.log(
-        `[admin-init] First admin user created successfully: ${admin.email}`
-      );
+      console.log(`[admin-init] First admin user created successfully: ${admin.email}`);
       console.log(
         '[admin-init] For better security, you can now remove the INITIAL_ADMIN_* variables from your .env'
       );

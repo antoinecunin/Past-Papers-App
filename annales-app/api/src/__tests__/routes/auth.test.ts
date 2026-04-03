@@ -47,22 +47,26 @@ describe('POST /api/auth/register', () => {
     });
 
     it('should reject short password', async () => {
-      const response = await request(app).post('/api/auth/register').send({
-        email: testEmail('test'),
-        password: '123',
-        firstName: 'John',
-        lastName: 'Doe',
-      });
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: testEmail('test'),
+          password: '123',
+          firstName: 'John',
+          lastName: 'Doe',
+        });
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('8 characters');
     });
 
     it('should reject missing fields', async () => {
-      const response = await request(app).post('/api/auth/register').send({
-        email: testEmail('test'),
-        password: 'password123',
-      });
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: testEmail('test'),
+          password: 'password123',
+        });
 
       expect(response.status).toBe(400);
     });
@@ -92,12 +96,14 @@ describe('POST /api/auth/register', () => {
 
     it('should hash password', async () => {
       const password = 'password123';
-      await request(app).post('/api/auth/register').send({
-        email: testEmail('hashtest'),
-        password,
-        firstName: 'Hash',
-        lastName: 'Test',
-      });
+      await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: testEmail('hashtest'),
+          password,
+          firstName: 'Hash',
+          lastName: 'Test',
+        });
 
       const user = await UserModel.findOne({ email: testEmail('hashtest') });
       expect(user?.password).not.toBe(password);
@@ -167,10 +173,12 @@ describe('POST /api/auth/login', () => {
   });
 
   it('should login with valid credentials', async () => {
-    const response = await request(app).post('/api/auth/login').send({
-      email: testEmail('verified'),
-      password: 'password123',
-    });
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testEmail('verified'),
+        password: 'password123',
+      });
 
     expect(response.status).toBe(200);
     expect(response.headers['set-cookie']).toBeDefined();
@@ -180,20 +188,24 @@ describe('POST /api/auth/login', () => {
   });
 
   it('should reject invalid password', async () => {
-    const response = await request(app).post('/api/auth/login').send({
-      email: testEmail('verified'),
-      password: 'wrongpassword',
-    });
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testEmail('verified'),
+        password: 'wrongpassword',
+      });
 
     expect(response.status).toBe(401);
     expect(response.body.error).toContain('Incorrect email or password');
   });
 
   it('should reject non-existent user', async () => {
-    const response = await request(app).post('/api/auth/login').send({
-      email: testEmail('nonexistent'),
-      password: 'password123',
-    });
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testEmail('nonexistent'),
+        password: 'password123',
+      });
 
     expect(response.status).toBe(401);
   });
@@ -210,20 +222,24 @@ describe('POST /api/auth/login', () => {
       verificationToken: 'some-token',
     });
 
-    const response = await request(app).post('/api/auth/login').send({
-      email: testEmail('unverified'),
-      password: 'password123',
-    });
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testEmail('unverified'),
+        password: 'password123',
+      });
 
     expect(response.status).toBe(401);
     expect(response.body.error).toContain('Email not verified');
   });
 
   it('should return user data without sensitive fields', async () => {
-    const response = await request(app).post('/api/auth/login').send({
-      email: testEmail('verified'),
-      password: 'password123',
-    });
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testEmail('verified'),
+        password: 'password123',
+      });
 
     expect(response.body.user).not.toHaveProperty('password');
     expect(response.body.user).not.toHaveProperty('verificationToken');
@@ -331,9 +347,11 @@ describe('POST /api/auth/forgot-password', () => {
       isVerified: true,
     });
 
-    const response = await request(app).post('/api/auth/forgot-password').send({
-      email: testEmail('resetme'),
-    });
+    const response = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({
+        email: testEmail('resetme'),
+      });
 
     expect(response.status).toBe(200);
     expect(response.body.message).toBeTruthy();
@@ -345,9 +363,11 @@ describe('POST /api/auth/forgot-password', () => {
   });
 
   it('should not reveal if email does not exist', async () => {
-    const response = await request(app).post('/api/auth/forgot-password').send({
-      email: testEmail('nonexistent'),
-    });
+    const response = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({
+        email: testEmail('nonexistent'),
+      });
 
     // Même message pour ne pas révéler si l'email existe
     expect(response.status).toBe(200);
@@ -437,10 +457,12 @@ describe('POST /api/auth/reset-password', () => {
     expect(user?.resetPasswordExpires).toBeUndefined();
 
     // Vérifier qu'on peut se connecter avec le nouveau mot de passe
-    const loginResponse = await request(app).post('/api/auth/login').send({
-      email: testEmail('resetvalid'),
-      password: 'newPassword123',
-    });
+    const loginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testEmail('resetvalid'),
+        password: 'newPassword123',
+      });
 
     expect(loginResponse.status).toBe(200);
     expect(loginResponse.headers['set-cookie']).toBeDefined();

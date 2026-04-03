@@ -2,7 +2,12 @@ import React, { useState, useRef } from 'react';
 import type { AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 import { useInstance } from '../hooks/useInstance';
-import { CONTENT_MAX_LENGTH, IMAGE_MAX_SIZE, formatCharCount, getCharCountColor } from '../constants/content';
+import {
+  CONTENT_MAX_LENGTH,
+  IMAGE_MAX_SIZE,
+  formatCharCount,
+  getCharCountColor,
+} from '../constants/content';
 
 interface ReplyFormProps {
   onSubmit: (content: AnswerContent) => Promise<void>;
@@ -12,7 +17,13 @@ interface ReplyFormProps {
   onClearMention?: () => void;
 }
 
-export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, onUploadImage, mentionLabel, onClearMention }) => {
+export const ReplyForm: React.FC<ReplyFormProps> = ({
+  onSubmit,
+  onCancel,
+  onUploadImage,
+  mentionLabel,
+  onClearMention,
+}) => {
   const { primaryHoverColor } = useInstance();
   const [contentType, setContentType] = useState<ContentType>('text');
   const [data, setData] = useState('');
@@ -24,9 +35,10 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, onUplo
 
   const maxLength = CONTENT_MAX_LENGTH[contentType];
   const trimmed = data.trim();
-  const canSubmit = contentType === 'image'
-    ? !!imageFile && !imageError && !submitting
-    : trimmed.length > 0 && !submitting;
+  const canSubmit =
+    contentType === 'image'
+      ? !!imageFile && !imageError && !submitting
+      : trimmed.length > 0 && !submitting;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,18 +111,17 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, onUplo
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      onClick={e => e.stopPropagation()}
-      style={formStyle}
-    >
+    <form onSubmit={handleSubmit} onClick={e => e.stopPropagation()} style={formStyle}>
       {mentionLabel && (
         <div style={mentionBadgeContainerStyle}>
           <span style={getMentionTagStyle(primaryHoverColor)}>{mentionLabel}</span>
           {onClearMention && (
             <button
               type="button"
-              onClick={e => { e.stopPropagation(); onClearMention(); }}
+              onClick={e => {
+                e.stopPropagation();
+                onClearMention();
+              }}
               style={mentionClearButtonStyle}
               title="Remove mention"
             >
@@ -139,35 +150,34 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, onUplo
             style={fileInputStyle}
           />
           {imageError && <div style={warningStyle}>{imageError}</div>}
-          {imagePreview && (
-            <img src={imagePreview} alt="Preview" style={imagePreviewStyle} />
-          )}
+          {imagePreview && <img src={imagePreview} alt="Preview" style={imagePreviewStyle} />}
         </>
       ) : (
         <>
           <textarea
             value={data}
             onChange={e => setData(e.target.value)}
-            placeholder={contentType === 'latex' ? 'LaTeX code (e.g.: \\int_0^1 x^2 dx)' : 'Your reply...'}
+            placeholder={
+              contentType === 'latex' ? 'LaTeX code (e.g.: \\int_0^1 x^2 dx)' : 'Your reply...'
+            }
             maxLength={maxLength}
             rows={2}
             style={textareaStyle}
           />
-          <div style={{
-            fontSize: '11px',
-            textAlign: 'right',
-            color: getCharCountColor(data.length, maxLength),
-          }}>
+          <div
+            style={{
+              fontSize: '11px',
+              textAlign: 'right',
+              color: getCharCountColor(data.length, maxLength),
+            }}
+          >
             {formatCharCount(data.length, maxLength)}
           </div>
         </>
       )}
 
       {contentType === 'latex' && trimmed && (
-        <div
-          style={previewStyle}
-          dangerouslySetInnerHTML={{ __html: renderLatex(trimmed) }}
-        />
+        <div style={previewStyle} dangerouslySetInnerHTML={{ __html: renderLatex(trimmed) }} />
       )}
 
       <div style={{ display: 'flex', gap: '6px' }}>
@@ -184,7 +194,10 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, onCancel, onUplo
         </button>
         <button
           type="button"
-          onClick={e => { e.stopPropagation(); onCancel(); }}
+          onClick={e => {
+            e.stopPropagation();
+            onCancel();
+          }}
           style={cancelButtonStyle}
         >
           Cancel

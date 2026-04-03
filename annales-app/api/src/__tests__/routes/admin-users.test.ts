@@ -100,9 +100,7 @@ describe('Admin user management', () => {
 
   describe('PUT /api/auth/users/:id/role', () => {
     it('should require authentication', async () => {
-      const response = await request(app)
-        .put('/api/auth/users/123/role')
-        .send({ role: 'admin' });
+      const response = await request(app).put('/api/auth/users/123/role').send({ role: 'admin' });
 
       expect(response.status).toBe(401);
     });
@@ -145,7 +143,9 @@ describe('Admin user management', () => {
         email: initialEmail,
         role: 'admin',
       });
-      const { user: target } = await createAuthenticatedUser({ email: testEmail('promote-target') });
+      const { user: target } = await createAuthenticatedUser({
+        email: testEmail('promote-target'),
+      });
 
       const response = await request(app)
         .put(`/api/auth/users/${target._id}/role`)
@@ -232,7 +232,9 @@ describe('Admin user management', () => {
         email: initialEmail,
         role: 'admin',
       });
-      const { user: target } = await createAuthenticatedUser({ email: testEmail('invalid-role-target') });
+      const { user: target } = await createAuthenticatedUser({
+        email: testEmail('invalid-role-target'),
+      });
 
       const response = await request(app)
         .put(`/api/auth/users/${target._id}/role`)

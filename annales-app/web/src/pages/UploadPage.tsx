@@ -78,7 +78,8 @@ export default function UploadPage() {
       setTimeout(() => setUploadSuccess(false), 5000);
     } catch (error) {
       console.error('Upload error:', error);
-      const message = error instanceof Error ? error.message : 'An unexpected error occurred during upload';
+      const message =
+        error instanceof Error ? error.message : 'An unexpected error occurred during upload';
       await showError('Upload error', message);
     } finally {
       setIsUploading(false);
@@ -92,12 +93,8 @@ export default function UploadPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
           <Upload className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">
-          Upload an exam
-        </h1>
-        <p className="text-sm md:text-base text-secondary">
-          Share your exams with the community
-        </p>
+        <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">Upload an exam</h1>
+        <p className="text-sm md:text-base text-secondary">Share your exams with the community</p>
       </div>
 
       {/* Success message */}
@@ -121,7 +118,7 @@ export default function UploadPage() {
             type="text"
             required
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             placeholder="E.g.: Final exam Mathematics"
           />
 
@@ -136,7 +133,7 @@ export default function UploadPage() {
               min={1900}
               max={new Date().getFullYear() + 1}
               value={year}
-              onChange={(e) => {
+              onChange={e => {
                 const val = e.target.value;
                 if (val === '') {
                   setYear(new Date().getFullYear());
@@ -156,16 +153,14 @@ export default function UploadPage() {
               type="text"
               required
               value={module}
-              onChange={(e) => setModule(e.target.value)}
+              onChange={e => setModule(e.target.value)}
               placeholder="E.g.: M12 - Algebra"
             />
           </div>
 
           {/* File drop */}
           <div>
-            <label className="block text-sm font-medium text-secondary-dark mb-2">
-              PDF file
-            </label>
+            <label className="block text-sm font-medium text-secondary-dark mb-2">PDF file</label>
             <FileDrop onFiles={handleFileSelect} />
             {selectedFile && (
               <p className="mt-2 text-sm text-secondary">

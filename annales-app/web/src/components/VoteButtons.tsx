@@ -7,12 +7,7 @@ interface VoteButtonsProps {
   onVote: (answerId: string, value: 1 | -1) => Promise<void>;
 }
 
-export const VoteButtons: React.FC<VoteButtonsProps> = ({
-  answerId,
-  score,
-  userVote,
-  onVote,
-}) => {
+export const VoteButtons: React.FC<VoteButtonsProps> = ({ answerId, score, userVote, onVote }) => {
   const [optimisticScore, setOptimisticScore] = useState<number | null>(null);
   const [optimisticVote, setOptimisticVote] = useState<number | null | undefined>(undefined);
   const [loading, setLoading] = useState(false);

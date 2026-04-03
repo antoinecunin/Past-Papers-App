@@ -25,9 +25,7 @@ describe('POST /api/answers/:id/vote', () => {
 
   it('should require authentication', async () => {
     const id = new Types.ObjectId();
-    const response = await request(app)
-      .post(`/api/answers/${id}/vote`)
-      .send({ value: 1 });
+    const response = await request(app).post(`/api/answers/${id}/vote`).send({ value: 1 });
 
     expect(response.status).toBe(401);
   });
@@ -264,9 +262,7 @@ describe('GET /api/answers - score and userVote', () => {
   it('should return userVote as null when user has not voted', async () => {
     const { user, token } = await createAuthenticatedUser();
     const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
-    await AnswerModel.create(
-      createAnswerData({ examId: exam._id, authorId: user._id })
-    );
+    await AnswerModel.create(createAnswerData({ examId: exam._id, authorId: user._id }));
 
     const response = await request(app)
       .get(`/api/answers?examId=${exam._id}`)
@@ -351,9 +347,7 @@ describe('Vote cascade delete', () => {
     expect(await VoteModel.countDocuments({ answerId: answer._id })).toBe(1);
 
     // Delete answer
-    await request(app)
-      .delete(`/api/answers/${answer._id}`)
-      .set('Authorization', `Bearer ${token}`);
+    await request(app).delete(`/api/answers/${answer._id}`).set('Authorization', `Bearer ${token}`);
 
     // Votes should be gone
     expect(await VoteModel.countDocuments({ answerId: answer._id })).toBe(0);
@@ -382,9 +376,7 @@ describe('Vote cascade delete', () => {
     expect(await VoteModel.countDocuments()).toBe(2);
 
     // Delete root → cascades to reply votes
-    await request(app)
-      .delete(`/api/answers/${root._id}`)
-      .set('Authorization', `Bearer ${token}`);
+    await request(app).delete(`/api/answers/${root._id}`).set('Authorization', `Bearer ${token}`);
 
     expect(await VoteModel.countDocuments()).toBe(0);
   });

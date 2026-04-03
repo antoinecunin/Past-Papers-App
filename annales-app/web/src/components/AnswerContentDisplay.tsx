@@ -2,7 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
 import { TrashIcon, CopyIcon } from './ui/Icon';
-import { CONTENT_MAX_LENGTH, IMAGE_MAX_SIZE, formatCharCount, getCharCountColor, imageKeyToUrl } from '../constants/content';
+import {
+  CONTENT_MAX_LENGTH,
+  IMAGE_MAX_SIZE,
+  formatCharCount,
+  getCharCountColor,
+  imageKeyToUrl,
+} from '../constants/content';
 
 interface AnswerContentDisplayProps {
   answer: Answer;
@@ -184,7 +190,10 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                 {truncated ? '...More' : ' Less'}
               </button>
             )}
-            <details style={{ marginTop: '4px', pointerEvents: 'auto' }} onClick={e => e.stopPropagation()}>
+            <details
+              style={{ marginTop: '4px', pointerEvents: 'auto' }}
+              onClick={e => e.stopPropagation()}
+            >
               <summary style={summaryStyle}>LaTeX code</summary>
               <div style={latexCodeStyle}>{latexData}</div>
             </details>
@@ -229,11 +238,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
           <div>
             {/* Show current image */}
             {editContent.data && !editImagePreview && (
-              <img
-                src={imageKeyToUrl(editContent.data)}
-                alt="Current"
-                style={previewImageStyle}
-              />
+              <img src={imageKeyToUrl(editContent.data)} alt="Current" style={previewImageStyle} />
             )}
             {editImagePreview && (
               <img src={editImagePreview} alt="New preview" style={previewImageStyle} />
@@ -245,7 +250,11 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
               onChange={e => {
                 const file = e.target.files?.[0];
                 setEditImageError(null);
-                if (!file) { setEditImageFile(null); setEditImagePreview(null); return; }
+                if (!file) {
+                  setEditImageFile(null);
+                  setEditImagePreview(null);
+                  return;
+                }
                 if (!file.type.startsWith('image/')) {
                   setEditImageError('Only image files are accepted');
                   return;
@@ -260,7 +269,9 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
               style={{ fontSize: '11px', padding: '4px 0', marginTop: '4px' }}
             />
             {editImageError && (
-              <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '2px' }}>{editImageError}</div>
+              <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '2px' }}>
+                {editImageError}
+              </div>
             )}
           </div>
         ) : (
@@ -277,12 +288,17 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
               style={textareaStyle}
               maxLength={CONTENT_MAX_LENGTH[editContent.type]}
             />
-            <div style={{
-              fontSize: '11px',
-              textAlign: 'right',
-              marginTop: '2px',
-              color: getCharCountColor(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type]),
-            }}>
+            <div
+              style={{
+                fontSize: '11px',
+                textAlign: 'right',
+                marginTop: '2px',
+                color: getCharCountColor(
+                  editContent.data.length,
+                  CONTENT_MAX_LENGTH[editContent.type]
+                ),
+              }}
+            >
               {formatCharCount(editContent.data.length, CONTENT_MAX_LENGTH[editContent.type])}
             </div>
           </>
@@ -400,7 +416,12 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
               style={actionButtonStyle}
               title="Report this comment"
             >
-              <svg className="w-3 h-3 text-orange-500 hover:text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-3 h-3 text-orange-500 hover:text-orange-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -421,7 +442,12 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
               style={actionButtonStyle}
               title="Reply"
             >
-              <svg className="w-3 h-3 text-blue-500 hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-3 h-3 text-blue-500 hover:text-blue-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

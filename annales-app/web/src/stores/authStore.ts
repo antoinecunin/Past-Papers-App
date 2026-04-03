@@ -45,7 +45,7 @@ const API_BASE = '/api/auth';
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    set => ({
       user: null,
       isLoading: false,
       error: null,

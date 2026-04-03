@@ -16,9 +16,7 @@ export default function PrivacyPage() {
             <span className="text-sm">Back</span>
           </button>
 
-          <h1 className="text-3xl font-bold text-secondary-dark mb-2">
-            Privacy Policy
-          </h1>
+          <h1 className="text-3xl font-bold text-secondary-dark mb-2">Privacy Policy</h1>
           <p className="text-secondary text-sm mb-8">
             Last updated: {new Date().toLocaleDateString('en-US')}
           </p>
@@ -28,10 +26,10 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
               <p className="leading-relaxed">
-                This privacy policy describes how {name} (hereinafter &quot;we&quot;, &quot;our&quot;,
-                or &quot;the platform&quot;) collects, uses, stores, and protects your personal data in
-                accordance with the General Data Protection Regulation (GDPR) and applicable data
-                protection legislation.
+                This privacy policy describes how {name} (hereinafter &quot;we&quot;,
+                &quot;our&quot;, or &quot;the platform&quot;) collects, uses, stores, and protects
+                your personal data in accordance with the General Data Protection Regulation (GDPR)
+                and applicable data protection legislation.
               </p>
             </section>
 
@@ -107,9 +105,7 @@ export default function PrivacyPage() {
                       <td className="border border-gray-200 p-3">Performance of contract</td>
                     </tr>
                     <tr>
-                      <td className="border border-gray-200 p-3">
-                        Sharing and viewing past exams
-                      </td>
+                      <td className="border border-gray-200 p-3">Sharing and viewing past exams</td>
                       <td className="border border-gray-200 p-3">Performance of contract</td>
                     </tr>
                     <tr>
@@ -119,9 +115,7 @@ export default function PrivacyPage() {
                       <td className="border border-gray-200 p-3">Legitimate interest</td>
                     </tr>
                     <tr>
-                      <td className="border border-gray-200 p-3">
-                        Platform improvement
-                      </td>
+                      <td className="border border-gray-200 p-3">Platform improvement</td>
                       <td className="border border-gray-200 p-3">Legitimate interest</td>
                     </tr>
                     <tr>
@@ -190,9 +184,7 @@ export default function PrivacyPage() {
 
               <div className="space-y-3">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Right of Access
-                  </h3>
+                  <h3 className="font-semibold mb-1 text-blue-900">✓ Right of Access</h3>
                   <p className="text-sm text-blue-800">
                     You can view and export all of your data from your profile (&quot;Export My
                     Data&quot; button).
@@ -200,9 +192,7 @@ export default function PrivacyPage() {
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Right to Rectification
-                  </h3>
+                  <h3 className="font-semibold mb-1 text-blue-900">✓ Right to Rectification</h3>
                   <p className="text-sm text-blue-800">
                     You can modify your first name, last name, and email address from your profile.
                   </p>
@@ -220,9 +210,7 @@ export default function PrivacyPage() {
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="font-semibold mb-1 text-blue-900">
-                    ✓ Right to Data Portability
-                  </h3>
+                  <h3 className="font-semibold mb-1 text-blue-900">✓ Right to Data Portability</h3>
                   <p className="text-sm text-blue-800">
                     You can export your data in JSON format from your profile.
                   </p>
@@ -266,13 +254,11 @@ export default function PrivacyPage() {
             {/* 9. Cookies */}
             <section>
               <h2 className="text-2xl font-semibold mb-4">9. Cookies and Local Storage</h2>
-              <p className="mb-4">
-                Our platform uses browser local storage (localStorage) for:
-              </p>
+              <p className="mb-4">Our platform uses browser local storage (localStorage) for:</p>
               <ul className="space-y-2 list-disc list-inside text-secondary">
                 <li>
-                  <strong>Authentication token (JWT):</strong> required for the platform to function,
-                  retained until logout
+                  <strong>Authentication token (JWT):</strong> required for the platform to
+                  function, retained until logout
                 </li>
                 <li>
                   <strong>User preferences:</strong> display and navigation settings
@@ -304,9 +290,7 @@ export default function PrivacyPage() {
 
             {/* 12. Modifications */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">
-                12. Changes to This Policy
-              </h2>
+              <h2 className="text-2xl font-semibold mb-4">12. Changes to This Policy</h2>
               <p className="text-secondary">
                 We reserve the right to modify this privacy policy at any time. Any changes will be
                 published on this page with an updated date. Significant changes will be notified to
@@ -350,10 +334,7 @@ export default function PrivacyPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm">
                   <strong>Email:</strong>{' '}
-                  <a
-                    href={`mailto:${contactEmail}`}
-                    className="text-primary hover:underline"
-                  >
+                  <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
                     {contactEmail}
                   </a>
                 </p>

@@ -53,7 +53,13 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     };
 
     const rgb = hexToRgb(primaryColor);
-    const primaryHoverColor = `#${Math.floor(rgb.r * 0.9).toString(16).padStart(2, '0')}${Math.floor(rgb.g * 0.9).toString(16).padStart(2, '0')}${Math.floor(rgb.b * 0.9).toString(16).padStart(2, '0')}`;
+    const primaryHoverColor = `#${Math.floor(rgb.r * 0.9)
+      .toString(16)
+      .padStart(2, '0')}${Math.floor(rgb.g * 0.9)
+      .toString(16)
+      .padStart(2, '0')}${Math.floor(rgb.b * 0.9)
+      .toString(16)
+      .padStart(2, '0')}`;
     const primaryLight = `rgb(${Math.min(255, rgb.r + (255 - rgb.r) * 0.9)}, ${Math.min(255, rgb.g + (255 - rgb.g) * 0.9)}, ${Math.min(255, rgb.b + (255 - rgb.b) * 0.9)})`;
 
     // Inject CSS variables

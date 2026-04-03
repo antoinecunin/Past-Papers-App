@@ -43,19 +43,22 @@ function App() {
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   // Load an exam by its ID (for direct URLs)
-  const loadExamById = useCallback(async (examId: string): Promise<Exam | null> => {
-    if (!user) return null;
+  const loadExamById = useCallback(
+    async (examId: string): Promise<Exam | null> => {
+      if (!user) return null;
 
-    try {
-      const response = await apiFetch(`/api/exams/${examId}`);
-      if (response.ok) {
-        return await response.json();
+      try {
+        const response = await apiFetch(`/api/exams/${examId}`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (error) {
+        console.error('Error loading exam:', error);
       }
-    } catch (error) {
-      console.error("Error loading exam:", error);
-    }
-    return null;
-  }, [user]);
+      return null;
+    },
+    [user]
+  );
 
   // Handle exam selection
   const handleExamSelect = (exam: Exam) => {
@@ -255,7 +258,9 @@ function App() {
                       {selectedExam.pages && (
                         <>
                           <span>•</span>
-                          <span>{selectedExam.pages} page{selectedExam.pages > 1 ? 's' : ''}</span>
+                          <span>
+                            {selectedExam.pages} page{selectedExam.pages > 1 ? 's' : ''}
+                          </span>
                         </>
                       )}
                     </div>
@@ -318,9 +323,15 @@ function App() {
   // Hide navigation for authentication and legal pages
   const shouldShowNavigation =
     user &&
-    !['login', 'register', 'forgot-password', 'reset-password', 'verify-email', 'privacy', 'terms'].includes(
-      currentRoute.page
-    );
+    ![
+      'login',
+      'register',
+      'forgot-password',
+      'reset-password',
+      'verify-email',
+      'privacy',
+      'terms',
+    ].includes(currentRoute.page);
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -110,7 +110,9 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
         {exam.module && (
           <div className="flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-secondary flex-shrink-0" />
-            <span className="text-xs md:text-sm text-secondary font-medium truncate">{exam.module}</span>
+            <span className="text-xs md:text-sm text-secondary font-medium truncate">
+              {exam.module}
+            </span>
           </div>
         )}
         {exam.pages && (

@@ -30,9 +30,7 @@ const COMMENT_REASONS = [
 export async function showReportModal(title: string, type: ReportType): Promise<ReportData | null> {
   const reasons = type === 'exam' ? EXAM_REASONS : COMMENT_REASONS;
 
-  const optionsHtml = reasons
-    .map(r => `<option value="${r.value}">${r.label}</option>`)
-    .join('');
+  const optionsHtml = reasons.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
 
   const result = await Swal.fire({
     title,
@@ -53,7 +51,8 @@ export async function showReportModal(title: string, type: ReportType): Promise<
     cancelButtonColor: '#64748b',
     preConfirm: () => {
       const reason = (document.getElementById('swal-reason') as HTMLSelectElement)?.value;
-      const description = (document.getElementById('swal-description') as HTMLTextAreaElement)?.value;
+      const description = (document.getElementById('swal-description') as HTMLTextAreaElement)
+        ?.value;
       if (!reason) {
         Swal.showValidationMessage('Please select a reason');
         return false;

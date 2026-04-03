@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { authMiddleware, requireAdmin, AuthenticatedRequest, AuthorizationUtils } from '../middleware/auth.js';
+import {
+  authMiddleware,
+  requireAdmin,
+  AuthenticatedRequest,
+  AuthorizationUtils,
+} from '../middleware/auth.js';
 import { answerService } from '../services/answer.service.js';
 import { voteService } from '../services/vote.service.js';
 import { objectIdSchema } from '../utils/validation.js';
@@ -44,7 +49,10 @@ const getAnswersQuerySchema = z.object({
 
 const createAnswerSchema = z.object({
   examId: objectIdSchema('examId'),
-  page: z.number({ required_error: 'page is required' }).int().min(1, 'page must be an integer >= 1'),
+  page: z
+    .number({ required_error: 'page is required' })
+    .int()
+    .min(1, 'page must be an integer >= 1'),
   yTop: z
     .number({ required_error: 'yTop is required' })
     .min(0, 'yTop must be >= 0')

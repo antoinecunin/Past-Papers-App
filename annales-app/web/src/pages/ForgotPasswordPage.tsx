@@ -51,9 +51,7 @@ export default function ForgotPasswordPage() {
                 If this email address is associated with an account, you will receive a link to
                 reset your password.
               </p>
-              <p className="text-xs text-secondary/80 mb-6">
-                Check your inbox and spam folder.
-              </p>
+              <p className="text-xs text-secondary/80 mb-6">Check your inbox and spam folder.</p>
               <div className="space-y-3">
                 <Button
                   type="button"
@@ -131,7 +129,7 @@ export default function ForgotPasswordPage() {
               autoComplete="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               placeholder={`your.email${allowedDomains[0] || '@example.com'}`}
             />
 
@@ -163,9 +161,7 @@ export default function ForgotPasswordPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">
-                or
-              </span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">or</span>
             </div>
           </div>
 

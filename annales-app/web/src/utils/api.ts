@@ -26,7 +26,11 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
 
     // Only redirect if not already on login/register/public pages
     const path = window.location.pathname;
-    if (!['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].includes(path)) {
+    if (
+      !['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].includes(
+        path
+      )
+    ) {
       window.location.href = '/login';
     }
   }

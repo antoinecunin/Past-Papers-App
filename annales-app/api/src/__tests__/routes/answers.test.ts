@@ -471,7 +471,9 @@ describe('POST /api/answers', () => {
 
     it('should create a reply with mentionedUserId', async () => {
       const { user, token } = await createAuthenticatedUser();
-      const { user: mentionedUser } = await createAuthenticatedUser({ email: testEmail('mentioned') });
+      const { user: mentionedUser } = await createAuthenticatedUser({
+        email: testEmail('mentioned'),
+      });
       const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
 
       const root = await AnswerModel.create(
@@ -499,7 +501,9 @@ describe('POST /api/answers', () => {
 
     it('should reject mentionedUserId without parentId (400)', async () => {
       const { user, token } = await createAuthenticatedUser();
-      const { user: mentionedUser } = await createAuthenticatedUser({ email: testEmail('mentioned2') });
+      const { user: mentionedUser } = await createAuthenticatedUser({
+        email: testEmail('mentioned2'),
+      });
       const exam = await ExamModel.create(createExamData({ uploadedBy: user._id }));
 
       const response = await request(app)

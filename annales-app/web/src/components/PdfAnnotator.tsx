@@ -11,7 +11,12 @@ import { ReplyForm } from './ReplyForm';
 import { useAuthStore } from '../stores/authStore';
 import { useInstance } from '../hooks/useInstance';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
-import { CONTENT_MAX_LENGTH, IMAGE_MAX_SIZE, formatCharCount, getCharCountColor } from '../constants/content';
+import {
+  CONTENT_MAX_LENGTH,
+  IMAGE_MAX_SIZE,
+  formatCharCount,
+  getCharCountColor,
+} from '../constants/content';
 import { apiFetch } from '../utils/api';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -51,7 +56,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   }
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [openThreads, setOpenThreads] = useState<Record<string, boolean>>({});
-  const [loadedReplies, setLoadedReplies] = useState<Record<string, { replies: Answer[]; hasMore: boolean; cursor?: string }>>({});
+  const [loadedReplies, setLoadedReplies] = useState<
+    Record<string, { replies: Answer[]; hasMore: boolean; cursor?: string }>
+  >({});
 
   // Hook for click positioning
   const { pendingPosition, handlePageClick, confirmComment, cancelComment } = useCommentPositioning(
@@ -577,7 +584,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         imageFileInput.addEventListener('change', () => {
           const file = imageFileInput.files?.[0];
           imageErrorDiv.style.display = 'none';
-          if (!file) { selectedImageFile = null; imagePreviewDiv.style.display = 'none'; return; }
+          if (!file) {
+            selectedImageFile = null;
+            imagePreviewDiv.style.display = 'none';
+            return;
+          }
           if (!file.type.startsWith('image/')) {
             imageErrorDiv.textContent = 'Only image files are accepted';
             imageErrorDiv.style.display = 'block';
@@ -682,7 +693,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   // Filter comments for the visible page (locally, no API call)
   useEffect(() => {
     const pageAnswers = allAnswers
-      .filter((a) => a.page === visiblePage)
+      .filter(a => a.page === visiblePage)
       .sort((a, b) => a.yTop - b.yTop);
     setAnswers(pageAnswers);
   }, [allAnswers, visiblePage]);
@@ -877,7 +888,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
       // Update root answers state
       setAllAnswers(prev =>
-        prev.map(a => (a._id === answerId ? { ...a, score: data.score, userVote: data.userVote } : a))
+        prev.map(a =>
+          a._id === answerId ? { ...a, score: data.score, userVote: data.userVote } : a
+        )
       );
       // Update loaded replies if the voted answer is a reply
       setLoadedReplies(prev => {
@@ -908,9 +921,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
       });
       if (!res.ok) return;
       const { isBestAnswer } = await res.json();
-      setAllAnswers(prev =>
-        prev.map(a => (a._id === answerId ? { ...a, isBestAnswer } : a))
-      );
+      setAllAnswers(prev => prev.map(a => (a._id === answerId ? { ...a, isBestAnswer } : a)));
     },
     [user]
   );
@@ -930,9 +941,8 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         setLoadedReplies(prev => {
           const existing = prev[parentId];
-          const newReplies = cursor && existing
-            ? [...existing.replies, ...data.replies]
-            : data.replies;
+          const newReplies =
+            cursor && existing ? [...existing.replies, ...data.replies] : data.replies;
           const lastReply = newReplies[newReplies.length - 1];
           return {
             ...prev,
@@ -1003,10 +1013,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
       setReplyTarget(null);
       // Reload thread replies and root comments (to update replyCount)
-      await Promise.all([
-        loadReplies(parentId),
-        loadAllAnswers(),
-      ]);
+      await Promise.all([loadReplies(parentId), loadAllAnswers()]);
       // Make sure the thread is open
       setOpenThreads(prev => ({ ...prev, [parentId]: true }));
     },
@@ -1052,208 +1059,243 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
         )}
 
         <ul style={commentListStyle}>
-          {[...(selectedGroup || answers)].sort((a, b) => {
-            if (a.isBestAnswer && !b.isBestAnswer) return -1;
-            if (!a.isBestAnswer && b.isBestAnswer) return 1;
-            return 0;
-          }).map(a => (
-            <li
-              key={a._id}
-              onClick={() => {
-                // Highlight this comment
-                setHighlightedAnswers([a._id]);
+          {[...(selectedGroup || answers)]
+            .sort((a, b) => {
+              if (a.isBestAnswer && !b.isBestAnswer) return -1;
+              if (!a.isBestAnswer && b.isBestAnswer) return 1;
+              return 0;
+            })
+            .map(a => (
+              <li
+                key={a._id}
+                onClick={() => {
+                  // Highlight this comment
+                  setHighlightedAnswers([a._id]);
 
-                // Scroll to the corresponding indicator and highlight it
-                const container = containerRef.current;
-                if (!container) return;
+                  // Scroll to the corresponding indicator and highlight it
+                  const container = containerRef.current;
+                  if (!container) return;
 
-                // Find all indicators and search for the one corresponding to this comment
-                const indicators = Array.from(container.querySelectorAll('.comment-indicator'));
-                let targetIndicator: HTMLElement | null = null;
+                  // Find all indicators and search for the one corresponding to this comment
+                  const indicators = Array.from(container.querySelectorAll('.comment-indicator'));
+                  let targetIndicator: HTMLElement | null = null;
 
-                for (const indicator of indicators) {
-                  const indicatorElement = indicator as HTMLElement;
-                  const answerIds =
-                    indicatorElement.getAttribute('data-answer-ids')?.split(',') || [];
+                  for (const indicator of indicators) {
+                    const indicatorElement = indicator as HTMLElement;
+                    const answerIds =
+                      indicatorElement.getAttribute('data-answer-ids')?.split(',') || [];
 
-                  // Check if this indicator contains our comment
-                  if (answerIds.includes(a._id)) {
-                    targetIndicator = indicatorElement;
-                    break;
-                  }
-                }
-
-                if (targetIndicator) {
-                  // If it's the same marker as before, reset the timer
-                  if (currentHighlightedMarkerRef.current === targetIndicator) {
-                    // Same marker: reset timer
-                    if (highlightTimeoutRef.current) {
-                      clearTimeout(highlightTimeoutRef.current);
+                    // Check if this indicator contains our comment
+                    if (answerIds.includes(a._id)) {
+                      targetIndicator = indicatorElement;
+                      break;
                     }
-                  } else {
-                    // Different marker: stop previous effect
-                    if (currentHighlightedMarkerRef.current) {
-                      currentHighlightedMarkerRef.current.classList.remove('highlighted-indicator');
+                  }
+
+                  if (targetIndicator) {
+                    // If it's the same marker as before, reset the timer
+                    if (currentHighlightedMarkerRef.current === targetIndicator) {
+                      // Same marker: reset timer
                       if (highlightTimeoutRef.current) {
                         clearTimeout(highlightTimeoutRef.current);
                       }
+                    } else {
+                      // Different marker: stop previous effect
+                      if (currentHighlightedMarkerRef.current) {
+                        currentHighlightedMarkerRef.current.classList.remove(
+                          'highlighted-indicator'
+                        );
+                        if (highlightTimeoutRef.current) {
+                          clearTimeout(highlightTimeoutRef.current);
+                        }
+                      }
                     }
+
+                    // Apply new effect
+                    currentHighlightedMarkerRef.current = targetIndicator;
+                    targetIndicator.classList.add('highlighted-indicator');
+                    targetIndicator.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Create a new timeout
+                    highlightTimeoutRef.current = setTimeout(() => {
+                      targetIndicator?.classList.remove('highlighted-indicator');
+                      setHighlightedAnswers([]);
+                      currentHighlightedMarkerRef.current = null;
+                      highlightTimeoutRef.current = null;
+                    }, 3000);
                   }
-
-                  // Apply new effect
-                  currentHighlightedMarkerRef.current = targetIndicator;
-                  targetIndicator.classList.add('highlighted-indicator');
-                  targetIndicator.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                  // Create a new timeout
-                  highlightTimeoutRef.current = setTimeout(() => {
-                    targetIndicator?.classList.remove('highlighted-indicator');
-                    setHighlightedAnswers([]);
-                    currentHighlightedMarkerRef.current = null;
-                    highlightTimeoutRef.current = null;
-                  }, 3000);
-                }
-              }}
-              style={{
-                ...commentItemStyle,
-                cursor: 'pointer',
-                backgroundColor: highlightedAnswers.includes(a._id) ? '#fef3c7' : 'transparent',
-                transition: 'all 0.3s ease',
-                transform: highlightedAnswers.includes(a._id) ? 'scale(1.02)' : 'scale(1)',
-                boxShadow: highlightedAnswers.includes(a._id)
-                  ? '0 4px 8px rgba(245, 158, 11, 0.2)'
-                  : 'none',
-              }}
-            >
-              <div
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                }}
+                style={{
+                  ...commentItemStyle,
+                  cursor: 'pointer',
+                  backgroundColor: highlightedAnswers.includes(a._id) ? '#fef3c7' : 'transparent',
+                  transition: 'all 0.3s ease',
+                  transform: highlightedAnswers.includes(a._id) ? 'scale(1.02)' : 'scale(1)',
+                  boxShadow: highlightedAnswers.includes(a._id)
+                    ? '0 4px 8px rgba(245, 158, 11, 0.2)'
+                    : 'none',
+                }}
               >
-                <div style={commentMetaStyle}>
-                  {PermissionUtils.isAdmin(user) && !a.parentId ? (
-                    <button
-                      onClick={e => { e.stopPropagation(); toggleBestAnswer(a._id); }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLButtonElement).style.background = a.isBestAnswer ? '#15803d' : '#16a34a';
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLButtonElement).style.background = a.isBestAnswer ? '#16a34a' : '#d1d5db';
-                      }}
-                      style={{
-                        ...bestAnswerBadgeStyle,
-                        background: a.isBestAnswer ? '#16a34a' : '#d1d5db',
-                        cursor: 'pointer',
-                      }}
-                      title={a.isBestAnswer ? 'Remove best answer' : 'Mark as best answer'}
-                    >
-                      ✓
-                    </button>
-                  ) : a.isBestAnswer ? (
-                    <span style={bestAnswerBadgeStyle} title="Best answer">✓</span>
-                  ) : null}
-                  {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonymous'} • Page {a.page}
-                </div>
-                <VoteButtons
-                  answerId={a._id}
-                  score={a.score ?? 0}
-                  userVote={a.userVote ?? null}
-                  onVote={voteOnAnswer}
-                />
-              </div>
-              <AnswerContentDisplay
-                answer={a}
-                onEdit={PermissionUtils.canEdit(user, a.authorId || '') ? editAnswer : undefined}
-                onDelete={PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined}
-                onReport={reportAnswer}
-                onReply={!a.parentId ? (id) => setReplyTarget(replyTarget?.rootId === id ? null : { rootId: id }) : undefined}
-                onUploadImage={uploadImage}
-              />
-
-              {/* Thread: reply form (just below the root comment) */}
-              {replyTarget?.rootId === a._id && (
-                <ReplyForm
-                  onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
-                  onCancel={() => setReplyTarget(null)}
-                  onUploadImage={uploadImage}
-                  mentionLabel={replyTarget.mentionLabel}
-                  onClearMention={() => setReplyTarget({ rootId: a._id })}
-                />
-              )}
-
-              {/* Thread: button to view replies */}
-              {!a.parentId && (a.replyCount || 0) > 0 && (
-                <button
-                  onClick={e => { e.stopPropagation(); toggleThread(a._id); }}
-                  style={threadToggleStyle}
+                <div
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                 >
-                  {openThreads[a._id]
-                    ? 'Hide replies'
-                    : `View ${a.replyCount} repl${(a.replyCount || 0) > 1 ? 'ies' : 'y'}`}
-                </button>
-              )}
+                  <div style={commentMetaStyle}>
+                    {PermissionUtils.isAdmin(user) && !a.parentId ? (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          toggleBestAnswer(a._id);
+                        }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLButtonElement).style.background = a.isBestAnswer
+                            ? '#15803d'
+                            : '#16a34a';
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLButtonElement).style.background = a.isBestAnswer
+                            ? '#16a34a'
+                            : '#d1d5db';
+                        }}
+                        style={{
+                          ...bestAnswerBadgeStyle,
+                          background: a.isBestAnswer ? '#16a34a' : '#d1d5db',
+                          cursor: 'pointer',
+                        }}
+                        title={a.isBestAnswer ? 'Remove best answer' : 'Mark as best answer'}
+                      >
+                        ✓
+                      </button>
+                    ) : a.isBestAnswer ? (
+                      <span style={bestAnswerBadgeStyle} title="Best answer">
+                        ✓
+                      </span>
+                    ) : null}
+                    {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : 'Anonymous'} •
+                    Page {a.page}
+                  </div>
+                  <VoteButtons
+                    answerId={a._id}
+                    score={a.score ?? 0}
+                    userVote={a.userVote ?? null}
+                    onVote={voteOnAnswer}
+                  />
+                </div>
+                <AnswerContentDisplay
+                  answer={a}
+                  onEdit={PermissionUtils.canEdit(user, a.authorId || '') ? editAnswer : undefined}
+                  onDelete={
+                    PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined
+                  }
+                  onReport={reportAnswer}
+                  onReply={
+                    !a.parentId
+                      ? id => setReplyTarget(replyTarget?.rootId === id ? null : { rootId: id })
+                      : undefined
+                  }
+                  onUploadImage={uploadImage}
+                />
 
-              {/* Thread: loaded replies */}
-              {openThreads[a._id] && loadedReplies[a._id] && (
-                <div style={threadContainerStyle}>
-                  {loadedReplies[a._id].replies.map(reply => (
-                    <div
-                      key={reply._id}
-                      style={replyItemStyle}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={commentMetaStyle}>
-                          {reply.mentionedAuthor && (
-                            <span style={getMentionDisplayStyle(primaryHoverColor)}>
-                              @{reply.mentionedAuthor.firstName} {reply.mentionedAuthor.lastName[0]}.
-                            </span>
-                          )}
-                          {reply.author ? `${reply.author.firstName} ${reply.author.lastName[0]}.` : 'Anonymous'}
+                {/* Thread: reply form (just below the root comment) */}
+                {replyTarget?.rootId === a._id && (
+                  <ReplyForm
+                    onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
+                    onCancel={() => setReplyTarget(null)}
+                    onUploadImage={uploadImage}
+                    mentionLabel={replyTarget.mentionLabel}
+                    onClearMention={() => setReplyTarget({ rootId: a._id })}
+                  />
+                )}
+
+                {/* Thread: button to view replies */}
+                {!a.parentId && (a.replyCount || 0) > 0 && (
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      toggleThread(a._id);
+                    }}
+                    style={threadToggleStyle}
+                  >
+                    {openThreads[a._id]
+                      ? 'Hide replies'
+                      : `View ${a.replyCount} repl${(a.replyCount || 0) > 1 ? 'ies' : 'y'}`}
+                  </button>
+                )}
+
+                {/* Thread: loaded replies */}
+                {openThreads[a._id] && loadedReplies[a._id] && (
+                  <div style={threadContainerStyle}>
+                    {loadedReplies[a._id].replies.map(reply => (
+                      <div key={reply._id} style={replyItemStyle}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <div style={commentMetaStyle}>
+                            {reply.mentionedAuthor && (
+                              <span style={getMentionDisplayStyle(primaryHoverColor)}>
+                                @{reply.mentionedAuthor.firstName}{' '}
+                                {reply.mentionedAuthor.lastName[0]}.
+                              </span>
+                            )}
+                            {reply.author
+                              ? `${reply.author.firstName} ${reply.author.lastName[0]}.`
+                              : 'Anonymous'}
+                          </div>
+                          <VoteButtons
+                            answerId={reply._id}
+                            score={reply.score ?? 0}
+                            userVote={reply.userVote ?? null}
+                            onVote={voteOnAnswer}
+                          />
                         </div>
-                        <VoteButtons
-                          answerId={reply._id}
-                          score={reply.score ?? 0}
-                          userVote={reply.userVote ?? null}
-                          onVote={voteOnAnswer}
+                        <AnswerContentDisplay
+                          answer={reply}
+                          onEdit={
+                            PermissionUtils.canEdit(user, reply.authorId || '')
+                              ? editAnswer
+                              : undefined
+                          }
+                          onDelete={
+                            PermissionUtils.canDelete(user, reply.authorId || '')
+                              ? deleteAnswer
+                              : undefined
+                          }
+                          onReport={reportAnswer}
+                          onReply={() => {
+                            const label = reply.author
+                              ? `@${reply.author.firstName} ${reply.author.lastName[0]}.`
+                              : undefined;
+                            setReplyTarget({
+                              rootId: a._id,
+                              mentionUserId: reply.authorId,
+                              mentionLabel: label,
+                            });
+                          }}
+                          onUploadImage={uploadImage}
                         />
                       </div>
-                      <AnswerContentDisplay
-                        answer={reply}
-                        onEdit={PermissionUtils.canEdit(user, reply.authorId || '') ? editAnswer : undefined}
-                        onDelete={PermissionUtils.canDelete(user, reply.authorId || '') ? deleteAnswer : undefined}
-                        onReport={reportAnswer}
-                        onReply={() => {
-                          const label = reply.author
-                            ? `@${reply.author.firstName} ${reply.author.lastName[0]}.`
-                            : undefined;
-                          setReplyTarget({
-                            rootId: a._id,
-                            mentionUserId: reply.authorId,
-                            mentionLabel: label,
-                          });
+                    ))}
+                    {loadedReplies[a._id].hasMore && (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          loadReplies(a._id, loadedReplies[a._id].cursor);
                         }}
-                        onUploadImage={uploadImage}
-                      />
-                    </div>
-                  ))}
-                  {loadedReplies[a._id].hasMore && (
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        loadReplies(a._id, loadedReplies[a._id].cursor);
-                      }}
-                      style={getLoadMoreStyle(primaryColor)}
-                    >
-                      Load more replies
-                    </button>
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
+                        style={getLoadMoreStyle(primaryColor)}
+                      >
+                        Load more replies
+                      </button>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
           {!(selectedGroup || answers).length && (
             <li style={{ opacity: 0.6, padding: '8px 0' }}>
-              {selectedGroup
-                ? 'No comments in this group.'
-                : 'No comments on this page.'}
+              {selectedGroup ? 'No comments in this group.' : 'No comments on this page.'}
             </li>
           )}
         </ul>
@@ -1401,4 +1443,3 @@ const bestAnswerBadgeStyle: React.CSSProperties = {
   marginRight: '4px',
   verticalAlign: 'middle',
 };
-

@@ -239,10 +239,12 @@ describe('POST /api/auth/change-password', () => {
     expect(response.body.message).toContain('changed successfully');
 
     // Vérifier qu'on peut se connecter avec le nouveau mot de passe
-    const loginResponse = await request(app).post('/api/auth/login').send({
-      email: testEmail('changepwd'),
-      password: 'newPassword456',
-    });
+    const loginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testEmail('changepwd'),
+        password: 'newPassword456',
+      });
 
     expect(loginResponse.status).toBe(200);
     expect(loginResponse.headers['set-cookie']).toBeDefined();

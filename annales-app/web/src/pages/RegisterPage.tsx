@@ -42,7 +42,9 @@ export default function RegisterPage() {
 
     if (!formData.email.trim()) {
       errors.push('Email is required');
-    } else if (!allowedDomains.some((domain) => formData.email.toLowerCase().endsWith(domain.toLowerCase()))) {
+    } else if (
+      !allowedDomains.some(domain => formData.email.toLowerCase().endsWith(domain.toLowerCase()))
+    ) {
       const domains = allowedDomains.join(', ');
       errors.push(`Email must end with one of the allowed domains: ${domains}`);
     }
@@ -109,10 +111,12 @@ export default function RegisterPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
                 <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Registration successful!</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">
+                Registration successful!
+              </h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                A verification email has been sent to your email address. Please click the
-                link in the email to activate your account.
+                A verification email has been sent to your email address. Please click the link in
+                the email to activate your account.
               </p>
               <Button
                 type="button"
@@ -245,7 +249,7 @@ export default function RegisterPage() {
                 type="checkbox"
                 id="acceptTerms"
                 checked={acceptedTerms}
-                onChange={(e) => {
+                onChange={e => {
                   setAcceptedTerms(e.target.checked);
                   if (validationErrors.length > 0) {
                     setValidationErrors([]);
@@ -253,7 +257,10 @@ export default function RegisterPage() {
                 }}
                 className="mt-0.5 w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2 cursor-pointer"
               />
-              <label htmlFor="acceptTerms" className="text-sm text-secondary leading-relaxed cursor-pointer">
+              <label
+                htmlFor="acceptTerms"
+                className="text-sm text-secondary leading-relaxed cursor-pointer"
+              >
                 I accept the{' '}
                 <button
                   type="button"

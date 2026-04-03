@@ -46,7 +46,10 @@ describe('POST /api/files/image', () => {
     const response = await request(app)
       .post('/api/files/image')
       .set('Authorization', `Bearer ${token}`)
-      .attach('image', Buffer.from('not an image'), { filename: 'test.txt', contentType: 'text/plain' });
+      .attach('image', Buffer.from('not an image'), {
+        filename: 'test.txt',
+        contentType: 'text/plain',
+      });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toContain('Only image files');

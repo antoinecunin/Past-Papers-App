@@ -18,9 +18,7 @@ export default function TermsPage() {
             <span className="text-sm">Back</span>
           </button>
 
-          <h1 className="text-3xl font-bold text-secondary-dark mb-2">
-            Terms of Service
-          </h1>
+          <h1 className="text-3xl font-bold text-secondary-dark mb-2">Terms of Service</h1>
           <p className="text-secondary text-sm mb-8">
             Last updated: {new Date().toLocaleDateString('en-US')}
           </p>
@@ -30,9 +28,9 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
               <p className="leading-relaxed text-secondary">
-                By creating an account and using {name} (hereinafter &quot;the
-                platform&quot;, &quot;the service&quot;), you unconditionally accept these terms of
-                service. If you do not accept these terms, please do not use the platform.
+                By creating an account and using {name} (hereinafter &quot;the platform&quot;,
+                &quot;the service&quot;), you unconditionally accept these terms of service. If you
+                do not accept these terms, please do not use the platform.
               </p>
             </section>
 
@@ -80,9 +78,7 @@ export default function TermsPage() {
 
               <div className="space-y-4">
                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <h3 className="font-semibold mb-2 text-green-900">
-                    ✓ Permitted Uses
-                  </h3>
+                  <h3 className="font-semibold mb-2 text-green-900">✓ Permitted Uses</h3>
                   <ul className="list-disc list-inside space-y-1 text-green-800 text-sm">
                     <li>Upload past exam papers that you have legitimately obtained</li>
                     <li>View and download available past exams</li>
@@ -94,13 +90,9 @@ export default function TermsPage() {
 
                 <div className="bg-red-50 rounded-lg p-4 border border-red-200">
                   <h3 className="font-semibold mb-2 text-red-900">✗ Prohibited Uses</h3>
-                  <p className="text-sm text-red-800 mb-2">
-                    You agree not to:
-                  </p>
+                  <p className="text-sm text-red-800 mb-2">You agree not to:</p>
                   <ul className="list-disc list-inside space-y-1 text-red-800 text-sm">
-                    <li>
-                      Upload content protected by copyright without authorization
-                    </li>
+                    <li>Upload content protected by copyright without authorization</li>
                     <li>Publish illegal, offensive, defamatory, or hateful content</li>
                     <li>Impersonate another person</li>
                     <li>Spam or send advertising messages</li>
@@ -121,9 +113,7 @@ export default function TermsPage() {
               <div className="space-y-4">
                 <div className="border-l-4 border-primary pl-4">
                   <h3 className="font-semibold mb-2">5.1. Your Content</h3>
-                  <p className="text-secondary mb-2">
-                    When you upload exams or post comments:
-                  </p>
+                  <p className="text-secondary mb-2">When you upload exams or post comments:</p>
                   <ul className="list-disc list-inside space-y-1 text-secondary">
                     <li>You retain ownership of your content</li>
                     <li>
@@ -157,9 +147,7 @@ export default function TermsPage() {
             {/* 6. Reporting */}
             <section>
               <h2 className="text-2xl font-semibold mb-4">6. Content Reporting</h2>
-              <p className="text-secondary mb-4">
-                A reporting system is available for you to:
-              </p>
+              <p className="text-secondary mb-4">A reporting system is available for you to:</p>
               <ul className="list-disc list-inside space-y-1 text-secondary">
                 <li>Report inappropriate or offensive content</li>
                 <li>Report spam or advertising messages</li>
@@ -174,9 +162,7 @@ export default function TermsPage() {
 
             {/* 7. Sanctions */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">
-                7. Sanctions and Account Suspension
-              </h2>
+              <h2 className="text-2xl font-semibold mb-4">7. Sanctions and Account Suspension</h2>
               <p className="text-secondary mb-4">
                 In the event of non-compliance with these terms, we reserve the right to:
               </p>
@@ -230,9 +216,7 @@ export default function TermsPage() {
                     platform
                   </li>
                   <li>We do not guarantee uninterrupted 24/7 availability</li>
-                  <li>
-                    Users are solely responsible for how they use the available content
-                  </li>
+                  <li>Users are solely responsible for how they use the available content</li>
                   <li>
                     We are not liable for data loss, although we make every effort to protect your
                     data
@@ -258,9 +242,7 @@ export default function TermsPage() {
 
             {/* 10. Availability */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">
-                10. Availability and Maintenance
-              </h2>
+              <h2 className="text-2xl font-semibold mb-4">10. Availability and Maintenance</h2>
               <p className="text-secondary">
                 We strive to keep the platform accessible at all times, but we reserve the right to:
               </p>
@@ -277,9 +259,7 @@ export default function TermsPage() {
 
             {/* 11. Changes to Terms */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">
-                11. Changes to These Terms
-              </h2>
+              <h2 className="text-2xl font-semibold mb-4">11. Changes to These Terms</h2>
               <p className="text-secondary">
                 We reserve the right to modify these terms at any time. Changes will be published on
                 this page with an updated date. Continued use of the platform after any modification
@@ -304,9 +284,9 @@ export default function TermsPage() {
                 <div className="border-l-4 border-primary pl-4">
                   <h3 className="font-semibold mb-2">12.2. By the Platform</h3>
                   <p className="text-secondary">
-                    We may suspend or delete your account in the event of a violation of these terms,
-                    without prior notice or compensation. Published content may be retained in
-                    anonymized form.
+                    We may suspend or delete your account in the event of a violation of these
+                    terms, without prior notice or compensation. Published content may be retained
+                    in anonymized form.
                   </p>
                 </div>
               </div>

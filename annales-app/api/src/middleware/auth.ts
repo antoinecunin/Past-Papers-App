@@ -22,8 +22,11 @@ export const authMiddleware = async (
 ): Promise<void> => {
   try {
     // Read token from cookie first, fallback to Authorization header (for tests)
-    const token = req.cookies?.token
-      || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : null);
+    const token =
+      req.cookies?.token ||
+      (req.headers.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.substring(7)
+        : null);
 
     if (!token) {
       res.status(401).json({ error: 'Missing token' });
@@ -71,8 +74,11 @@ export const optionalAuthMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.cookies?.token
-      || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.substring(7) : null);
+    const token =
+      req.cookies?.token ||
+      (req.headers.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.substring(7)
+        : null);
 
     if (!token) {
       next();

@@ -227,7 +227,7 @@ const sampleComments = [
   'For question 3, use the recurrence formula.',
   "This section wasn't covered in this year's curriculum.",
   'Full solution available on the forum.',
-  "I think this is a trick question — check the assumptions.",
+  'I think this is a trick question — check the assumptions.',
   'Thanks for sharing!',
   'The method from the tutorial works well here.',
 ];
@@ -544,8 +544,7 @@ async function createReports(
       });
 
       commentReportsCreated++;
-      if (verbose)
-        logSuccess(`Comment report #${commentReportsCreated}: ${reason} (${status})`);
+      if (verbose) logSuccess(`Comment report #${commentReportsCreated}: ${reason} (${status})`);
     } catch (error) {
       if (verbose) logWarning(`Error creating comment report: ${error}`);
     }
@@ -595,7 +594,9 @@ async function main() {
 
     // Create exams (uploader = first verified user)
     const firstVerified = config.users.find(u => u.isVerified);
-    const uploaderEmail = firstVerified ? buildEmail(firstVerified.emailPrefix) : buildEmail(config.users[0].emailPrefix);
+    const uploaderEmail = firstVerified
+      ? buildEmail(firstVerified.emailPrefix)
+      : buildEmail(config.users[0].emailPrefix);
     const exams = await createExams(config.files, uploaderEmail, userIds, configDir, verbose);
     const examIds = exams.map(e => e.id);
 

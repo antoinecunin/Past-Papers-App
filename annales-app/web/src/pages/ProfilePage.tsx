@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
-import { User, Key, Mail, Shield, Save, AlertCircle, X, Trash2, Download, FileJson } from 'lucide-react';
+import {
+  User,
+  Key,
+  Mail,
+  Shield,
+  Save,
+  AlertCircle,
+  X,
+  Trash2,
+  Download,
+  FileJson,
+} from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
@@ -11,8 +22,16 @@ import { showSuccessToast } from '../utils/swal';
 import { apiFetch } from '../utils/api';
 
 export default function ProfilePage() {
-  const { user, updateProfile, changePassword, deleteAccount, logout, isLoading, error, clearError } =
-    useAuthStore();
+  const {
+    user,
+    updateProfile,
+    changePassword,
+    deleteAccount,
+    logout,
+    isLoading,
+    error,
+    clearError,
+  } = useAuthStore();
   const { navigate } = useRouter();
   const { allowedDomains } = useInstance();
 
@@ -124,7 +143,9 @@ export default function ProfilePage() {
 
     if (!newEmail.trim()) {
       errors.push('New email address is required');
-    } else if (!allowedDomains.some((domain) => newEmail.toLowerCase().endsWith(domain.toLowerCase()))) {
+    } else if (
+      !allowedDomains.some(domain => newEmail.toLowerCase().endsWith(domain.toLowerCase()))
+    ) {
       const domains = allowedDomains.join(', ');
       errors.push(`Email must end with one of the allowed domains: ${domains}`);
     }
@@ -270,7 +291,7 @@ export default function ProfilePage() {
       cancelButtonColor: '#64748b',
       confirmButtonText: 'Delete permanently',
       cancelButtonText: 'Cancel',
-      inputValidator: (value) => {
+      inputValidator: value => {
         if (!value) {
           return 'Password is required';
         }
@@ -383,14 +404,14 @@ export default function ProfilePage() {
                 <Input
                   label="First name"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={e => setFirstName(e.target.value)}
                   placeholder="Your first name"
                   required
                 />
                 <Input
                   label="Last name"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={e => setLastName(e.target.value)}
                   placeholder="Your last name"
                   required
                 />
@@ -605,16 +626,15 @@ export default function ProfilePage() {
               <div className="flex items-start gap-2 text-xs text-secondary">
                 <FileJson className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p>
-                  The export includes: profile, uploaded exams, comments, reports.
-                  See our{' '}
+                  The export includes: profile, uploaded exams, comments, reports. See our{' '}
                   <button
                     type="button"
                     onClick={() => navigate('privacy')}
                     className="text-primary hover:underline cursor-pointer"
                   >
                     Privacy Policy
-                  </button>
-                  {' '}for more information.
+                  </button>{' '}
+                  for more information.
                 </p>
               </div>
             </div>

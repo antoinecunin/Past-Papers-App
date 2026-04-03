@@ -49,8 +49,8 @@ const registerSchema = z.object({
     .string()
     .email('Invalid email')
     .refine(
-      (val) => instanceConfigService.isEmailDomainAllowed(val),
-      (_val) => {
+      val => instanceConfigService.isEmailDomainAllowed(val),
+      _val => {
         const config = instanceConfigService.getConfig();
         const domains = config.email.allowedDomains.join(', ');
         return { message: `Email must end with one of the allowed domains: ${domains}` };
@@ -77,8 +77,18 @@ const resetPasswordSchema = z.object({
 
 const updateProfileSchema = z
   .object({
-    firstName: z.string().trim().min(1, 'First name is required').max(50, 'First name is too long').optional(),
-    lastName: z.string().trim().min(1, 'Last name is required').max(50, 'Last name is too long').optional(),
+    firstName: z
+      .string()
+      .trim()
+      .min(1, 'First name is required')
+      .max(50, 'First name is too long')
+      .optional(),
+    lastName: z
+      .string()
+      .trim()
+      .min(1, 'Last name is required')
+      .max(50, 'Last name is too long')
+      .optional(),
   })
   .refine(data => data.firstName || data.lastName, {
     message: 'At least one field must be provided',
@@ -98,8 +108,8 @@ const changeEmailSchema = z.object({
     .string()
     .email('Invalid email')
     .refine(
-      (val) => instanceConfigService.isEmailDomainAllowed(val),
-      (_val) => {
+      val => instanceConfigService.isEmailDomainAllowed(val),
+      _val => {
         const config = instanceConfigService.getConfig();
         const domains = config.email.allowedDomains.join(', ');
         return { message: `Email must end with one of the allowed domains: ${domains}` };
@@ -876,12 +886,14 @@ router.put(
   })
 );
 
-const updatePermissionsSchema = z.object({
-  canComment: z.boolean().optional(),
-  canUpload: z.boolean().optional(),
-}).refine(data => data.canComment !== undefined || data.canUpload !== undefined, {
-  message: 'At least one permission must be provided',
-});
+const updatePermissionsSchema = z
+  .object({
+    canComment: z.boolean().optional(),
+    canUpload: z.boolean().optional(),
+  })
+  .refine(data => data.canComment !== undefined || data.canUpload !== undefined, {
+    message: 'At least one permission must be provided',
+  });
 
 /**
  * @swagger

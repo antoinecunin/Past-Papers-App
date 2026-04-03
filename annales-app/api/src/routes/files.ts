@@ -11,14 +11,15 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 
 export const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
-const imageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 const currentYear = new Date().getFullYear();
 
 const uploadSchema = z.object({
-  title: z
-    .string({ required_error: 'Title is required' })
-    .min(1, 'Title is required'),
+  title: z.string({ required_error: 'Title is required' }).min(1, 'Title is required'),
   year: z
     .string()
     .transform(Number)
@@ -29,9 +30,7 @@ const uploadSchema = z.object({
         .min(1900, 'Invalid year')
         .max(currentYear + 1, 'Invalid year')
     ),
-  module: z
-    .string({ required_error: 'Module is required' })
-    .min(1, 'Module is required'),
+  module: z.string({ required_error: 'Module is required' }).min(1, 'Module is required'),
 });
 
 const examIdParamSchema = z.object({

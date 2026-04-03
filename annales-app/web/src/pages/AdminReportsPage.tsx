@@ -1,6 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import { Shield, AlertCircle, RefreshCw, CheckCircle, XCircle, FileText, MessageSquare, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import {
+  Shield,
+  AlertCircle,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  FileText,
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+} from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
 import { apiFetch } from '../utils/api';
@@ -33,7 +44,14 @@ interface Report {
   _id: string;
   type: 'exam' | 'comment';
   targetId: string;
-  reason: 'inappropriate_content' | 'spam' | 'off_topic' | 'wrong_exam' | 'poor_quality' | 'duplicate' | 'other';
+  reason:
+    | 'inappropriate_content'
+    | 'spam'
+    | 'off_topic'
+    | 'wrong_exam'
+    | 'poor_quality'
+    | 'duplicate'
+    | 'other';
   description?: string;
   reportedBy: User;
   status: 'pending' | 'approved' | 'rejected';
@@ -68,35 +86,38 @@ export default function AdminReportsPage() {
   const [offset, setOffset] = useState(0);
   const [pagination, setPagination] = useState<ReportsResponse['pagination'] | null>(null);
 
-  const fetchReports = useCallback(async (fetchOffset: number) => {
-    if (!user) return;
+  const fetchReports = useCallback(
+    async (fetchOffset: number) => {
+      if (!user) return;
 
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filter.status) params.append('status', filter.status);
-      if (filter.type) params.append('type', filter.type);
-      params.append('limit', String(REPORTS_PER_PAGE));
-      params.append('offset', String(fetchOffset));
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (filter.status) params.append('status', filter.status);
+        if (filter.type) params.append('type', filter.type);
+        params.append('limit', String(REPORTS_PER_PAGE));
+        params.append('offset', String(fetchOffset));
 
-      const response = await apiFetch(`/api/reports?${params.toString()}`);
+        const response = await apiFetch(`/api/reports?${params.toString()}`);
 
-      if (response.ok) {
-        const data: ReportsResponse = await response.json();
-        setReports(data.reports);
-        setPagination(data.pagination);
-        setError(null);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Error loading reports');
+        if (response.ok) {
+          const data: ReportsResponse = await response.json();
+          setReports(data.reports);
+          setPagination(data.pagination);
+          setError(null);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || 'Error loading reports');
+        }
+      } catch (err) {
+        console.error('Error fetching reports:', err);
+        setError('Network error while loading reports');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching reports:', err);
-      setError('Network error while loading reports');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, filter]);
+    },
+    [user, filter]
+  );
 
   const handleReviewReport = async (reportId: string, action: 'approve' | 'reject') => {
     if (!user) return;
@@ -289,8 +310,12 @@ export default function AdminReportsPage() {
             <Shield className="w-6 h-6 text-warning" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">Report management</h1>
-            <p className="text-sm md:text-base text-secondary mt-1">Manage reports of inappropriate content</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark">
+              Report management
+            </h1>
+            <p className="text-sm md:text-base text-secondary mt-1">
+              Manage reports of inappropriate content
+            </p>
           </div>
         </div>
         <div className="text-sm text-secondary">
@@ -319,7 +344,7 @@ export default function AdminReportsPage() {
         <div className="flex flex-wrap gap-3">
           <select
             value={filter.status || ''}
-            onChange={(e) => setFilter({ ...filter, status: e.target.value || undefined })}
+            onChange={e => setFilter({ ...filter, status: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
             <option value="">All statuses</option>
@@ -330,7 +355,7 @@ export default function AdminReportsPage() {
 
           <select
             value={filter.type || ''}
-            onChange={(e) => setFilter({ ...filter, type: e.target.value || undefined })}
+            onChange={e => setFilter({ ...filter, type: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
             <option value="">All types</option>
@@ -361,184 +386,189 @@ export default function AdminReportsPage() {
         </div>
       ) : (
         <>
-        <div className="space-y-4">
-          {reports.map((report) => (
-            <div key={report._id} className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
-              <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                {/* Left: Report details */}
-                <div className="flex-1 space-y-3">
-                  {/* Type and target info */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {report.type === 'exam' ? (
-                      <FileText className="w-5 h-5 text-primary" />
-                    ) : (
-                      <MessageSquare className="w-5 h-5 text-info" />
-                    )}
-                    <span className="font-semibold text-secondary-dark">
-                      {getTypeLabel(report.type)}
-                    </span>
-                    <span className="text-xs text-secondary/70">
-                      #{report.targetId.slice(-8)}
-                    </span>
-                    <button
-                      onClick={() => handleViewTarget(report)}
-                      className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
-                        report.target.exists
-                          ? 'text-primary hover:bg-primary/10 cursor-pointer'
-                          : 'text-secondary/50 cursor-not-allowed'
-                      }`}
-                      title={report.target.exists ? 'View content' : 'Content deleted'}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>{getTargetLabel(report)}</span>
-                    </button>
-                  </div>
-
-                  {/* Reason */}
-                  <div>
-                    <span className="text-sm font-medium text-secondary">Reason: </span>
-                    <span className="text-sm text-secondary-dark">{getReasonLabel(report.reason)}</span>
-                  </div>
-
-                  {/* Description */}
-                  {report.description && (
-                    <div className="text-sm text-secondary italic bg-bg-secondary p-3 rounded-lg">
-                      &quot;{report.description}&quot;
-                    </div>
-                  )}
-
-                  {/* Comment content preview */}
-                  {report.type === 'comment' && report.target.content && (
-                    <div className="text-sm bg-gray-50 border border-gray-200 p-3 rounded-lg">
-                      <span className="text-xs font-medium text-secondary block mb-1">
-                        Comment content ({report.target.content.type}):
-                      </span>
-                      {report.target.content.type === 'image' ? (
-                        <span className="text-xs text-secondary italic">[Image]</span>
+          <div className="space-y-4">
+            {reports.map(report => (
+              <div
+                key={report._id}
+                className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                  {/* Left: Report details */}
+                  <div className="flex-1 space-y-3">
+                    {/* Type and target info */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {report.type === 'exam' ? (
+                        <FileText className="w-5 h-5 text-primary" />
                       ) : (
-                        <p className="text-secondary-dark whitespace-pre-wrap break-words">
-                          {report.target.content.data.length > 300
-                            ? `${report.target.content.data.slice(0, 300)}...`
-                            : report.target.content.data}
-                        </p>
+                        <MessageSquare className="w-5 h-5 text-info" />
                       )}
+                      <span className="font-semibold text-secondary-dark">
+                        {getTypeLabel(report.type)}
+                      </span>
+                      <span className="text-xs text-secondary/70">
+                        #{report.targetId.slice(-8)}
+                      </span>
+                      <button
+                        onClick={() => handleViewTarget(report)}
+                        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors ${
+                          report.target.exists
+                            ? 'text-primary hover:bg-primary/10 cursor-pointer'
+                            : 'text-secondary/50 cursor-not-allowed'
+                        }`}
+                        title={report.target.exists ? 'View content' : 'Content deleted'}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>{getTargetLabel(report)}</span>
+                      </button>
                     </div>
-                  )}
 
-                  {/* Reporter */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-border">
-                    <span className="text-xs text-secondary">Reported by:</span>
-                    <span className="text-xs font-medium text-secondary-dark">
-                      {report.reportedBy.firstName} {report.reportedBy.lastName}
-                    </span>
-                    <span className="text-xs text-secondary/70">
-                      ({report.reportedBy.email})
-                    </span>
-                  </div>
+                    {/* Reason */}
+                    <div>
+                      <span className="text-sm font-medium text-secondary">Reason: </span>
+                      <span className="text-sm text-secondary-dark">
+                        {getReasonLabel(report.reason)}
+                      </span>
+                    </div>
 
-                  {/* Date */}
-                  <div className="text-xs text-secondary/70">
-                    {new Date(report.createdAt).toLocaleDateString('en-US', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </div>
-                </div>
-
-                {/* Right: Status and Actions */}
-                <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[200px]">
-                  {/* Status badge */}
-                  <div>{getStatusBadge(report.status)}</div>
-
-                  {/* Reviewer info */}
-                  {report.reviewedBy && (
-                    <div className="text-xs text-secondary">
-                      <div>By: {report.reviewedBy.firstName} {report.reviewedBy.lastName}</div>
-                      {report.reviewNote && (
-                        <div className="mt-1 italic">Note: {report.reviewNote}</div>
-                      )}
-                      <div className="mt-1">
-                        {new Date(report.reviewedAt!).toLocaleDateString('en-US')}
+                    {/* Description */}
+                    {report.description && (
+                      <div className="text-sm text-secondary italic bg-bg-secondary p-3 rounded-lg">
+                        &quot;{report.description}&quot;
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Action buttons */}
-                  {report.status === 'pending' && (
-                    <div className="flex gap-2 w-full lg:w-auto">
-                      <Button
-                        onClick={() => handleReviewReport(report._id, 'approve')}
-                        disabled={actionLoading === report._id}
-                        variant="danger"
-                        size="sm"
-                        className="gap-1.5 flex-1 lg:flex-initial"
-                      >
-                        {actionLoading === report._id ? (
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {/* Comment content preview */}
+                    {report.type === 'comment' && report.target.content && (
+                      <div className="text-sm bg-gray-50 border border-gray-200 p-3 rounded-lg">
+                        <span className="text-xs font-medium text-secondary block mb-1">
+                          Comment content ({report.target.content.type}):
+                        </span>
+                        {report.target.content.type === 'image' ? (
+                          <span className="text-xs text-secondary italic">[Image]</span>
                         ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4" />
-                            <span>Approve</span>
-                          </>
+                          <p className="text-secondary-dark whitespace-pre-wrap break-words">
+                            {report.target.content.data.length > 300
+                              ? `${report.target.content.data.slice(0, 300)}...`
+                              : report.target.content.data}
+                          </p>
                         )}
-                      </Button>
-                      <Button
-                        onClick={() => handleReviewReport(report._id, 'reject')}
-                        disabled={actionLoading === report._id}
-                        variant="secondary"
-                        size="sm"
-                        className="gap-1.5 flex-1 lg:flex-initial"
-                      >
-                        {actionLoading === report._id ? (
-                          <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            <XCircle className="w-4 h-4" />
-                            <span>Reject</span>
-                          </>
-                        )}
-                      </Button>
+                      </div>
+                    )}
+
+                    {/* Reporter */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-border">
+                      <span className="text-xs text-secondary">Reported by:</span>
+                      <span className="text-xs font-medium text-secondary-dark">
+                        {report.reportedBy.firstName} {report.reportedBy.lastName}
+                      </span>
+                      <span className="text-xs text-secondary/70">({report.reportedBy.email})</span>
                     </div>
-                  )}
+
+                    {/* Date */}
+                    <div className="text-xs text-secondary/70">
+                      {new Date(report.createdAt).toLocaleDateString('en-US', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right: Status and Actions */}
+                  <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[200px]">
+                    {/* Status badge */}
+                    <div>{getStatusBadge(report.status)}</div>
+
+                    {/* Reviewer info */}
+                    {report.reviewedBy && (
+                      <div className="text-xs text-secondary">
+                        <div>
+                          By: {report.reviewedBy.firstName} {report.reviewedBy.lastName}
+                        </div>
+                        {report.reviewNote && (
+                          <div className="mt-1 italic">Note: {report.reviewNote}</div>
+                        )}
+                        <div className="mt-1">
+                          {new Date(report.reviewedAt!).toLocaleDateString('en-US')}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    {report.status === 'pending' && (
+                      <div className="flex gap-2 w-full lg:w-auto">
+                        <Button
+                          onClick={() => handleReviewReport(report._id, 'approve')}
+                          disabled={actionLoading === report._id}
+                          variant="danger"
+                          size="sm"
+                          className="gap-1.5 flex-1 lg:flex-initial"
+                        >
+                          {actionLoading === report._id ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Approve</span>
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => handleReviewReport(report._id, 'reject')}
+                          disabled={actionLoading === report._id}
+                          variant="secondary"
+                          size="sm"
+                          className="gap-1.5 flex-1 lg:flex-initial"
+                        >
+                          {actionLoading === report._id ? (
+                            <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4" />
+                              <span>Reject</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Pagination */}
-        {pagination && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 pt-4">
-            <Button
-              onClick={handlePreviousPage}
-              disabled={offset === 0 || loading}
-              variant="secondary"
-              size="sm"
-              className="gap-1.5"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Previous</span>
-            </Button>
-
-            <span className="text-sm text-secondary">
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <Button
-              onClick={handleNextPage}
-              disabled={!pagination.hasMore || loading}
-              variant="secondary"
-              size="sm"
-              className="gap-1.5"
-            >
-              <span>Next</span>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            ))}
           </div>
-        )}
+
+          {/* Pagination */}
+          {pagination && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 pt-4">
+              <Button
+                onClick={handlePreviousPage}
+                disabled={offset === 0 || loading}
+                variant="secondary"
+                size="sm"
+                className="gap-1.5"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Previous</span>
+              </Button>
+
+              <span className="text-sm text-secondary">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <Button
+                onClick={handleNextPage}
+                disabled={!pagination.hasMore || loading}
+                variant="secondary"
+                size="sm"
+                className="gap-1.5"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>

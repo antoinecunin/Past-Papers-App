@@ -68,7 +68,7 @@ class AnswerService {
     return answers.map(a => ({
       ...a,
       replyCount: replyCountMap.get(a._id.toString()) || 0,
-      author: a.authorId ? authorMap.get(a.authorId.toString()) ?? null : null,
+      author: a.authorId ? (authorMap.get(a.authorId.toString()) ?? null) : null,
       userVote: voteMap.get(a._id.toString()) ?? null,
     })) as AnswerWithAuthor[];
   }
@@ -118,8 +118,10 @@ class AnswerService {
     return {
       replies: replies.map(r => ({
         ...r,
-        author: r.authorId ? authorMap.get(r.authorId.toString()) ?? null : null,
-        mentionedAuthor: r.mentionedUserId ? authorMap.get(r.mentionedUserId.toString()) ?? null : null,
+        author: r.authorId ? (authorMap.get(r.authorId.toString()) ?? null) : null,
+        mentionedAuthor: r.mentionedUserId
+          ? (authorMap.get(r.mentionedUserId.toString()) ?? null)
+          : null,
         userVote: voteMap.get(r._id.toString()) ?? null,
       })) as ReplyWithAuthor[],
       hasMore,
@@ -265,7 +267,9 @@ class AnswerService {
 
     // Cascade delete des réponses, votes et images si c'est un commentaire racine
     if (!existingAnswer.parentId) {
-      const replies = await AnswerModel.find({ parentId: existingAnswer._id }).select('_id content').lean();
+      const replies = await AnswerModel.find({ parentId: existingAnswer._id })
+        .select('_id content')
+        .lean();
       const replyIds = replies.map(r => r._id);
       await voteService.deleteByAnswerIds([...replyIds, existingAnswer._id]);
       await this.deleteAnswerImages([...replies, existingAnswer]);
@@ -294,9 +298,7 @@ class AnswerService {
   /**
    * Supprime les images S3 associées à une liste de commentaires
    */
-  private async deleteAnswerImages(
-    answers: Array<{ content?: AnswerContent }>
-  ): Promise<void> {
+  private async deleteAnswerImages(answers: Array<{ content?: AnswerContent }>): Promise<void> {
     const imageKeys = answers
       .filter(a => a.content?.type === 'image' && isValidImageKey(a.content.data))
       .map(a => a.content!.data);

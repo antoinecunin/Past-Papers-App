@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Shield, AlertCircle, RefreshCw, Users, ChevronUp, ChevronDown, Search, RotateCcw, ArrowUpDown } from 'lucide-react';
+import {
+  Shield,
+  AlertCircle,
+  RefreshCw,
+  Users,
+  ChevronUp,
+  ChevronDown,
+  Search,
+  RotateCcw,
+  ArrowUpDown,
+} from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { PermissionUtils } from '../utils/permissions';
 import { Button } from '../components/ui/Button';
@@ -78,9 +88,15 @@ export default function AdminUsersPage() {
       if (response.ok) {
         // Update local state
         setUsers(prev =>
-          prev.map(u => (u._id === targetUser._id
-            ? { ...u, role: newRole, ...(newRole === 'admin' ? { canComment: true, canUpload: true } : {}) }
-            : u))
+          prev.map(u =>
+            u._id === targetUser._id
+              ? {
+                  ...u,
+                  role: newRole,
+                  ...(newRole === 'admin' ? { canComment: true, canUpload: true } : {}),
+                }
+              : u
+          )
         );
       } else {
         const errorData = await response.json();
@@ -96,7 +112,10 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleTogglePermission = async (targetUser: UserEntry, permission: 'canComment' | 'canUpload') => {
+  const handleTogglePermission = async (
+    targetUser: UserEntry,
+    permission: 'canComment' | 'canUpload'
+  ) => {
     if (!user) return;
     const newValue = !targetUser[permission];
 
@@ -128,7 +147,8 @@ export default function AdminUsersPage() {
   // Filtering and sort
   const filteredUsers = useMemo(() => {
     const filtered = users.filter(u => {
-      const matchesSearch = searchTerm === '' ||
+      const matchesSearch =
+        searchTerm === '' ||
         `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = !selectedRole || u.role === selectedRole;
@@ -174,12 +194,7 @@ export default function AdminUsersPage() {
           <Users className="w-6 h-6 text-purple-600" />
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
         </div>
-        <Button
-          onClick={() => fetchUsers()}
-          variant="secondary"
-          size="sm"
-          disabled={loading}
-        >
+        <Button onClick={() => fetchUsers()} variant="secondary" size="sm" disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -188,7 +203,9 @@ export default function AdminUsersPage() {
       {!loading && !isInitialAdmin && (
         <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
           <AlertCircle className="w-5 h-5 text-yellow-600" />
-          <p className="text-yellow-700">Only the initial admin can change user roles. You can view users but not modify roles.</p>
+          <p className="text-yellow-700">
+            Only the initial admin can change user roles. You can view users but not modify roles.
+          </p>
         </div>
       )}
 
@@ -210,7 +227,9 @@ export default function AdminUsersPage() {
           </div>
           <div className="px-4 py-2 bg-purple-50 rounded-lg border border-purple-200">
             <span className="text-sm text-purple-600">Admins: </span>
-            <span className="font-semibold text-purple-700">{users.filter(u => u.role === 'admin').length}</span>
+            <span className="font-semibold text-purple-700">
+              {users.filter(u => u.role === 'admin').length}
+            </span>
           </div>
         </div>
         {(searchTerm || selectedRole) && (
@@ -308,14 +327,19 @@ export default function AdminUsersPage() {
                 const isCurrentUserInitialAdmin = isSelf && u.role === 'admin';
 
                 return (
-                  <tr key={u._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={u._id}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">
                           {u.firstName} {u.lastName}
                         </span>
                         {isSelf && (
-                          <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">you</span>
+                          <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                            you
+                          </span>
                         )}
                       </div>
                     </td>
@@ -341,11 +365,15 @@ export default function AdminUsersPage() {
                           className={`w-8 h-5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
                             (u.canComment ?? true) ? 'bg-green-500' : 'bg-red-400'
                           }`}
-                          title={(u.canComment ?? true) ? 'Disable commenting' : 'Enable commenting'}
+                          title={
+                            (u.canComment ?? true) ? 'Disable commenting' : 'Enable commenting'
+                          }
                         >
-                          <span className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
-                            (u.canComment ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'
-                          }`} />
+                          <span
+                            className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
+                              (u.canComment ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'
+                            }`}
+                          />
                         </button>
                       )}
                     </td>
@@ -361,9 +389,11 @@ export default function AdminUsersPage() {
                           }`}
                           title={(u.canUpload ?? true) ? 'Disable upload' : 'Enable upload'}
                         >
-                          <span className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
-                            (u.canUpload ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'
-                          }`} />
+                          <span
+                            className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
+                              (u.canUpload ?? true) ? 'translate-x-3.5' : 'translate-x-0.5'
+                            }`}
+                          />
                         </button>
                       )}
                     </td>

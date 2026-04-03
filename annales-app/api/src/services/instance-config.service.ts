@@ -1,7 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { InstanceConfig, instanceConfigSchema, PublicInstanceConfig } from '../types/instance-config.js';
+import {
+  InstanceConfig,
+  instanceConfigSchema,
+  PublicInstanceConfig,
+} from '../types/instance-config.js';
 
 /**
  * Service for loading and validating instance configuration
@@ -23,7 +27,7 @@ class InstanceConfigService {
 
     // Use first path that exists
     this.configPath =
-      possiblePaths.find((p) => fs.existsSync(p)) || possiblePaths[possiblePaths.length - 1];
+      possiblePaths.find(p => fs.existsSync(p)) || possiblePaths[possiblePaths.length - 1];
   }
 
   /**
@@ -48,11 +52,11 @@ class InstanceConfigService {
         '/config/instance.config.example.json',
         path.resolve(
           path.dirname(fileURLToPath(import.meta.url)),
-          '../../../instance.config.example.json',
+          '../../../instance.config.example.json'
         ),
       ].filter(Boolean) as string[];
 
-      configFile = examplePaths.find((p) => fs.existsSync(p)) || '';
+      configFile = examplePaths.find(p => fs.existsSync(p)) || '';
 
       if (!configFile || !fs.existsSync(configFile)) {
         throw new Error('Neither instance.config.json nor instance.config.example.json found');
@@ -109,7 +113,7 @@ class InstanceConfigService {
     const config = this.getConfig();
     const emailLower = email.toLowerCase();
 
-    return config.email.allowedDomains.some((domain) => emailLower.endsWith(domain.toLowerCase()));
+    return config.email.allowedDomains.some(domain => emailLower.endsWith(domain.toLowerCase()));
   }
 }
 

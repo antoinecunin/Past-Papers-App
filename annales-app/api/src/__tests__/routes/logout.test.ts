@@ -40,9 +40,7 @@ describe('POST /api/auth/logout', () => {
     const { token } = await createAuthenticatedUser({ email: testEmail('logout-invalid') });
 
     // Logout
-    await request(app)
-      .post('/api/auth/logout')
-      .set('Authorization', `Bearer ${token}`);
+    await request(app).post('/api/auth/logout').set('Authorization', `Bearer ${token}`);
 
     // Try to use the same token
     const response = await request(app)

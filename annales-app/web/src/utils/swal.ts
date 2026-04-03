@@ -97,7 +97,7 @@ export function showSuccessToast(title: string): void {
     showConfirmButton: false,
     timer: 3000,
     timerProgressBar: true,
-    didOpen: (toast) => {
+    didOpen: toast => {
       toast.onmouseenter = Swal.stopTimer;
       toast.onmouseleave = Swal.resumeTimer;
     },
@@ -119,7 +119,7 @@ export function showErrorToast(title: string): void {
     showConfirmButton: false,
     timer: 4000,
     timerProgressBar: true,
-    didOpen: (toast) => {
+    didOpen: toast => {
       toast.onmouseenter = Swal.stopTimer;
       toast.onmouseleave = Swal.resumeTimer;
     },

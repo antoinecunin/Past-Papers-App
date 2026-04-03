@@ -266,7 +266,8 @@ class EmailService {
         {
           color: '#1e40af',
           bgColor: '#dbeafe',
-          content: "If you didn't attempt this registration, you can safely ignore this email. Your account is secure.",
+          content:
+            "If you didn't attempt this registration, you can safely ignore this email. Your account is secure.",
         },
       ],
     });

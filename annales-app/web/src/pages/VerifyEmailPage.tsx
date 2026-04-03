@@ -68,7 +68,9 @@ export default function VerifyEmailPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-info/10 mb-4">
                 <div className="w-8 h-8 border-2 border-info/30 border-t-info rounded-full animate-spin"></div>
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">Verification in progress...</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">
+                Verification in progress...
+              </h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed">
                 We are verifying your email address, please wait.
               </p>
@@ -90,8 +92,8 @@ export default function VerifyEmailPage() {
               </div>
               <h3 className="text-2xl font-bold text-secondary-dark mb-3">Email verified!</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                Your email address has been verified successfully. You can now
-                sign in to your account.
+                Your email address has been verified successfully. You can now sign in to your
+                account.
               </p>
               <Button
                 type="button"
@@ -146,10 +148,12 @@ export default function VerifyEmailPage() {
           )}
 
           <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold text-secondary-dark mb-2">Expired or invalid link</h3>
+            <h3 className="text-lg font-semibold text-secondary-dark mb-2">
+              Expired or invalid link
+            </h3>
             <p className="text-sm text-secondary">
-              This verification link is no longer valid. You can request a new
-              verification link below.
+              This verification link is no longer valid. You can request a new verification link
+              below.
             </p>
           </div>
 
@@ -195,9 +199,7 @@ export default function VerifyEmailPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">
-                or
-              </span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">or</span>
             </div>
           </div>
 

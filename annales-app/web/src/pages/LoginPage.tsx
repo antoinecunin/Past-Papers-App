@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { AlertCircle, X, LogIn, UserPlus } from "lucide-react";
-import { useAuthStore } from "../stores/authStore";
-import { useRouter } from "../hooks/useRouter";
-import { useInstance } from "../hooks/useInstance";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, X, LogIn, UserPlus } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
+import { useRouter } from '../hooks/useRouter';
+import { useInstance } from '../hooks/useInstance';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { login, isLoading, error, clearError } = useAuthStore();
   const { navigate } = useRouter();
   const { name, allowedDomains } = useInstance();
@@ -27,7 +27,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      navigate("exams");
+      navigate('exams');
     } catch {
       // Error is already handled by the store
     }
@@ -41,9 +41,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
             <LogIn className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
-            Welcome
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">Welcome</h1>
           <p className="text-sm md:text-base text-secondary">{name}</p>
         </div>
 
@@ -75,7 +73,7 @@ export default function LoginPage() {
               autoComplete="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               placeholder={`your.email${allowedDomains[0] || '@example.com'}`}
             />
 
@@ -88,7 +86,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
             />
 
@@ -96,7 +94,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-end">
               <button
                 type="button"
-                onClick={() => navigate("forgot-password")}
+                onClick={() => navigate('forgot-password')}
                 className="text-sm font-medium text-primary hover:text-primary-hover transition-colors hover:underline cursor-pointer"
               >
                 Forgot password?
@@ -143,7 +141,7 @@ export default function LoginPage() {
             variant="secondary"
             size="lg"
             className="w-full gap-2"
-            onClick={() => navigate("register")}
+            onClick={() => navigate('register')}
           >
             <UserPlus className="w-5 h-5" />
             <span>Create account</span>

@@ -87,8 +87,8 @@ export default function ResetPasswordPage() {
               </div>
               <h3 className="text-2xl font-bold text-secondary-dark mb-3">Password changed</h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
-                Your password has been changed successfully. You can now sign in
-                with your new password.
+                Your password has been changed successfully. You can now sign in with your new
+                password.
               </p>
               <Button
                 type="button"
@@ -119,13 +119,9 @@ export default function ResetPasswordPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
             <Key className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">
-            New password
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-secondary-dark mb-2">New password</h1>
           <p className="text-sm md:text-base text-secondary">{name}</p>
-          <p className="text-xs md:text-sm text-secondary/80 mt-2">
-            Choose a new secure password
-          </p>
+          <p className="text-xs md:text-sm text-secondary/80 mt-2">Choose a new secure password</p>
         </div>
 
         {/* Reset password card */}
@@ -212,9 +208,7 @@ export default function ResetPasswordPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">
-                or
-              </span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">or</span>
             </div>
           </div>
 

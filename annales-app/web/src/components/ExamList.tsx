@@ -214,7 +214,10 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
           {/* Year filter */}
           <div>
-            <label htmlFor="year-filter" className="block text-sm font-medium text-secondary-dark mb-1">
+            <label
+              htmlFor="year-filter"
+              className="block text-sm font-medium text-secondary-dark mb-1"
+            >
               Year
             </label>
             <select
@@ -234,7 +237,10 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
           {/* Module filter */}
           <div>
-            <label htmlFor="module-filter" className="block text-sm font-medium text-secondary-dark mb-1">
+            <label
+              htmlFor="module-filter"
+              className="block text-sm font-medium text-secondary-dark mb-1"
+            >
               Module
             </label>
             <select
@@ -297,7 +303,12 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredExams.map(exam => (
-            <ExamCard key={exam._id} exam={exam} onSelect={onExamSelect} onReport={handleReportExam} />
+            <ExamCard
+              key={exam._id}
+              exam={exam}
+              onSelect={onExamSelect}
+              onReport={handleReportExam}
+            />
           ))}
         </div>
       )}
