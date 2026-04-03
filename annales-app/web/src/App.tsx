@@ -394,15 +394,6 @@ function App() {
             </div>
 
             <div className="flex items-center space-x-4">
-              {isPage('viewer') && selectedExam && (
-                <div className="text-sm text-gray-500">
-                  {selectedExam.pages &&
-                    (selectedExam.pages === 1
-                      ? t('exams.card.page_count', { count: selectedExam.pages })
-                      : t('exams.card.page_count_plural', { count: selectedExam.pages }))}
-                </div>
-              )}
-
               {user && (
                 <div className="flex items-center space-x-4">
                   <button
