@@ -14,7 +14,9 @@ A self-hosted platform for sharing and annotating past exam papers. Built for un
 - **Content moderation** — Report system with admin panel
 - **User management** — Admin promotion/demotion, granular permissions (canComment, canUpload)
 - **Multi-instance** — Each deployment configures its own branding, email domains, and legal info
+- **Internationalization** — French and English, switchable by the user
 - **GDPR compliant** — Data export, account deletion with content anonymization, privacy policy, terms of service
+- **Secure by default** — HttpOnly cookie auth, token revocation, XSS protection (DOMPurify), rate limiting, email enumeration prevention
 
 ## Quick Start
 
@@ -93,10 +95,11 @@ npm run test:coverage
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, Zustand |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, Zustand, react-i18next |
 | Backend | Node.js 20, Express, TypeScript, Mongoose |
 | Database | MongoDB 7 |
 | Storage | Garage v2 (S3-compatible, by Deuxfleurs) |
+| Image processing | sharp (WebP conversion, EXIF stripping) |
 | Reverse Proxy | Nginx |
 | Infrastructure | Docker Compose |
 
