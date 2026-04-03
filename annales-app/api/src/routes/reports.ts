@@ -206,6 +206,8 @@ router.post(
  *     responses:
  *       200:
  *         description: List of reports
+ *       400:
+ *         description: Invalid query parameters
  *       401:
  *         description: Not authenticated
  *       403:

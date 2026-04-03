@@ -86,6 +86,8 @@ const examIdParamSchema = z.object({
  *         description: Missing or invalid file
  *       401:
  *         description: Not authenticated
+ *       403:
+ *         description: Upload permission revoked
  *       413:
  *         description: File too large (>50MB)
  *       500:
@@ -257,6 +259,8 @@ const IMAGE_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
  *         description: Invalid file
  *       401:
  *         description: Not authenticated
+ *       403:
+ *         description: Commenting permission revoked
  */
 router.post(
   '/image',
@@ -300,6 +304,8 @@ router.post(
  *         description: Invalid filename
  *       404:
  *         description: Image not found
+ *       500:
+ *         description: Server error
  */
 router.get(
   '/image/:filename',

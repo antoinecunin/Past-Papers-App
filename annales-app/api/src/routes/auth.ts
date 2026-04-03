@@ -113,7 +113,7 @@ const changeEmailSchema = z.object({
  * /auth/register:
  *   post:
  *     summary: Register a new user
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -171,7 +171,7 @@ router.post(
  * /auth/login:
  *   post:
  *     summary: Log in a user
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -189,15 +189,12 @@ router.post(
  *                 type: string
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Login successful (JWT set as HTTP-only cookie)
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 token:
- *                   type: string
- *                   description: Valid JWT for authentication
  *                 user:
  *                   type: object
  *                   properties:
@@ -241,7 +238,7 @@ router.post(
  * /auth/verify-email:
  *   post:
  *     summary: Verify email address
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -279,7 +276,7 @@ router.post(
  * /auth/forgot-password:
  *   post:
  *     summary: Request a password reset
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -294,9 +291,9 @@ router.post(
  *                 format: email
  *     responses:
  *       200:
- *         description: Reset email sent
- *       404:
- *         description: User not found
+ *         description: Always returns success (to prevent email enumeration)
+ *       400:
+ *         description: Invalid data
  */
 router.post(
   '/forgot-password',
@@ -320,7 +317,7 @@ router.post(
  * /auth/reset-password:
  *   post:
  *     summary: Reset password
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -362,7 +359,7 @@ router.post(
  * /auth/resend-verification:
  *   post:
  *     summary: Resend verification email
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -402,7 +399,7 @@ router.post(
  * /auth/dev/verify-user:
  *   post:
  *     summary: Mark a user as verified (development only)
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -448,7 +445,7 @@ if (process.env.NODE_ENV === 'development') {
  * /auth/profile:
  *   get:
  *     summary: Get the authenticated user's profile
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -491,7 +488,7 @@ router.get(
  * /auth/profile:
  *   patch:
  *     summary: Update user profile
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -533,7 +530,7 @@ router.patch(
  * /auth/change-password:
  *   post:
  *     summary: Change password (authenticated user)
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -586,7 +583,7 @@ router.post(
  *     description: >
  *       Changes the user's email address. Requires current password for confirmation.
  *       The email will be reset as unverified and a new verification email will be sent.
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -644,7 +641,7 @@ router.put(
  *       Returns all personal data and content created by the user in JSON format
  *       (right of access and right to data portability).
  *       Includes: profile, uploaded exams, comments, reports.
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -685,7 +682,7 @@ router.get(
  *       Deletes the user's personal data.
  *       Exams and answers are kept but anonymized (author set to null).
  *       Reports are deleted.
- *     tags: [Authentication]
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     requestBody:

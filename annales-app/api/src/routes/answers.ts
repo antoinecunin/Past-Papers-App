@@ -201,7 +201,7 @@ const voteSchema = z.object({
  *                     description: Content type
  *                   data:
  *                     type: string
- *                     description: Content (text, image URL from imgur/ibb/postimg, or LaTeX)
+ *                     description: Content (text, S3 image key from /api/files/image, or LaTeX)
  *                   rendered:
  *                     type: string
  *                     description: Rendered HTML (for LaTeX)
@@ -226,6 +226,8 @@ const voteSchema = z.object({
  *         description: Invalid parameters
  *       401:
  *         description: Not authenticated
+ *       403:
+ *         description: Commenting permission revoked
  *       404:
  *         description: Parent comment not found
  *       500:
@@ -556,7 +558,7 @@ router.put(
  * @swagger
  * /answers/{id}:
  *   delete:
- *     summary: Delete a comment (owner only)
+ *     summary: Delete a comment (owner or admin)
  *     tags: [Answers]
  *     security:
  *       - bearerAuth: []

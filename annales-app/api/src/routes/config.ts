@@ -5,7 +5,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/config/instance:
+ * /config/instance:
  *   get:
  *     summary: Get public instance configuration
  *     description: Returns instance-specific configuration including branding and email settings. This endpoint is public and doesn't require authentication.
