@@ -1,7 +1,6 @@
 .env
 .env.dev
 .claude/
-CLAUDE.md
 *.pdf
 node_modules/
 dist/
