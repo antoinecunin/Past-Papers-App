@@ -35,7 +35,7 @@ cp instance.config.example.json instance.config.json
 
 Edit `.env` with your JWT secret, SMTP credentials, admin account, and domain URLs. See `.env.example` for documentation on each variable.
 
-Edit `instance.config.json` with your instance name, allowed email domains, and branding.
+Edit `instance.config.json` with your instance name, allowed email domains, and branding. Keep the instance name short to avoid navbar layout issues, and test the UI in both English and French.
 
 ### 2. Start
 
