@@ -11,6 +11,9 @@ See @README.md for setup and architecture.
 ```bash
 ./start.sh dev --clean --seed    # Dev with fresh data
 ./start.sh prod                  # Production
+./backup.sh                      # Backup MongoDB + Garage files
+./backup.sh list                 # List available backups
+./backup.sh restore              # Restore most recent backup
 cd annales-app/api && npm test   # 210 tests
 cd annales-app/api && npm run lint && npm run format:check
 cd annales-app/web && npm run lint && npm run format:check
@@ -32,6 +35,7 @@ Test accounts: `admin@<domain>` / `admin123`, `test@<domain>` / `test1234`
 
 - **Token revocation**: `tokenVersion` on User, incremented on logout/password change/email change. Auth middleware rejects mismatched versions.
 - **Garage** replaced MinIO (archived 2026). Init via `docker exec` in `start.sh`. Credentials generated on first run — user updates `.env` manually.
+- **`--clean` in prod** requires typing `yes` to confirm. Always backup first with `./backup.sh`.
 - **Images**: uploaded to Garage, converted to WebP via sharp, served publicly at `GET /api/files/image/:filename` (UUID, no auth). PDFs require auth.
 - **Initial admin** (`INITIAL_ADMIN_EMAIL` env var) is the only one who can promote/demote roles. Any admin can toggle `canComment`/`canUpload`.
 - **LaTeX**: KaTeX with `trust: false` + DOMPurify on output to prevent XSS.

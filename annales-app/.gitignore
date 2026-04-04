@@ -40,3 +40,6 @@ Thumbs.db
 
 # Instance configuration (use instance.config.example.json as template)
 instance.config.json
+
+# Backups
+backups/

@@ -47,6 +47,8 @@ Edit `instance.config.json` with your instance name, allowed email domains, and 
 
 On first run, Garage S3 generates credentials displayed in the terminal. Update `S3_ACCESS_KEY` and `S3_SECRET_KEY` in your `.env`, then restart.
 
+> **Warning:** `./start.sh prod --clean` deletes all data (database + files) and requires confirmation. Always run `./backup.sh` before cleaning production.
+
 The application will be available at `http://localhost:8080`.
 
 ## Development
@@ -112,6 +114,22 @@ The application serves HTTP internally. Terminate TLS in front of the containers
 example.com {
     reverse_proxy localhost:8080
 }
+```
+
+## Backups
+
+```bash
+./backup.sh              # Create a backup (keeps last 2)
+./backup.sh list         # List available backups
+./backup.sh restore      # Restore the most recent backup
+./backup.sh restore <id> # Restore a specific backup
+```
+
+For automated backups, add a cron job (e.g. daily at 3am):
+
+```bash
+crontab -e
+# Add: 0 3 * * * cd /path/to/annales-app && ./backup.sh
 ```
 
 ## License
