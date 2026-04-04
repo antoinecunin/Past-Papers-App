@@ -49,17 +49,6 @@ echo "📦 Copying files into the container..."
 # Copy config
 docker cp "$CONFIG_FILE" "$API_CONTAINER:/app/seed-config.json"
 
-# Copy PDFs referenced in the config
-PDF_FILES=$(jq -r '.files[].path' "$CONFIG_FILE" 2>/dev/null | sort -u)
-for pdf in $PDF_FILES; do
-  if [ -f "$pdf" ]; then
-    docker cp "$pdf" "$API_CONTAINER:/app/$pdf"
-    echo "  📄 $pdf"
-  else
-    echo -e "${YELLOW}  ⚠️  File not found: $pdf${NC}"
-  fi
-done
-
 # Run the seeding script inside the container
 echo ""
 echo "🌱 Running seeding..."
@@ -76,8 +65,5 @@ fi
 echo ""
 echo "🧹 Cleaning up temporary files from the container..."
 docker exec "$API_CONTAINER" rm -f /app/seed-config.json
-for pdf in $PDF_FILES; do
-  docker exec "$API_CONTAINER" rm -f "/app/$pdf" 2>/dev/null || true
-done
 
 echo -e "${GREEN}✅ Seeding complete!${NC}"

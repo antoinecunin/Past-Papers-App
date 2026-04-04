@@ -46,54 +46,14 @@
     }
   ],
   "files": [
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "Final Exam M12",
-      "year": 2021,
-      "module": "M12-ALGO"
-    },
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "M12 Exam - Session 2",
-      "year": 2021,
-      "module": "M12-ALGO"
-    },
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "Data Structures Final Lab",
-      "year": 2022,
-      "module": "M15-STRUCT"
-    },
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "Database Exam",
-      "year": 2022,
-      "module": "M21-BDD"
-    },
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "Web Development Midterm",
-      "year": 2023,
-      "module": "M31-WEB"
-    },
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "Networking Quiz",
-      "year": 2023,
-      "module": "M25-NET"
-    },
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "Operating Systems Final Exam",
-      "year": 2024,
-      "module": "M18-SYS"
-    },
-    {
-      "path": "M12_controle_final.pdf",
-      "title": "AI Lab Exam",
-      "year": 2024,
-      "module": "M42-IA"
-    }
+    { "title": "Final Exam M12", "year": 2021, "module": "M12-ALGO" },
+    { "title": "M12 Exam - Session 2", "year": 2021, "module": "M12-ALGO" },
+    { "title": "Data Structures Final Lab", "year": 2022, "module": "M15-STRUCT" },
+    { "title": "Database Exam", "year": 2022, "module": "M21-BDD" },
+    { "title": "Web Development Midterm", "year": 2023, "module": "M31-WEB" },
+    { "title": "Networking Quiz", "year": 2023, "module": "M25-NET" },
+    { "title": "Operating Systems Final Exam", "year": 2024, "module": "M18-SYS" },
+    { "title": "AI Lab Exam", "year": 2024, "module": "M42-IA" }
   ],
   "reports": {
     "count": 40,

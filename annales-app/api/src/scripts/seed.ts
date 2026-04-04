@@ -23,6 +23,30 @@ import { uploadBuffer, objectKey } from '../services/s3.js';
 import { instanceConfigService } from '../services/instance-config.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
+
+/**
+ * Generate a fake PDF with the given number of pages using pdf-lib.
+ * Each page has the exam title and page number drawn on it.
+ */
+async function generateFakePdf(title: string, numPages: number): Promise<Buffer> {
+  const pdf = await PDFDocument.create();
+  const font = await pdf.embedFont('Helvetica');
+
+  for (let i = 1; i <= numPages; i++) {
+    const page = pdf.addPage([595, 842]); // A4
+    page.drawText(title, { x: 50, y: 780, size: 20, font });
+    page.drawText(`Page ${i} / ${numPages}`, { x: 50, y: 750, size: 14, font });
+    page.drawText('This is a generated test document for development purposes.', {
+      x: 50,
+      y: 700,
+      size: 12,
+      font,
+    });
+  }
+
+  const bytes = await pdf.save();
+  return Buffer.from(bytes);
+}
 const __dirname = path.dirname(__filename);
 
 // Types for seed configuration
@@ -36,7 +60,6 @@ interface SeedUser {
 }
 
 interface SeedFile {
-  path: string;
   title: string;
   year: number;
   module: string;
@@ -162,7 +185,6 @@ async function createExams(
   files: SeedFile[],
   uploaderEmail: string,
   userIds: Map<string, mongoose.Types.ObjectId>,
-  configDir: string,
   verbose: boolean
 ): Promise<ExamInfo[]> {
   log('📄', `Creating ${files.length} exams...`);
@@ -176,16 +198,9 @@ async function createExams(
 
   for (const fileData of files) {
     try {
-      const filePath = path.resolve(configDir, fileData.path);
-
-      // Check that the file exists
-      if (!fs.existsSync(filePath)) {
-        logWarning(`File not found: ${filePath}`);
-        continue;
-      }
-
-      // Read the file
-      const fileBuffer = fs.readFileSync(filePath);
+      // Generate a fake PDF (1-3 pages)
+      const numPages = 1 + Math.floor(Math.random() * 3);
+      const fileBuffer = await generateFakePdf(fileData.title, numPages);
 
       // Generate a unique S3 key
       const timestamp = Date.now();
@@ -195,9 +210,7 @@ async function createExams(
       // Upload to S3
       await uploadBuffer(fileKey, fileBuffer, 'application/pdf');
 
-      // Extract page count
-      const pdf = await PDFDocument.load(fileBuffer);
-      const pages = pdf.getPageCount();
+      const pages = numPages;
 
       // Create exam in database
       const exam = await Exam.create({
@@ -577,7 +590,6 @@ async function main() {
 
   // Read configuration
   const config: SeedConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  const configDir = path.dirname(configPath);
   const verbose = config.settings?.verbose ?? true;
 
   try {
@@ -597,7 +609,7 @@ async function main() {
     const uploaderEmail = firstVerified
       ? buildEmail(firstVerified.emailPrefix)
       : buildEmail(config.users[0].emailPrefix);
-    const exams = await createExams(config.files, uploaderEmail, userIds, configDir, verbose);
+    const exams = await createExams(config.files, uploaderEmail, userIds, verbose);
     const examIds = exams.map(e => e.id);
 
     // Create comments and replies on exams
