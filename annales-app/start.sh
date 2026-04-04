@@ -112,6 +112,14 @@ fi
 
 # 🧹 Clean volumes if requested
 if [ "$CLEAN" = "true" ]; then
+  if [ "$MODE" = "prod" ]; then
+    echo "⚠️  WARNING: This will permanently delete ALL production data (database + files)."
+    read -p "Are you sure? Type 'yes' to confirm: " confirm
+    if [ "$confirm" != "yes" ]; then
+      echo "❌ Aborted."
+      exit 1
+    fi
+  fi
   echo "🧹 Cleaning data volumes ($MODE)..."
 
   # Stop services if running
