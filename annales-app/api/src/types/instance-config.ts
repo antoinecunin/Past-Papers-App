@@ -15,9 +15,6 @@ export const instanceConfigSchema = z.object({
       .array(z.string().regex(/^@[\w.-]+\.\w+$/, 'Invalid domain format'))
       .min(1, 'At least one allowed domain is required'),
   }),
-  branding: z.object({
-    primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format'),
-  }),
 });
 
 export type InstanceConfig = z.infer<typeof instanceConfigSchema>;

@@ -1,6 +1,6 @@
 /**
  * Instance configuration types (frontend)
- * Matches backend PublicInstanceConfig - KISS principle
+ * Matches backend PublicInstanceConfig
  */
 
 export interface InstanceConfig {
@@ -11,9 +11,6 @@ export interface InstanceConfig {
   };
   email: {
     allowedDomains: string[];
-  };
-  branding: {
-    primaryColor: string;
   };
 }
 
@@ -29,8 +26,5 @@ export const DEFAULT_INSTANCE_CONFIG: InstanceConfig = {
   },
   email: {
     allowedDomains: ['@students.example.edu'],
-  },
-  branding: {
-    primaryColor: '#0EA5E9',
   },
 };

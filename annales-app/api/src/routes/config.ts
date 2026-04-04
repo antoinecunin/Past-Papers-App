@@ -8,7 +8,7 @@ const router = Router();
  * /config/instance:
  *   get:
  *     summary: Get public instance configuration
- *     description: Returns instance-specific configuration including branding and email settings. This endpoint is public and doesn't require authentication.
+ *     description: Returns instance-specific configuration including email settings. This endpoint is public and doesn't require authentication.
  *     tags: [Config]
  *     responses:
  *       200:
@@ -38,12 +38,6 @@ const router = Router();
  *                       items:
  *                         type: string
  *                       example: ["@students.example.edu"]
- *                 branding:
- *                   type: object
- *                   properties:
- *                     primaryColor:
- *                       type: string
- *                       example: "#0EA5E9"
  *       500:
  *         description: Server error while loading configuration
  */

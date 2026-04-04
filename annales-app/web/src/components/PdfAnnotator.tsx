@@ -10,7 +10,6 @@ import { AnswerContentDisplay } from './AnswerContentDisplay';
 import { VoteButtons } from './VoteButtons';
 import { ReplyForm } from './ReplyForm';
 import { useAuthStore } from '../stores/authStore';
-import { useInstance } from '../hooks/useInstance';
 import { showReportModal, showReportSuccess, showReportError } from '../utils/reportModal';
 import {
   CONTENT_MAX_LENGTH,
@@ -38,7 +37,6 @@ type Props = {
 export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const { primaryColor, primaryHoverColor } = useInstance();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState(0);
@@ -1239,7 +1237,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                         >
                           <div style={commentMetaStyle}>
                             {reply.mentionedAuthor && (
-                              <span style={getMentionDisplayStyle(primaryHoverColor)}>
+                              <span style={mentionDisplayStyle}>
                                 @{reply.mentionedAuthor.firstName}{' '}
                                 {reply.mentionedAuthor.lastName[0]}.
                               </span>
@@ -1288,7 +1286,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                           e.stopPropagation();
                           loadReplies(a._id, loadedReplies[a._id].cursor);
                         }}
-                        style={getLoadMoreStyle(primaryColor)}
+                        style={loadMoreStyle}
                       >
                         {t('comments.load_more')}
                       </button>
@@ -1395,42 +1393,25 @@ const replyItemStyle: React.CSSProperties = {
   wordBreak: 'break-word',
   maxWidth: '100%',
 };
-const getLoadMoreStyle = (primaryColor: string): React.CSSProperties => ({
+const loadMoreStyle: React.CSSProperties = {
   background: 'none',
   border: 'none',
-  color: primaryColor,
+  color: '#2563eb',
   cursor: 'pointer',
   fontSize: '11px',
   padding: '4px 0',
   textDecoration: 'underline',
-});
+};
 
-const getMentionDisplayStyle = (primaryHoverColor: string): React.CSSProperties => {
-  // Calculate lighter background based on primary hover color
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : { r: 29, g: 78, b: 216 };
-  };
-
-  const rgb = hexToRgb(primaryHoverColor);
-  const lightBg = `rgb(${Math.min(255, rgb.r + (255 - rgb.r) * 0.9)}, ${Math.min(255, rgb.g + (255 - rgb.g) * 0.9)}, ${Math.min(255, rgb.b + (255 - rgb.b) * 0.9)})`;
-
-  return {
-    display: 'inline-block',
-    padding: '1px 6px',
-    background: lightBg,
-    color: primaryHoverColor,
-    borderRadius: '10px',
-    fontSize: '11px',
-    fontWeight: 600,
-    marginRight: '4px',
-  };
+const mentionDisplayStyle: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '1px 6px',
+  background: '#dbeafe',
+  color: '#1d4ed8',
+  borderRadius: '10px',
+  fontSize: '11px',
+  fontWeight: 600,
+  marginRight: '4px',
 };
 
 const bestAnswerBadgeStyle: React.CSSProperties = {

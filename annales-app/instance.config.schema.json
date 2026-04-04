@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Instance Configuration",
-  "description": "Minimal configuration for instance customization (KISS principle)",
+  "description": "Configuration for instance customization",
   "type": "object",
-  "required": ["instance", "email", "branding"],
+  "required": ["instance", "email"],
   "properties": {
     "instance": {
       "type": "object",
@@ -12,7 +12,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "Full instance name displayed in the app",
+          "description": "Instance name displayed in the app (keep it short)",
           "minLength": 1,
           "examples": ["Exam Archive - My University"]
         },
@@ -44,19 +44,6 @@
             "pattern": "^@[\\w.-]+\\.\\w+$",
             "examples": ["@students.example.edu", "@university.edu"]
           }
-        }
-      }
-    },
-    "branding": {
-      "type": "object",
-      "description": "Visual branding customization",
-      "required": ["primaryColor"],
-      "properties": {
-        "primaryColor": {
-          "type": "string",
-          "description": "Primary brand color (6-digit hex code)",
-          "pattern": "^#[0-9A-Fa-f]{6}$",
-          "examples": ["#0EA5E9", "#3B82F6", "#10B981"]
         }
       }
     }

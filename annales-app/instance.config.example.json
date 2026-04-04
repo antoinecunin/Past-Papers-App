@@ -7,8 +7,5 @@
   },
   "email": {
     "allowedDomains": ["@students.example.edu"]
-  },
-  "branding": {
-    "primaryColor": "#2563eb"
   }
 }

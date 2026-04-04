@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
-import { useInstance } from '../hooks/useInstance';
 import {
   CONTENT_MAX_LENGTH,
   IMAGE_MAX_SIZE,
@@ -26,7 +25,6 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
   onClearMention,
 }) => {
   const { t } = useTranslation();
-  const { primaryHoverColor } = useInstance();
   const [contentType, setContentType] = useState<ContentType>('text');
   const [data, setData] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -116,7 +114,7 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
     <form onSubmit={handleSubmit} onClick={e => e.stopPropagation()} style={formStyle}>
       {mentionLabel && (
         <div style={mentionBadgeContainerStyle}>
-          <span style={getMentionTagStyle(primaryHoverColor)}>{mentionLabel}</span>
+          <span style={mentionTagStyle}>{mentionLabel}</span>
           {onClearMention && (
             <button
               type="button"
@@ -293,30 +291,14 @@ const mentionBadgeContainerStyle: React.CSSProperties = {
   gap: '4px',
 };
 
-const getMentionTagStyle = (primaryHoverColor: string): React.CSSProperties => {
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : { r: 29, g: 78, b: 216 };
-  };
-
-  const rgb = hexToRgb(primaryHoverColor);
-  const lightBg = `rgb(${Math.min(255, rgb.r + (255 - rgb.r) * 0.9)}, ${Math.min(255, rgb.g + (255 - rgb.g) * 0.9)}, ${Math.min(255, rgb.b + (255 - rgb.b) * 0.9)})`;
-
-  return {
-    display: 'inline-block',
-    padding: '1px 8px',
-    background: lightBg,
-    color: primaryHoverColor,
-    borderRadius: '10px',
-    fontSize: '11px',
-    fontWeight: 600,
-  };
+const mentionTagStyle: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '1px 8px',
+  background: '#dbeafe',
+  color: '#1d4ed8',
+  borderRadius: '10px',
+  fontSize: '11px',
+  fontWeight: 600,
 };
 
 const mentionClearButtonStyle: React.CSSProperties = {
