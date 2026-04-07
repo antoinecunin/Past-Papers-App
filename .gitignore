@@ -6,3 +6,5 @@ node_modules/
 dist/
 *.zip
 instance.config.json
+.playwright-mcp/
+*-audit/
