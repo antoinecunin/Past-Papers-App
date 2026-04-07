@@ -21,7 +21,8 @@
     "not_applicable": "—",
     "password_placeholder": "Password",
     "page": "page",
-    "pages": "pages"
+    "pages": "pages",
+    "close": "Close"
   },
   "nav": {
     "exams": "Exams",
@@ -30,7 +31,8 @@
     "users": "Users",
     "profile_title": "My profile",
     "sign_out": "Sign out",
-    "admin_badge": "Admin"
+    "admin_badge": "Admin",
+    "menu": "Menu"
   },
   "auth": {
     "login": {
@@ -256,7 +258,9 @@
       "delete_success_title": "Exam deleted",
       "delete_success_message": "The exam has been successfully deleted.",
       "delete_error": "Unable to delete the exam",
-      "delete_error_generic": "An error occurred while deleting"
+      "delete_error_generic": "An error occurred while deleting",
+      "mobile_pdf_hint": "The PDF viewer is not available on mobile",
+      "mobile_pdf_hint_sub": "Use the download button above to view this PDF. Comments are available via the button below."
     },
     "filedrop": {
       "drop_hint": "Drop the PDF here",

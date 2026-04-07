@@ -71,9 +71,14 @@ export default function AdminUsersPage() {
   const handleRoleChange = async (targetUser: UserEntry, newRole: 'user' | 'admin') => {
     if (!user) return;
 
-    const action = newRole === 'admin' ? t('admin.users.promote_action') : t('admin.users.demote_action');
+    const action =
+      newRole === 'admin' ? t('admin.users.promote_action') : t('admin.users.demote_action');
     const confirmed = window.confirm(
-      t('admin.users.role_change_confirm', { action, name: `${targetUser.firstName} ${targetUser.lastName}`, email: targetUser.email })
+      t('admin.users.role_change_confirm', {
+        action,
+        name: `${targetUser.firstName} ${targetUser.lastName}`,
+        email: targetUser.email,
+      })
     );
     if (!confirmed) return;
 
@@ -205,9 +210,7 @@ export default function AdminUsersPage() {
       {!loading && !isInitialAdmin && (
         <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
           <AlertCircle className="w-5 h-5 text-yellow-600" />
-          <p className="text-yellow-700">
-            {t('admin.users.role_warning')}
-          </p>
+          <p className="text-yellow-700">{t('admin.users.role_warning')}</p>
         </div>
       )}
 
@@ -311,17 +314,29 @@ export default function AdminUsersPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-          <table className="w-full">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_user')}</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_email')}</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_role')}</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_comment')}</th>
-                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_upload')}</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">
+                  {t('admin.users.table_user')}
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">
+                  {t('admin.users.table_email')}
+                </th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">
+                  {t('admin.users.table_role')}
+                </th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">
+                  {t('admin.users.table_comment')}
+                </th>
+                <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">
+                  {t('admin.users.table_upload')}
+                </th>
                 {isInitialAdmin && (
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">{t('admin.users.table_actions')}</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">
+                    {t('admin.users.table_actions')}
+                  </th>
                 )}
               </tr>
             </thead>
@@ -370,7 +385,9 @@ export default function AdminUsersPage() {
                             (u.canComment ?? true) ? 'bg-green-500' : 'bg-red-400'
                           }`}
                           title={
-                            (u.canComment ?? true) ? t('admin.users.disable_comment') : t('admin.users.enable_comment')
+                            (u.canComment ?? true)
+                              ? t('admin.users.disable_comment')
+                              : t('admin.users.enable_comment')
                           }
                         >
                           <span
@@ -391,7 +408,11 @@ export default function AdminUsersPage() {
                           className={`w-8 h-5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
                             (u.canUpload ?? true) ? 'bg-green-500' : 'bg-red-400'
                           }`}
-                          title={(u.canUpload ?? true) ? t('admin.users.disable_upload') : t('admin.users.enable_upload')}
+                          title={
+                            (u.canUpload ?? true)
+                              ? t('admin.users.disable_upload')
+                              : t('admin.users.enable_upload')
+                          }
                         >
                           <span
                             className={`block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
@@ -412,7 +433,9 @@ export default function AdminUsersPage() {
                             className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <ChevronUp className="w-3 h-3" />
-                            {actionLoading === u._id ? t('admin.users.promoting') : t('admin.users.promote')}
+                            {actionLoading === u._id
+                              ? t('admin.users.promoting')
+                              : t('admin.users.promote')}
                           </button>
                         ) : (
                           <button
@@ -421,7 +444,9 @@ export default function AdminUsersPage() {
                             className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <ChevronDown className="w-3 h-3" />
-                            {actionLoading === u._id ? t('admin.users.demoting') : t('admin.users.demote')}
+                            {actionLoading === u._id
+                              ? t('admin.users.demoting')
+                              : t('admin.users.demote')}
                           </button>
                         )}
                       </td>

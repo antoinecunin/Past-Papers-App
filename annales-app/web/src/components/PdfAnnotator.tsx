@@ -48,6 +48,15 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
   const highlightTimeoutRef = useRef<number | null>(null); // Reference to current timeout
   const currentHighlightedMarkerRef = useRef<HTMLElement | null>(null); // Reference to currently highlighted marker
 
+  // Responsive: detect mobile/tablet for sidebar toggle
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1024);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   // Thread state
   interface ReplyTarget {
     rootId: string;
@@ -596,7 +605,9 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
             return;
           }
           if (file.size > IMAGE_MAX_SIZE) {
-            imageErrorDiv.textContent = t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 });
+            imageErrorDiv.textContent = t('comments.reply_form.file_size_error', {
+              size: IMAGE_MAX_SIZE / 1024 / 1024,
+            });
             imageErrorDiv.style.display = 'block';
             selectedImageFile = null;
             return;
@@ -1020,6 +1031,213 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
     [user, examId, allAnswers, loadReplies, loadAllAnswers]
   );
 
+  if (isMobile) {
+    return (
+      <div data-pdf-annotator>
+        {/* Mobile: no embedded PDF, just comments */}
+        <div style={mobilePlaceholderStyle}>
+          <span style={{ fontSize: 32 }}>📄</span>
+          <p style={{ margin: 0, fontWeight: 600, color: '#374151' }}>
+            {t('exams.viewer.mobile_pdf_hint')}
+          </p>
+          <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
+            {t('exams.viewer.mobile_pdf_hint_sub')}
+          </p>
+        </div>
+
+        {/* Floating button to toggle comments */}
+        {!sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            style={floatingButtonStyle}
+            aria-label={t('comments.sidebar_title')}
+          >
+            💬 {answers.length}
+          </button>
+        )}
+
+        {/* Overlay backdrop */}
+        {sidebarOpen && <div style={overlayBackdropStyle} onClick={() => setSidebarOpen(false)} />}
+
+        <aside
+          style={{
+            ...sidebarMobileStyle,
+            transform: sidebarOpen ? 'translateX(0)' : 'translateX(100%)',
+          }}
+          aria-label="Comments"
+        >
+          <div style={sidebarHeaderStyle}>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '18px',
+                padding: '4px',
+                marginRight: '8px',
+              }}
+              aria-label={t('common.close')}
+            >
+              ✕
+            </button>
+            <strong>{t('comments.sidebar_title')}</strong>
+            <span style={{ opacity: 0.7 }}>
+              {selectedGroup
+                ? t('comments.selected_group', { count: selectedGroup.length })
+                : t('comments.page_indicator', {
+                    current: visiblePage,
+                    total: numPages || '…',
+                  })}
+            </span>
+          </div>
+          <ul style={commentListStyle}>
+            {[...(selectedGroup || answers)]
+              .sort((a, b) => {
+                if (a.isBestAnswer && !b.isBestAnswer) return -1;
+                if (!a.isBestAnswer && b.isBestAnswer) return 1;
+                return 0;
+              })
+              .map(a => (
+                <li key={a._id} style={commentItemStyle}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={commentMetaStyle}>
+                      {a.isBestAnswer && (
+                        <span style={bestAnswerBadgeStyle} title={t('comments.best_answer.title')}>
+                          ✓
+                        </span>
+                      )}
+                      {a.author
+                        ? `${a.author.firstName} ${a.author.lastName[0]}.`
+                        : t('comments.anonymous')}{' '}
+                      •{t('common.page')} {a.page}
+                    </div>
+                    <VoteButtons
+                      answerId={a._id}
+                      score={a.score ?? 0}
+                      userVote={a.userVote ?? null}
+                      onVote={voteOnAnswer}
+                    />
+                  </div>
+                  <AnswerContentDisplay
+                    answer={a}
+                    onEdit={
+                      PermissionUtils.canEdit(user, a.authorId || '') ? editAnswer : undefined
+                    }
+                    onDelete={
+                      PermissionUtils.canDelete(user, a.authorId || '') ? deleteAnswer : undefined
+                    }
+                    onReport={reportAnswer}
+                    onReply={
+                      !a.parentId
+                        ? id => setReplyTarget(replyTarget?.rootId === id ? null : { rootId: id })
+                        : undefined
+                    }
+                    onUploadImage={uploadImage}
+                  />
+                  {replyTarget?.rootId === a._id && (
+                    <ReplyForm
+                      onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
+                      onCancel={() => setReplyTarget(null)}
+                      onUploadImage={uploadImage}
+                      mentionLabel={replyTarget.mentionLabel}
+                      onClearMention={() => setReplyTarget({ rootId: a._id })}
+                    />
+                  )}
+                  {!a.parentId && (a.replyCount || 0) > 0 && (
+                    <button onClick={() => toggleThread(a._id)} style={threadToggleStyle}>
+                      {openThreads[a._id]
+                        ? t('comments.hide_replies')
+                        : (a.replyCount || 0) === 1
+                          ? t('comments.view_replies', { count: a.replyCount })
+                          : t('comments.view_replies_plural', { count: a.replyCount })}
+                    </button>
+                  )}
+                  {openThreads[a._id] && loadedReplies[a._id] && (
+                    <div style={threadContainerStyle}>
+                      {loadedReplies[a._id].replies.map(reply => (
+                        <div key={reply._id} style={replyItemStyle}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <div style={commentMetaStyle}>
+                              {reply.mentionedAuthor && (
+                                <span style={mentionDisplayStyle}>
+                                  @{reply.mentionedAuthor.firstName}{' '}
+                                  {reply.mentionedAuthor.lastName[0]}.
+                                </span>
+                              )}
+                              {reply.author
+                                ? `${reply.author.firstName} ${reply.author.lastName[0]}.`
+                                : t('comments.anonymous')}
+                            </div>
+                            <VoteButtons
+                              answerId={reply._id}
+                              score={reply.score ?? 0}
+                              userVote={reply.userVote ?? null}
+                              onVote={voteOnAnswer}
+                            />
+                          </div>
+                          <AnswerContentDisplay
+                            answer={reply}
+                            onEdit={
+                              PermissionUtils.canEdit(user, reply.authorId || '')
+                                ? editAnswer
+                                : undefined
+                            }
+                            onDelete={
+                              PermissionUtils.canDelete(user, reply.authorId || '')
+                                ? deleteAnswer
+                                : undefined
+                            }
+                            onReport={reportAnswer}
+                            onReply={() => {
+                              const label = reply.author
+                                ? `@${reply.author.firstName} ${reply.author.lastName[0]}.`
+                                : undefined;
+                              setReplyTarget({
+                                rootId: a._id,
+                                mentionUserId: reply.authorId,
+                                mentionLabel: label,
+                              });
+                            }}
+                            onUploadImage={uploadImage}
+                          />
+                        </div>
+                      ))}
+                      {loadedReplies[a._id].hasMore && (
+                        <button
+                          onClick={() => loadReplies(a._id, loadedReplies[a._id].cursor)}
+                          style={loadMoreStyle}
+                        >
+                          {t('comments.load_more')}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            {!(selectedGroup || answers).length && (
+              <li style={{ opacity: 0.6, padding: '8px 0' }}>
+                {selectedGroup ? t('comments.no_group_comments') : t('comments.no_comments')}
+              </li>
+            )}
+          </ul>
+        </aside>
+      </div>
+    );
+  }
+
   return (
     <div style={wrapperStyle} data-pdf-annotator>
       <div style={{ ...pdfPaneStyle, position: 'relative' }}>
@@ -1029,6 +1247,7 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
           aria-label="PDF viewer"
         ></div>
       </div>
+
       <aside style={sidebarStyle} aria-label="Comments">
         <div style={sidebarHeaderStyle}>
           <strong>{t('comments.sidebar_title')}</strong>
@@ -1161,7 +1380,11 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                           background: a.isBestAnswer ? '#16a34a' : '#d1d5db',
                           cursor: 'pointer',
                         }}
-                        title={a.isBestAnswer ? t('comments.best_answer.unmark') : t('comments.best_answer.mark')}
+                        title={
+                          a.isBestAnswer
+                            ? t('comments.best_answer.unmark')
+                            : t('comments.best_answer.mark')
+                        }
                       >
                         ✓
                       </button>
@@ -1170,8 +1393,10 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
                         ✓
                       </span>
                     ) : null}
-                    {a.author ? `${a.author.firstName} ${a.author.lastName[0]}.` : t('comments.anonymous')} •
-                    {t('common.page')} {a.page}
+                    {a.author
+                      ? `${a.author.firstName} ${a.author.lastName[0]}.`
+                      : t('comments.anonymous')}{' '}
+                    •{t('common.page')} {a.page}
                   </div>
                   <VoteButtons
                     answerId={a._id}
@@ -1329,6 +1554,18 @@ const wrapperStyle: React.CSSProperties = {
   maxWidth: '100%',
   overflow: 'hidden',
 };
+const mobilePlaceholderStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  padding: '32px 16px',
+  background: '#f9fafb',
+  border: '1px solid #e5e7eb',
+  borderRadius: 12,
+  textAlign: 'center',
+};
 const pdfPaneStyle: React.CSSProperties = {
   overflow: 'auto',
   border: '1px solid #e5e7eb',
@@ -1344,6 +1581,44 @@ const sidebarStyle: React.CSSProperties = {
   paddingLeft: 16,
   minWidth: 0,
   maxWidth: '100%',
+};
+const sidebarMobileStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  right: 0,
+  bottom: 0,
+  width: 'min(360px, 85vw)',
+  background: '#ffffff',
+  boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
+  zIndex: 50,
+  overflow: 'auto',
+  overflowX: 'hidden',
+  padding: 16,
+  transition: 'transform 0.3s ease',
+};
+const floatingButtonStyle: React.CSSProperties = {
+  position: 'fixed',
+  bottom: 24,
+  right: 24,
+  zIndex: 40,
+  background: '#4f46e5',
+  color: 'white',
+  border: 'none',
+  borderRadius: '9999px',
+  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)',
+};
+const overlayBackdropStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: 'rgba(0,0,0,0.3)',
+  zIndex: 45,
 };
 const sidebarHeaderStyle: React.CSSProperties = {
   display: 'flex',

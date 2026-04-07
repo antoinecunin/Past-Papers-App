@@ -21,7 +21,8 @@
     "not_applicable": "—",
     "password_placeholder": "Mot de passe",
     "page": "page",
-    "pages": "pages"
+    "pages": "pages",
+    "close": "Fermer"
   },
   "nav": {
     "exams": "Examens",
@@ -30,7 +31,8 @@
     "users": "Utilisateurs",
     "profile_title": "Mon profil",
     "sign_out": "Déconnexion",
-    "admin_badge": "Admin"
+    "admin_badge": "Admin",
+    "menu": "Menu"
   },
   "auth": {
     "login": {
@@ -256,7 +258,9 @@
       "delete_success_title": "Examen supprimé",
       "delete_success_message": "L'examen a été supprimé avec succès.",
       "delete_error": "Impossible de supprimer l'examen",
-      "delete_error_generic": "Une erreur est survenue lors de la suppression"
+      "delete_error_generic": "Une erreur est survenue lors de la suppression",
+      "mobile_pdf_hint": "La visionneuse PDF n'est pas disponible sur mobile",
+      "mobile_pdf_hint_sub": "Utilisez le bouton de téléchargement ci-dessus pour consulter ce PDF. Les commentaires sont accessibles via le bouton ci-dessous."
     },
     "filedrop": {
       "drop_hint": "Déposez le PDF ici",

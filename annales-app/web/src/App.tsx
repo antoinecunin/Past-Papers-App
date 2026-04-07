@@ -14,7 +14,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import ExamList from './components/ExamList';
 import PdfAnnotator from './components/PdfAnnotator';
-import { ArrowLeft, Download, AlertTriangle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, AlertTriangle, Trash2, Menu, X } from 'lucide-react';
 import { Button } from './components/ui/Button';
 import { useRouter } from './hooks/useRouter';
 import { useAuthStore } from './stores/authStore';
@@ -44,6 +44,16 @@ function App() {
   const { user, logout } = useAuthStore();
   const { name } = useInstance();
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile menu on navigation
+  const handleNavigate = (
+    page: Parameters<typeof navigate>[0],
+    params?: Parameters<typeof navigate>[1]
+  ) => {
+    setMobileMenuOpen(false);
+    navigate(page, params);
+  };
 
   // Load an exam by its ID (for direct URLs)
   const loadExamById = useCallback(
@@ -126,7 +136,10 @@ function App() {
       });
 
       if (response.ok) {
-        await showSuccess(t('exams.viewer.delete_success_title'), t('exams.viewer.delete_success_message'));
+        await showSuccess(
+          t('exams.viewer.delete_success_title'),
+          t('exams.viewer.delete_success_message')
+        );
         navigate('exams');
         setSelectedExam(null);
       } else {
@@ -293,7 +306,9 @@ function App() {
                     title={t('exams.viewer.report_title')}
                   >
                     <AlertTriangle className="w-4 h-4" />
-                    <span className="text-sm font-medium hidden md:inline">{t('exams.viewer.report_button')}</span>
+                    <span className="text-sm font-medium hidden md:inline">
+                      {t('exams.viewer.report_button')}
+                    </span>
                   </button>
 
                   {/* Delete button (owner or admin) */}
@@ -341,13 +356,14 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       {shouldShowNavigation && (
-        <nav className="bg-white shadow-sm border-b p-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-end gap-4">
-            <div className="flex items-center gap-4 mr-auto">
-              <h1 className="text-lg font-semibold text-gray-900">{name}</h1>
-              <div className="flex space-x-2">
+        <nav className="bg-white shadow-sm border-b">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 p-4">
+            {/* Left: Instance name + desktop nav buttons */}
+            <div className="flex items-center gap-4 min-w-0">
+              <h1 className="text-lg font-semibold text-gray-900 truncate">{name}</h1>
+              <div className="hidden lg:flex space-x-2 flex-shrink-0">
                 <button
-                  onClick={() => navigate('exams')}
+                  onClick={() => handleNavigate('exams')}
                   className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                     isPage('exams')
                       ? 'bg-primary text-white hover:bg-primary-hover'
@@ -357,7 +373,7 @@ function App() {
                   {t('nav.exams')}
                 </button>
                 <button
-                  onClick={() => navigate('upload')}
+                  onClick={() => handleNavigate('upload')}
                   className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                     isPage('upload')
                       ? 'bg-primary text-white hover:bg-primary-hover'
@@ -369,7 +385,7 @@ function App() {
                 {PermissionUtils.isAdmin(user) && (
                   <>
                     <button
-                      onClick={() => navigate('admin-reports')}
+                      onClick={() => handleNavigate('admin-reports')}
                       className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                         isPage('admin-reports')
                           ? 'bg-purple-500 text-white'
@@ -379,7 +395,7 @@ function App() {
                       {t('nav.reports')}
                     </button>
                     <button
-                      onClick={() => navigate('admin-users')}
+                      onClick={() => handleNavigate('admin-users')}
                       className={`px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                         isPage('admin-users')
                           ? 'bg-purple-500 text-white'
@@ -393,11 +409,12 @@ function App() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4 flex-shrink-0">
+            {/* Right: Desktop user section */}
+            <div className="hidden lg:flex items-center space-x-4 flex-shrink-0">
               {user && (
-                <div className="flex items-center space-x-4">
+                <>
                   <button
-                    onClick={() => navigate('profile')}
+                    onClick={() => handleNavigate('profile')}
                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer whitespace-nowrap"
                     title={t('nav.profile_title')}
                   >
@@ -414,18 +431,115 @@ function App() {
                   <button
                     onClick={() => {
                       logout();
-                      navigate('login');
+                      handleNavigate('login');
                     }}
                     className="text-sm text-red-600 hover:text-red-700 font-medium cursor-pointer"
                   >
                     {t('nav.sign_out')}
                   </button>
                   <LanguageSwitch />
-                </div>
+                </>
               )}
+            </div>
+
+            {/* Mobile: profile icon + hamburger */}
+            <div className="flex lg:hidden items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => handleNavigate('profile')}
+                className="flex items-center gap-1.5 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+                title={t('nav.profile_title')}
+              >
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium text-gray-900 max-w-[8rem] truncate">
+                  {user?.firstName}
+                </span>
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label={t('nav.menu')}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
         </nav>
+      )}
+
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 bg-black/30 z-40"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="lg:hidden fixed top-0 right-0 h-full w-72 bg-white shadow-xl z-50 flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <span className="font-semibold text-gray-900">{t('nav.menu')}</span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label={t('common.close')}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+              <button
+                onClick={() => handleNavigate('exams')}
+                className={`w-full text-left px-4 py-2.5 rounded-lg font-medium transition-colors cursor-pointer ${
+                  isPage('exams') ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {t('nav.exams')}
+              </button>
+              <button
+                onClick={() => handleNavigate('upload')}
+                className={`w-full text-left px-4 py-2.5 rounded-lg font-medium transition-colors cursor-pointer ${
+                  isPage('upload') ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {t('nav.upload')}
+              </button>
+              {PermissionUtils.isAdmin(user) && (
+                <>
+                  <button
+                    onClick={() => handleNavigate('admin-reports')}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg font-medium transition-colors cursor-pointer ${
+                      isPage('admin-reports')
+                        ? 'bg-purple-500 text-white'
+                        : 'text-purple-700 hover:bg-purple-50'
+                    }`}
+                  >
+                    {t('nav.reports')}
+                  </button>
+                  <button
+                    onClick={() => handleNavigate('admin-users')}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg font-medium transition-colors cursor-pointer ${
+                      isPage('admin-users')
+                        ? 'bg-purple-500 text-white'
+                        : 'text-purple-700 hover:bg-purple-50'
+                    }`}
+                  >
+                    {t('nav.users')}
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="border-t border-gray-200 p-4 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  logout();
+                  handleNavigate('login');
+                }}
+                className="text-sm text-red-600 hover:text-red-700 font-medium cursor-pointer"
+              >
+                {t('nav.sign_out')}
+              </button>
+              <LanguageSwitch />
+            </div>
+          </div>
+        </>
       )}
 
       <main className={shouldShowNavigation ? 'max-w-[90rem] mx-auto p-4 md:p-6 lg:p-8' : ''}>
