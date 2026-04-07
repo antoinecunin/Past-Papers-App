@@ -53,3 +53,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Comment action buttons: always visible on touch devices, hover-only on desktop */
+@media (hover: none) {
+  [data-action-buttons] {
+    opacity: 1 !important;
+  }
+}

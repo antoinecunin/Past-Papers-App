@@ -262,7 +262,9 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
                   return;
                 }
                 if (file.size > IMAGE_MAX_SIZE) {
-                  setEditImageError(t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 }));
+                  setEditImageError(
+                    t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 })
+                  );
                   return;
                 }
                 setEditImageFile(file);

@@ -94,7 +94,7 @@ export async function showValidationError(text: string): Promise<void> {
 export function showSuccessToast(title: string): void {
   const Toast = Swal.mixin({
     toast: true,
-    position: 'top-end',
+    position: window.innerWidth < 640 ? 'top' : 'top-end',
     showConfirmButton: false,
     timer: 3000,
     timerProgressBar: true,
@@ -116,7 +116,7 @@ export function showSuccessToast(title: string): void {
 export function showErrorToast(title: string): void {
   const Toast = Swal.mixin({
     toast: true,
-    position: 'top-end',
+    position: window.innerWidth < 640 ? 'top' : 'top-end',
     showConfirmButton: false,
     timer: 4000,
     timerProgressBar: true,

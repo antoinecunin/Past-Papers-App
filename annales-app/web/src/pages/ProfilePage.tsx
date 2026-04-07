@@ -352,21 +352,27 @@ export default function ProfilePage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1.5">{t('profile.email_label')}</label>
+                <label className="block text-sm font-medium text-secondary mb-1.5">
+                  {t('profile.email_label')}
+                </label>
                 <div className="px-4 py-3 bg-bg-tertiary rounded-xl text-secondary-dark border border-border">
                   {user.email}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">{t('profile.role_label')}</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">
+                    {t('profile.role_label')}
+                  </label>
                   <div className="px-4 py-3 bg-bg-tertiary rounded-xl text-secondary-dark border border-border flex items-center gap-2">
                     <Shield className="w-4 h-4 text-primary" />
                     {PermissionUtils.getRoleLabel(user.role)}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">{t('profile.status_label')}</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">
+                    {t('profile.status_label')}
+                  </label>
                   <div className="px-4 py-3 bg-bg-tertiary rounded-xl border border-border flex items-center gap-2">
                     <div
                       className={`w-2.5 h-2.5 rounded-full ${user.isVerified ? 'bg-success' : 'bg-warning'}`}
@@ -402,7 +408,7 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label={t('profile.first_name_label')}
                   value={firstName}
@@ -470,9 +476,7 @@ export default function ProfilePage() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
                 <p className="font-medium mb-1">⚠️ Important</p>
-                <p className="text-xs leading-relaxed">
-                  {t('profile.change_email.warning')}
-                </p>
+                <p className="text-xs leading-relaxed">{t('profile.change_email.warning')}</p>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-3">
@@ -611,9 +615,7 @@ export default function ProfilePage() {
               <Shield className="w-5 h-5" />
               {t('profile.gdpr.title')}
             </h2>
-            <p className="text-sm text-secondary mb-4">
-              {t('profile.gdpr.description')}
-            </p>
+            <p className="text-sm text-secondary mb-4">{t('profile.gdpr.description')}</p>
             <div className="space-y-3">
               <Button
                 type="button"
@@ -647,9 +649,7 @@ export default function ProfilePage() {
               <Trash2 className="w-5 h-5" />
               {t('profile.danger_zone.title')}
             </h2>
-            <p className="text-sm text-secondary mb-4">
-              {t('profile.danger_zone.description')}
-            </p>
+            <p className="text-sm text-secondary mb-4">{t('profile.danger_zone.description')}</p>
             <Button
               type="button"
               variant="danger"

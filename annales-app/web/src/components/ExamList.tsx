@@ -202,7 +202,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
 
       {/* Filters and search */}
       <div className="bg-white border border-border rounded-xl p-4 md:p-6 shadow-lg shadow-black/5">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Input
@@ -297,11 +297,11 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
             <FileX className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-secondary-dark mb-2">{t('exams.no_results_title')}</h3>
+          <h3 className="text-lg font-semibold text-secondary-dark mb-2">
+            {t('exams.no_results_title')}
+          </h3>
           <p className="text-sm text-secondary">
-            {exams.length === 0
-              ? t('exams.no_exams')
-              : t('exams.no_results')}
+            {exams.length === 0 ? t('exams.no_exams') : t('exams.no_results')}
           </p>
         </div>
       ) : (
