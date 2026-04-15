@@ -11,7 +11,7 @@
  */
 
 import { execSync, execFileSync } from 'child_process';
-import { existsSync, readdirSync, statSync } from 'fs';
+import { existsSync, statSync } from 'fs';
 import { resolve } from 'path';
 
 // ─── Colors ───
@@ -83,23 +83,11 @@ let copied = false;
 if (directory && existsSync(directory) && statSync(directory).isDirectory()) {
   const absDir = resolve(directory);
 
-  // Find PDF files
-  const pdfs = readdirSync(absDir).filter((f) => f.toLowerCase().endsWith('.pdf'));
-
-  if (pdfs.length === 0) {
-    logError(`❌ No PDF files found in ${absDir}`);
-    process.exit(1);
-  }
-
-  // Copy PDFs into the container
-  console.log('📦 Copying PDF files into the container...');
+  // Copy entire directory into the container (recursive, preserves structure)
+  console.log('📦 Copying files into the container...');
   dockerExec(container, ['rm', '-rf', '/tmp/import-pdfs']);
-  dockerExec(container, ['mkdir', '-p', '/tmp/import-pdfs']);
-
-  for (const pdf of pdfs) {
-    dockerCp(resolve(absDir, pdf), `${container}:/tmp/import-pdfs/`);
-  }
-  logSuccess(`   ✓ ${pdfs.length} file(s) copied`);
+  dockerCp(absDir, `${container}:/tmp/import-pdfs`);
+  logSuccess('   ✓ Directory copied');
   copied = true;
 
   // Replace directory argument with container path

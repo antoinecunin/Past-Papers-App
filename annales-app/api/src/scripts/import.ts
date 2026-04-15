@@ -38,7 +38,8 @@ function logError(msg: string) {
 
 interface ParsedFile {
   filepath: string;
-  filename: string;
+  relativePath: string; // path relative to the import directory (used for pattern matching)
+  filename: string; // just the file name (used for display and upload)
   module: string;
   year: number;
   title: string;
@@ -46,7 +47,7 @@ interface ParsedFile {
 }
 
 function buildPatternRegex(pattern: string): { regex: RegExp; groups: string[] } {
-  const placeholderRe = /\{(module|year|title)\}/g;
+  const placeholderRe = /\{(module|year|title|_)\}/g;
   const groups: string[] = [];
   let lastIndex = 0;
   let regexStr = '^';
@@ -66,6 +67,13 @@ function buildPatternRegex(pattern: string): { regex: RegExp; groups: string[] }
 
     if (name === 'year') {
       regexStr += '(\\d{4})';
+    } else if (name === '_') {
+      // Wildcard: match anything but don't capture (used to skip irrelevant parts)
+      if (nextLiteralChar) {
+        regexStr += `[^${escapeRegExp(nextLiteralChar)}]+`;
+      } else {
+        regexStr += '.+';
+      }
     } else if (nextLiteralChar) {
       regexStr += `([^${escapeRegExp(nextLiteralChar)}]+)`;
     } else {
@@ -79,24 +87,47 @@ function buildPatternRegex(pattern: string): { regex: RegExp; groups: string[] }
   regexStr += escapeRegExp(pattern.slice(lastIndex));
   regexStr += '$';
 
-  return { regex: new RegExp(regexStr), groups };
+  // Filter out wildcards from groups (they don't produce capture groups)
+  const captureGroups = groups.filter(g => g !== '_');
+
+  return { regex: new RegExp(regexStr), groups: captureGroups };
 }
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function parseFilenames(files: string[], directory: string, pattern: string): ParsedFile[] {
+// ─── Recursive file scanning ───
+
+function scanPdfs(directory: string, base?: string): string[] {
+  const results: string[] = [];
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+  for (const entry of entries) {
+    const relative = base ? `${base}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      results.push(...scanPdfs(path.join(directory, entry.name), relative));
+    } else if (entry.name.toLowerCase().endsWith('.pdf')) {
+      results.push(relative);
+    }
+  }
+  return results.sort();
+}
+
+// ─── File parsing ───
+
+function parseFiles(relativePaths: string[], directory: string, pattern: string): ParsedFile[] {
   const { regex, groups } = buildPatternRegex(pattern);
   const hasTitle = groups.includes('title');
 
-  return files.map(filename => {
-    const filepath = path.join(directory, filename);
-    const match = filename.match(regex);
+  return relativePaths.map(relativePath => {
+    const filepath = path.join(directory, relativePath);
+    const filename = path.basename(relativePath);
+    const match = relativePath.match(regex);
 
     if (!match) {
       return {
         filepath,
+        relativePath,
         filename,
         module: '',
         year: 0,
@@ -112,6 +143,7 @@ function parseFilenames(files: string[], directory: string, pattern: string): Pa
 
     return {
       filepath,
+      relativePath,
       filename,
       module: extracted['module'] || '',
       year: parseInt(extracted['year'], 10) || 0,
@@ -126,11 +158,12 @@ function parseFilenames(files: string[], directory: string, pattern: string): Pa
 // ─── Preview table ───
 
 function printPreview(files: ParsedFile[]): { matchCount: number; unmatchCount: number } {
-  const maxFile = Math.min(50, Math.max(8, ...files.map(f => f.filename.length)));
+  const pathCol = files.some(f => f.relativePath !== f.filename) ? 'Path' : 'Filename';
+  const maxFile = Math.min(50, Math.max(pathCol.length, ...files.map(f => f.relativePath.length)));
   const maxModule = Math.min(30, Math.max(6, ...files.map(f => f.module.length)));
   const maxTitle = Math.min(40, Math.max(5, ...files.map(f => f.title.length)));
 
-  const header = `  ${pad('Filename', maxFile)}  ${pad('Module', maxModule)}  ${pad('Year', 4)}  ${pad('Title', maxTitle)}`;
+  const header = `  ${pad(pathCol, maxFile)}  ${pad('Module', maxModule)}  ${pad('Year', 4)}  ${pad('Title', maxTitle)}`;
   const separator = `  ${'─'.repeat(maxFile)}  ${'─'.repeat(maxModule)}  ${'─'.repeat(4)}  ${'─'.repeat(maxTitle)}  ${'─'.repeat(2)}`;
 
   console.log(`\n${colors.bold}📋 Preview (${files.length} files):${colors.reset}\n`);
@@ -141,16 +174,18 @@ function printPreview(files: ParsedFile[]): { matchCount: number; unmatchCount: 
   let unmatchCount = 0;
 
   for (const f of files) {
-    const name =
-      f.filename.length > maxFile ? f.filename.slice(0, maxFile - 3) + '...' : f.filename;
+    const display =
+      f.relativePath.length > maxFile
+        ? f.relativePath.slice(0, maxFile - 3) + '...'
+        : f.relativePath;
     if (f.matched) {
       console.log(
-        `  ${pad(name, maxFile)}  ${pad(f.module, maxModule)}  ${pad(String(f.year), 4)}  ${pad(f.title, maxTitle)}  ✓`
+        `  ${pad(display, maxFile)}  ${pad(f.module, maxModule)}  ${pad(String(f.year), 4)}  ${pad(f.title, maxTitle)}  ✓`
       );
       matchCount++;
     } else {
       logWarning(
-        `  ${pad(name, maxFile)}  ${pad('-', maxModule)}  ${pad('-', 4)}  ${pad(f.title, maxTitle)}  ⚠️`
+        `  ${pad(display, maxFile)}  ${pad('-', maxModule)}  ${pad('-', 4)}  ${pad(f.title, maxTitle)}  ⚠️`
       );
       unmatchCount++;
     }
@@ -201,6 +236,7 @@ async function main() {
     console.log('   {module}    Module or subject name');
     console.log('   {year}      Year (4 digits)');
     console.log('   {title}     Exam title');
+    console.log('   {_}         Wildcard (matches anything, ignored)');
     console.log('');
     console.log('   At least {year} and {module} are required.');
     console.log('   If {title} is omitted, the full filename (without extension) is used.');
@@ -209,8 +245,13 @@ async function main() {
     console.log('   --dry-run   Preview extracted metadata without uploading');
     console.log('   --help      Show this help');
     console.log('');
+    console.log('   The pattern is matched against the relative path, so it supports');
+    console.log('   both flat and nested directory structures.');
+    console.log('');
     console.log('EXAMPLES:');
     console.log('   npm run import -- ./annales "{module}_{year}_{title}.pdf"');
+    console.log('   npm run import -- ./exams "{module}/{year}/{title}.pdf"');
+    console.log('   npm run import -- ./exams "{_}/{module}/{year}/{title}.pdf"');
     console.log('   npm run import -- ./exams "{year} - {module} - {title}.pdf" --dry-run');
     process.exit(positional.length < 2 ? 1 : 0);
   }
@@ -235,11 +276,8 @@ async function main() {
   const maxFileSizeMB = instanceConfigService.getConfig().uploads.maxFileSizeMB;
   const maxFileSize = maxFileSizeMB * 1024 * 1024;
 
-  // Scan directory for PDFs
-  const allFiles = fs
-    .readdirSync(directory)
-    .filter(f => f.toLowerCase().endsWith('.pdf'))
-    .sort();
+  // Scan directory for PDFs (recursive)
+  const allFiles = scanPdfs(directory);
 
   if (allFiles.length === 0) {
     logError(`❌ No PDF files found in ${directory}`);
@@ -249,13 +287,13 @@ async function main() {
   // Filter out files that are too large
   let skippedCount = 0;
   const validFiles: string[] = [];
-  for (const filename of allFiles) {
-    const size = fs.statSync(path.join(directory, filename)).size;
+  for (const relativePath of allFiles) {
+    const size = fs.statSync(path.join(directory, relativePath)).size;
     if (size > maxFileSize) {
-      logWarning(`⚠️  Skipping (>${maxFileSizeMB}MB): ${filename}`);
+      logWarning(`⚠️  Skipping (>${maxFileSizeMB}MB): ${relativePath}`);
       skippedCount++;
     } else {
-      validFiles.push(filename);
+      validFiles.push(relativePath);
     }
   }
 
@@ -267,8 +305,8 @@ async function main() {
     process.exit(1);
   }
 
-  // Parse filenames
-  const parsed = parseFilenames(validFiles, directory, pattern);
+  // Parse files (pattern matches against relative path)
+  const parsed = parseFiles(validFiles, directory, pattern);
   const { matchCount } = printPreview(parsed);
 
   if (skippedCount > 0) {
