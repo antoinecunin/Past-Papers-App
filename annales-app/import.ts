@@ -42,7 +42,7 @@ function detectContainer(): string {
     return 'annales-api';
   }
   logError('❌ No active API container found.');
-  console.log('Start services first with ./start.sh dev or ./start.sh prod');
+  console.log('Start services first: npm start -- dev (or npm start -- prod)');
   process.exit(1);
 }
 

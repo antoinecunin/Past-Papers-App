@@ -39,11 +39,11 @@ function detectContainer(): string {
   }
   if (containers.includes('annales-api')) {
     logError('❌ Seeding is only available in development mode.');
-    console.log('Start services in dev mode first: ./start.sh dev');
+    console.log('Start services in dev mode first: npm start -- dev');
     process.exit(1);
   }
   logError('❌ No active API container found.');
-  console.log('Start services first with ./start.sh dev');
+  console.log('Start services first: npm start -- dev');
   process.exit(1);
 }
 

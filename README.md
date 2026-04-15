@@ -39,22 +39,23 @@ Edit `.env` with your JWT secret, SMTP credentials, admin account, and domain UR
 
 Edit `instance.config.json` with your instance name, allowed email domains, and branding. Keep the instance name short to avoid navbar layout issues, and test the UI in both English and French.
 
-### 2. Start
+### 2. Install and start
 
 ```bash
-./start.sh prod
+npm install
+npm start
 ```
 
 On first run, Garage S3 generates credentials displayed in the terminal. Update `S3_ACCESS_KEY` and `S3_SECRET_KEY` in your `.env`, then restart.
 
-> **Warning:** `./start.sh prod --clean` deletes all data (database + files) and requires confirmation. Always run `./backup.sh` before cleaning production.
+> **Warning:** `npm start -- --clean` deletes all data (database + files) and requires confirmation. Always run `npm run backup` before cleaning production.
 
 The application will be available at `http://localhost:8080`.
 
 ## Development
 
 ```bash
-./start.sh dev --clean --seed
+npm start -- dev --clean --seed
 ```
 
 | URL | Description |
@@ -119,17 +120,17 @@ example.com {
 ## Backups
 
 ```bash
-./backup.sh              # Create a backup (keeps last 2)
-./backup.sh list         # List available backups
-./backup.sh restore      # Restore the most recent backup
-./backup.sh restore <id> # Restore a specific backup
+npm run backup              # Create a backup (keeps last 2)
+npm run backup -- list      # List available backups
+npm run backup -- restore   # Restore the most recent backup
+npm run backup -- restore <id>  # Restore a specific backup
 ```
 
 For automated backups, add a cron job (e.g. daily at 3am):
 
 ```bash
 crontab -e
-# Add: 0 3 * * * cd /path/to/annales-app && ./backup.sh
+# Add: 0 3 * * * cd /path/to/annales-app && npm run backup
 ```
 
 ## License

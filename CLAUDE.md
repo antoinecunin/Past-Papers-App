@@ -9,12 +9,13 @@ See @README.md for setup and architecture.
 ## Commands
 
 ```bash
-./start.sh dev --clean --seed    # Dev with fresh data
-./start.sh prod                  # Production
-./backup.sh                      # Backup MongoDB + Garage files
-./backup.sh list                 # List available backups
-./backup.sh restore              # Restore most recent backup
-cd annales-app/api && npm test   # 210 tests
+npm start -- dev --clean --seed    # Dev with fresh data
+npm start -- prod                  # Production
+npm run backup                     # Backup MongoDB + Garage files
+npm run backup -- list             # List available backups
+npm run backup -- restore          # Restore most recent backup
+npm run import -- <dir> <pattern>  # Bulk import PDFs
+cd annales-app/api && npm test     # 210 tests
 cd annales-app/api && npm run lint && npm run format:check
 cd annales-app/web && npm run lint && npm run format:check
 ```
@@ -34,8 +35,8 @@ Test accounts: `admin@<domain>` / `admin123`, `test@<domain>` / `test1234`
 ## Non-obvious decisions
 
 - **Token revocation**: `tokenVersion` on User, incremented on logout/password change/email change. Auth middleware rejects mismatched versions.
-- **Garage** replaced MinIO (archived 2026). Init via `docker exec` in `start.sh`. Credentials generated on first run — user updates `.env` manually.
-- **`--clean` in prod** requires typing `yes` to confirm. Always backup first with `./backup.sh`.
+- **Garage** replaced MinIO (archived 2026). Init via `docker exec` in `start.ts`. Credentials generated on first run — user updates `.env` manually.
+- **`--clean` in prod** requires typing `yes` to confirm. Always backup first with `npm run backup`.
 - **Images**: uploaded to Garage, converted to WebP via sharp, served publicly at `GET /api/files/image/:filename` (UUID, no auth). PDFs require auth.
 - **Initial admin** (`INITIAL_ADMIN_EMAIL` env var) is the only one who can promote/demote roles. Any admin can toggle `canComment`/`canUpload`.
 - **LaTeX**: KaTeX with `trust: false` + DOMPurify on output to prevent XSS.
