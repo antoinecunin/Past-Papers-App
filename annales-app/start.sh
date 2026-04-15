@@ -207,7 +207,7 @@ if curl -sf "http://localhost:$WEB_PORT/api/health" >/dev/null; then
   # 🌱 Create test data if requested
   if [ "$SEED" = "true" ]; then
     echo ""
-    ./seed.sh
+    npm run seed
   fi
 else
   echo "❌ Reverse proxy failed (port $WEB_PORT). Logs:"
