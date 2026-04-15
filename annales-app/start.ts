@@ -302,7 +302,11 @@ async function main() {
     // Seed if requested
     if (seed) {
       console.log('');
-      execSync('npm run seed', { stdio: 'inherit' });
+      try {
+        execSync('npm run seed', { stdio: 'inherit' });
+      } catch {
+        logError('❌ Seeding failed. Services are running but test data was not created.');
+      }
     }
   } else {
     logError(`❌ Reverse proxy failed (port ${webPort}). Logs:`);

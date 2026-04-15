@@ -89,12 +89,11 @@ console.log('');
 
 let exitCode = 0;
 try {
-  dockerExecInteractive(container, [
-    'node',
-    'dist/scripts/seed.js',
-    '--config',
-    '/app/seed-config.json',
-  ]);
+  const isDev = container.includes('-dev');
+  const cmd = isDev
+    ? ['npx', 'tsx', 'src/scripts/seed.ts', '--config', '/app/seed-config.json']
+    : ['node', 'dist/scripts/seed.js', '--config', '/app/seed-config.json'];
+  dockerExecInteractive(container, cmd);
 } catch (err) {
   exitCode = (err as { status?: number }).status ?? 1;
 } finally {
