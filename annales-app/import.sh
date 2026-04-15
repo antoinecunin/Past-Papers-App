@@ -409,25 +409,39 @@ for i in "${!FILENAMES[@]}"; do
   file="${PDF_FILES[$i]}"
   filename="${FILENAMES[$i]}"
 
-  RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -b "$COOKIE_FILE" \
-    -F "file=@$file" \
-    -F "title=${TITLES[$i]}" \
-    -F "year=${YEARS[$i]}" \
-    -F "module=${MODULES[$i]}" \
-    "$API_URL/api/files/upload")
+  RETRIES=0
+  MAX_RETRIES=5
+  HEADERS_FILE=$(mktemp)
+  while true; do
+    RESPONSE=$(curl -s -D "$HEADERS_FILE" -w "\n%{http_code}" \
+      -b "$COOKIE_FILE" \
+      -F "file=@$file" \
+      -F "title=${TITLES[$i]}" \
+      -F "year=${YEARS[$i]}" \
+      -F "module=${MODULES[$i]}" \
+      "$API_URL/api/files/upload")
 
-  STATUS=$(echo "$RESPONSE" | tail -1)
+    STATUS=$(echo "$RESPONSE" | tail -1)
 
-  if [ "$STATUS" = "200" ]; then
-    echo -e "  [${CURRENT}/${UPLOAD_COUNT}] ${GREEN}✓${NC} $filename"
-    SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-  else
-    BODY=$(echo "$RESPONSE" | sed '$d')
-    ERROR=$(echo "$BODY" | grep -o '"error":"[^"]*"' | head -1 | cut -d'"' -f4)
-    echo -e "  [${CURRENT}/${UPLOAD_COUNT}] ${RED}✗${NC} $filename — ${ERROR:-HTTP $STATUS}"
-    FAIL_COUNT=$((FAIL_COUNT + 1))
-  fi
+    if [ "$STATUS" = "200" ]; then
+      echo -e "  [${CURRENT}/${UPLOAD_COUNT}] ${GREEN}✓${NC} $filename"
+      SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+      break
+    elif [ "$STATUS" = "429" ] && [ $RETRIES -lt $MAX_RETRIES ]; then
+      RETRIES=$((RETRIES + 1))
+      WAIT=$(grep -i '^Retry-After:' "$HEADERS_FILE" | tr -d '\r' | awk '{print $2}')
+      WAIT=${WAIT:-10}
+      echo -e "  [${CURRENT}/${UPLOAD_COUNT}] ${YELLOW}⏳${NC} $filename — rate limited, retrying in ${WAIT}s ($RETRIES/$MAX_RETRIES)"
+      sleep "$WAIT"
+    else
+      BODY=$(echo "$RESPONSE" | sed '$d')
+      ERROR=$(echo "$BODY" | grep -o '"error":"[^"]*"' | head -1 | cut -d'"' -f4)
+      echo -e "  [${CURRENT}/${UPLOAD_COUNT}] ${RED}✗${NC} $filename — ${ERROR:-HTTP $STATUS}"
+      FAIL_COUNT=$((FAIL_COUNT + 1))
+      break
+    fi
+  done
+  rm -f "$HEADERS_FILE"
 done
 
 # ─── Summary ───
