@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Upload, CheckCircle } from 'lucide-react';
 import FileDrop from '../components/FileDrop';
 import { useAuthStore } from '../stores/authStore';
+import { useInstance } from '../hooks/useInstance';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { showValidationError, showError } from '../utils/swal';
@@ -11,6 +12,7 @@ import { apiFetch } from '../utils/api';
 export default function UploadPage() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const { maxFileSizeMB } = useInstance();
   const [title, setTitle] = useState('');
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [module, setModule] = useState('');
@@ -80,8 +82,7 @@ export default function UploadPage() {
       setTimeout(() => setUploadSuccess(false), 5000);
     } catch (error) {
       console.error('Upload error:', error);
-      const message =
-        error instanceof Error ? error.message : t('exams.upload.error_message');
+      const message = error instanceof Error ? error.message : t('exams.upload.error_message');
       await showError(t('exams.upload.error_title'), message);
     } finally {
       setIsUploading(false);
@@ -95,7 +96,9 @@ export default function UploadPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
           <Upload className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">{t('exams.upload.title')}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-secondary-dark mb-2">
+          {t('exams.upload.title')}
+        </h1>
         <p className="text-sm md:text-base text-secondary">{t('exams.upload.subtitle')}</p>
       </div>
 
@@ -103,9 +106,7 @@ export default function UploadPage() {
       {uploadSuccess && (
         <div className="bg-success-bg border border-success/20 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2 duration-200">
           <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-          <p className="text-sm text-success font-medium">
-            {t('exams.upload.success')}
-          </p>
+          <p className="text-sm text-success font-medium">{t('exams.upload.success')}</p>
         </div>
       )}
 
@@ -162,8 +163,10 @@ export default function UploadPage() {
 
           {/* File drop */}
           <div>
-            <label className="block text-sm font-medium text-secondary-dark mb-2">{t('exams.upload.file_label')}</label>
-            <FileDrop onFiles={handleFileSelect} />
+            <label className="block text-sm font-medium text-secondary-dark mb-2">
+              {t('exams.upload.file_label')}
+            </label>
+            <FileDrop onFiles={handleFileSelect} maxSizeMB={maxFileSizeMB} />
             {selectedFile && (
               <p className="mt-2 text-sm text-secondary">
                 {t('exams.upload.selected_file', { name: selectedFile.name })}

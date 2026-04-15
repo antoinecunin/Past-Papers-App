@@ -16,6 +16,7 @@ export const useInstance = () => {
     organizationName: config.instance.organizationName,
     contactEmail: config.instance.contactEmail,
     allowedDomains: config.email.allowedDomains,
+    maxFileSizeMB: config.uploads?.maxFileSizeMB ?? 50,
     isLoading,
     error,
   };

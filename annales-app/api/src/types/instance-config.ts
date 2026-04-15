@@ -15,6 +15,11 @@ export const instanceConfigSchema = z.object({
       .array(z.string().regex(/^@[\w.-]+\.\w+$/, 'Invalid domain format'))
       .min(1, 'At least one allowed domain is required'),
   }),
+  uploads: z
+    .object({
+      maxFileSizeMB: z.number().int().min(1).max(100).default(50),
+    })
+    .default({ maxFileSizeMB: 50 }),
 });
 
 export type InstanceConfig = z.infer<typeof instanceConfigSchema>;

@@ -3,7 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { useDropzone } from 'react-dropzone';
 import { FileUp, Upload } from 'lucide-react';
 
-export default function FileDrop({ onFiles }: { onFiles: (files: File[]) => void }) {
+export default function FileDrop({
+  onFiles,
+  maxSizeMB = 50,
+}: {
+  onFiles: (files: File[]) => void;
+  maxSizeMB?: number;
+}) {
   const { t } = useTranslation();
   const onDrop = useCallback((accepted: File[]) => onFiles(accepted), [onFiles]);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -38,7 +44,7 @@ export default function FileDrop({ onFiles }: { onFiles: (files: File[]) => void
                 {t('exams.filedrop.drag_hint')}
               </p>
               <p className="text-xs md:text-sm text-secondary">
-                {t('exams.filedrop.format_info')}
+                {t('exams.filedrop.format_info', { maxSize: maxSizeMB })}
               </p>
             </div>
           </>

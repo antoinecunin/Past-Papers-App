@@ -12,6 +12,9 @@ export interface InstanceConfig {
   email: {
     allowedDomains: string[];
   };
+  uploads?: {
+    maxFileSizeMB?: number;
+  };
 }
 
 /**

@@ -46,6 +46,20 @@
           }
         }
       }
+    },
+    "uploads": {
+      "type": "object",
+      "description": "File upload settings",
+      "properties": {
+        "maxFileSizeMB": {
+          "type": "integer",
+          "description": "Maximum PDF file size in megabytes (default: 50)",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50,
+          "examples": [10, 20, 50]
+        }
+      }
     }
   }
 }

@@ -8,9 +8,16 @@ import { PDFDocument } from 'pdf-lib';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 import { objectIdSchema } from '../utils/validation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { instanceConfigService } from '../services/instance-config.service.js';
 
 export const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+// Created per-request instead of at module level because the instance config
+// (which defines maxFileSizeMB) is loaded after route modules are imported.
+const getUploadMiddleware = () =>
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: instanceConfigService.getConfig().uploads.maxFileSizeMB * 1024 * 1024 },
+  });
 const imageUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -56,7 +63,7 @@ const examIdParamSchema = z.object({
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: PDF file to upload (max 50MB)
+ *                 description: PDF file to upload (max size configured per instance)
  *               title:
  *                 type: string
  *                 description: Exam title
@@ -88,14 +95,23 @@ const examIdParamSchema = z.object({
  *       403:
  *         description: Upload permission revoked
  *       413:
- *         description: File too large (>50MB)
+ *         description: File too large (exceeds instance limit)
  *       500:
  *         description: Server error
  */
 router.post(
   '/upload',
   authMiddleware,
-  upload.single('file'),
+  (req, res, next) => {
+    const upload = getUploadMiddleware();
+    upload.single('file')(req, res, (err: unknown) => {
+      if (err && (err as { code?: string }).code === 'LIMIT_FILE_SIZE') {
+        const maxMB = instanceConfigService.getConfig().uploads.maxFileSizeMB;
+        return res.status(413).json({ error: `File too large (max ${maxMB}MB)` });
+      }
+      next(err);
+    });
+  },
   asyncHandler(async (req: AuthenticatedRequest, res) => {
     if (!req.user!.canUpload) {
       return res.status(403).json({ error: 'Your upload permission has been revoked' });

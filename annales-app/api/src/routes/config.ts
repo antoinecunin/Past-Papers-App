@@ -38,6 +38,12 @@ const router = Router();
  *                       items:
  *                         type: string
  *                       example: ["@students.example.edu"]
+ *                 uploads:
+ *                   type: object
+ *                   properties:
+ *                     maxFileSizeMB:
+ *                       type: integer
+ *                       example: 50
  *       500:
  *         description: Server error while loading configuration
  */

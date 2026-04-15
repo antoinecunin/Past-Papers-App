@@ -265,7 +265,7 @@
     "filedrop": {
       "drop_hint": "Drop the PDF here",
       "drag_hint": "Drag and drop a PDF here or click to select",
-      "format_info": "Accepted formats: PDF - Max size: 50MB"
+      "format_info": "Accepted formats: PDF - Max size: {{maxSize}}MB"
     }
   },
   "comments": {

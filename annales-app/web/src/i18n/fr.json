@@ -265,7 +265,7 @@
     "filedrop": {
       "drop_hint": "Déposez le PDF ici",
       "drag_hint": "Glissez-déposez un PDF ici ou cliquez pour sélectionner",
-      "format_info": "Formats acceptés : PDF - Taille max : 50 Mo"
+      "format_info": "Formats acceptés : PDF - Taille max : {{maxSize}} Mo"
     }
   },
   "comments": {
