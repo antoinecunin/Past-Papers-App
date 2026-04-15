@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "import": "tsx import.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}
