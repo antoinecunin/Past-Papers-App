@@ -1,6 +1,7 @@
 {
   "private": true,
   "scripts": {
+    "backup": "tsx backup.ts",
     "import": "tsx import.ts",
     "seed": "tsx seed.ts"
   },
