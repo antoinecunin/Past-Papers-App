@@ -31,7 +31,9 @@ const COMMENT_REASONS = [
 export async function showReportModal(title: string, type: ReportType): Promise<ReportData | null> {
   const reasons = type === 'exam' ? EXAM_REASONS : COMMENT_REASONS;
 
-  const optionsHtml = reasons.map(r => `<option value="${r.value}">${i18n.t(r.labelKey)}</option>`).join('');
+  const optionsHtml = reasons
+    .map(r => `<option value="${r.value}">${i18n.t(r.labelKey)}</option>`)
+    .join('');
 
   const result = await Swal.fire({
     title,

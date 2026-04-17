@@ -125,7 +125,8 @@ export default function AdminReportsPage() {
     if (!user) return;
 
     const result = await Swal.fire({
-      title: action === 'approve' ? t('admin.reports.approve_title') : t('admin.reports.reject_title'),
+      title:
+        action === 'approve' ? t('admin.reports.approve_title') : t('admin.reports.reject_title'),
       html: `
         <div style="text-align: left;">
           <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #334155;">
@@ -136,7 +137,10 @@ export default function AdminReportsPage() {
       `,
       icon: action === 'approve' ? 'warning' : 'question',
       showCancelButton: true,
-      confirmButtonText: action === 'approve' ? t('admin.reports.approve_confirm') : t('admin.reports.reject_confirm'),
+      confirmButtonText:
+        action === 'approve'
+          ? t('admin.reports.approve_confirm')
+          : t('admin.reports.reject_confirm'),
       cancelButtonText: t('common.cancel'),
       confirmButtonColor: action === 'approve' ? '#ef4444' : '#64748b',
       cancelButtonColor: '#64748b',
@@ -161,7 +165,10 @@ export default function AdminReportsPage() {
       if (response.ok) {
         await Swal.fire({
           title: t('common.success'),
-          text: action === 'approve' ? t('admin.reports.approve_success') : t('admin.reports.reject_success'),
+          text:
+            action === 'approve'
+              ? t('admin.reports.approve_success')
+              : t('admin.reports.reject_success'),
           icon: 'success',
           confirmButtonColor: '#10b981',
         });
@@ -263,7 +270,9 @@ export default function AdminReportsPage() {
       return t('admin.reports.content_deleted');
     }
     if (report.type === 'exam') {
-      return t('admin.reports.target_exam', { title: report.target.title || t('admin.reports.label_exam') });
+      return t('admin.reports.target_exam', {
+        title: report.target.title || t('admin.reports.label_exam'),
+      });
     }
     return t('admin.reports.target_comment', { page: report.target.page || '?' });
   };
@@ -383,7 +392,9 @@ export default function AdminReportsPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary/10 mb-4">
             <CheckCircle className="w-8 h-8 text-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-secondary-dark mb-2">{t('admin.reports.no_results_title')}</h3>
+          <h3 className="text-lg font-semibold text-secondary-dark mb-2">
+            {t('admin.reports.no_results_title')}
+          </h3>
           <p className="text-sm text-secondary">{t('admin.reports.no_results_message')}</p>
         </div>
       ) : (
@@ -417,7 +428,11 @@ export default function AdminReportsPage() {
                             ? 'text-primary hover:bg-primary/10 cursor-pointer'
                             : 'text-secondary/50 cursor-not-allowed'
                         }`}
-                        title={report.target.exists ? t('admin.reports.view_content') : t('admin.reports.content_deleted')}
+                        title={
+                          report.target.exists
+                            ? t('admin.reports.view_content')
+                            : t('admin.reports.content_deleted')
+                        }
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         <span>{getTargetLabel(report)}</span>
@@ -426,7 +441,9 @@ export default function AdminReportsPage() {
 
                     {/* Reason */}
                     <div>
-                      <span className="text-sm font-medium text-secondary">{t('admin.reports.reason_label')} </span>
+                      <span className="text-sm font-medium text-secondary">
+                        {t('admin.reports.reason_label')}{' '}
+                      </span>
                       <span className="text-sm text-secondary-dark">
                         {getReasonLabel(report.reason)}
                       </span>
@@ -446,7 +463,9 @@ export default function AdminReportsPage() {
                           {t('admin.reports.comment_preview', { type: report.target.content.type })}
                         </span>
                         {report.target.content.type === 'image' ? (
-                          <span className="text-xs text-secondary italic">{t('admin.reports.comment_image')}</span>
+                          <span className="text-xs text-secondary italic">
+                            {t('admin.reports.comment_image')}
+                          </span>
                         ) : (
                           <p className="text-secondary-dark whitespace-pre-wrap break-words">
                             {report.target.content.data.length > 300
@@ -459,7 +478,9 @@ export default function AdminReportsPage() {
 
                     {/* Reporter */}
                     <div className="flex items-center gap-2 pt-2 border-t border-border">
-                      <span className="text-xs text-secondary">{t('admin.reports.reported_by')}</span>
+                      <span className="text-xs text-secondary">
+                        {t('admin.reports.reported_by')}
+                      </span>
                       <span className="text-xs font-medium text-secondary-dark">
                         {report.reportedBy.firstName} {report.reportedBy.lastName}
                       </span>
@@ -487,10 +508,13 @@ export default function AdminReportsPage() {
                     {report.reviewedBy && (
                       <div className="text-xs text-secondary">
                         <div>
-                          {t('admin.reports.reviewed_by')} {report.reviewedBy.firstName} {report.reviewedBy.lastName}
+                          {t('admin.reports.reviewed_by')} {report.reviewedBy.firstName}{' '}
+                          {report.reviewedBy.lastName}
                         </div>
                         {report.reviewNote && (
-                          <div className="mt-1 italic">{t('admin.reports.review_note')} {report.reviewNote}</div>
+                          <div className="mt-1 italic">
+                            {t('admin.reports.review_note')} {report.reviewNote}
+                          </div>
                         )}
                         <div className="mt-1">
                           {new Date(report.reviewedAt!).toLocaleDateString('en-US')}

@@ -92,7 +92,9 @@ export default function VerifyEmailPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/10 mb-4">
                 <CheckCircle className="w-8 h-8 text-success" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">{t('auth.verify_email.success_title')}</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">
+                {t('auth.verify_email.success_title')}
+              </h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-6">
                 {t('auth.verify_email.success_message')}
               </p>
@@ -152,9 +154,7 @@ export default function VerifyEmailPage() {
             <h3 className="text-lg font-semibold text-secondary-dark mb-2">
               {t('auth.verify_email.error_heading')}
             </h3>
-            <p className="text-sm text-secondary">
-              {t('auth.verify_email.error_message')}
-            </p>
+            <p className="text-sm text-secondary">{t('auth.verify_email.error_message')}</p>
           </div>
 
           <form onSubmit={handleResendVerification} className="space-y-5">
@@ -199,7 +199,9 @@ export default function VerifyEmailPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">{t('common.or')}</span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">
+                {t('common.or')}
+              </span>
             </div>
           </div>
 

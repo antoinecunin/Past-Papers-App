@@ -58,7 +58,9 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
     }
 
     if (file.size > IMAGE_MAX_SIZE) {
-      setImageError(t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 }));
+      setImageError(
+        t('comments.reply_form.file_size_error', { size: IMAGE_MAX_SIZE / 1024 / 1024 })
+      );
       setImageFile(null);
       setImagePreview(null);
       return;
@@ -158,7 +160,9 @@ export const ReplyForm: React.FC<ReplyFormProps> = ({
             value={data}
             onChange={e => setData(e.target.value)}
             placeholder={
-              contentType === 'latex' ? t('comments.reply_form.latex_placeholder') : t('comments.reply_form.text_placeholder')
+              contentType === 'latex'
+                ? t('comments.reply_form.latex_placeholder')
+                : t('comments.reply_form.text_placeholder')
             }
             maxLength={maxLength}
             rows={2}

@@ -48,11 +48,15 @@ export default function ForgotPasswordPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-info/10 mb-4">
                 <Mail className="w-8 h-8 text-info" />
               </div>
-              <h3 className="text-2xl font-bold text-secondary-dark mb-3">{t('auth.forgot_password.success_title')}</h3>
+              <h3 className="text-2xl font-bold text-secondary-dark mb-3">
+                {t('auth.forgot_password.success_title')}
+              </h3>
               <p className="text-sm md:text-base text-secondary leading-relaxed mb-2">
                 {t('auth.forgot_password.success_message')}
               </p>
-              <p className="text-xs text-secondary/80 mb-6">{t('auth.forgot_password.check_email')}</p>
+              <p className="text-xs text-secondary/80 mb-6">
+                {t('auth.forgot_password.check_email')}
+              </p>
               <div className="space-y-3">
                 <Button
                   type="button"
@@ -162,7 +166,9 @@ export default function ForgotPasswordPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm text-secondary font-medium">{t('common.or')}</span>
+              <span className="px-3 bg-white text-sm text-secondary font-medium">
+                {t('common.or')}
+              </span>
             </div>
           </div>
 
