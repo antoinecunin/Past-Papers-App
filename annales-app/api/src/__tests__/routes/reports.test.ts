@@ -197,6 +197,7 @@ describe('POST /api/reports', () => {
       year: 2024,
       module: 'Test',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 5,
       uploadedBy: user._id,
     });
@@ -234,6 +235,7 @@ describe('POST /api/reports', () => {
       year: 2024,
       module: 'Test Module',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });
@@ -271,6 +273,7 @@ describe('POST /api/reports', () => {
       year: 2024,
       module: 'Test Module',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });
@@ -337,6 +340,7 @@ describe('GET /api/reports', () => {
       year: 2024,
       module: 'Test Module',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });
@@ -347,6 +351,7 @@ describe('GET /api/reports', () => {
       year: 2024,
       module: 'Test Module 2',
       fileKey: 'test2.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });
@@ -400,6 +405,7 @@ describe('GET /api/reports', () => {
       year: 2024,
       module: 'Test Module',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });
@@ -482,6 +488,7 @@ describe('PUT /api/reports/:id/review', () => {
       year: 2024,
       module: 'Test Module',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });
@@ -515,6 +522,7 @@ describe('PUT /api/reports/:id/review', () => {
       year: 2024,
       module: 'Test Module',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });
@@ -557,6 +565,7 @@ describe('PUT /api/reports/:id/review', () => {
       year: 2024,
       module: 'Test Module',
       fileKey: 'test.pdf',
+      fileSize: 1024,
       pages: 1,
       uploadedBy: user._id,
     });

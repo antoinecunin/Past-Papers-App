@@ -218,6 +218,7 @@ async function createExams(
         year: fileData.year,
         module: fileData.module,
         fileKey,
+        fileSize: fileBuffer.length,
         pages,
         uploadedBy: uploaderId,
       });

@@ -370,6 +370,7 @@ describe('DELETE /api/auth/account', () => {
       year: 2024,
       module: 'Test',
       fileKey: 'test/key.pdf',
+      fileSize: 1024,
       uploadedBy: testUser._id,
     });
 
@@ -415,6 +416,7 @@ describe('DELETE /api/auth/account', () => {
       year: 2024,
       module: 'Other',
       fileKey: 'other/key.pdf',
+      fileSize: 1024,
       uploadedBy: otherUser._id,
     });
 
@@ -506,6 +508,7 @@ describe('GET /api/auth/data-export', () => {
       year: 2024,
       module: 'Test',
       fileKey: 'test/key.pdf',
+      fileSize: 1024,
       uploadedBy: testUser._id,
     });
 

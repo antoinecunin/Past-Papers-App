@@ -95,7 +95,7 @@ const examIdParamSchema = z.object({
  *       403:
  *         description: Upload permission revoked
  *       413:
- *         description: File too large (exceeds instance limit)
+ *         description: File too large or storage quota exceeded
  *       500:
  *         description: Server error
  */
@@ -133,6 +133,16 @@ router.post(
 
     const { title, year, module } = result.data;
 
+    // Check storage quota
+    const { maxStorageMB } = instanceConfigService.getConfig().uploads;
+    const maxStorageBytes = maxStorageMB * 1024 * 1024;
+    const [{ totalSize = 0 } = {}] = await Exam.aggregate([
+      { $group: { _id: null, totalSize: { $sum: '$fileSize' } } },
+    ]);
+    if (totalSize + req.file.size > maxStorageBytes) {
+      return res.status(413).json({ error: `Storage quota exceeded (max ${maxStorageMB}MB)` });
+    }
+
     // Validation du contenu PDF (rejette les fichiers renommés)
     let pages: number;
     try {
@@ -150,6 +160,7 @@ router.post(
       year,
       module,
       fileKey: key,
+      fileSize: req.file.size,
       pages,
       uploadedBy: req.user!.id,
     });

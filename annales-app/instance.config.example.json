@@ -9,6 +9,7 @@
     "allowedDomains": ["@students.example.edu"]
   },
   "uploads": {
-    "maxFileSizeMB": 50
+    "maxFileSizeMB": 50,
+    "maxStorageMB": 10000
   }
 }

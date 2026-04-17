@@ -58,6 +58,13 @@
           "maximum": 100,
           "default": 50,
           "examples": [10, 20, 50]
+        },
+        "maxStorageMB": {
+          "type": "integer",
+          "description": "Maximum total storage in megabytes (default: 10000)",
+          "minimum": 1,
+          "default": 10000,
+          "examples": [1000, 5000, 10000]
         }
       }
     }

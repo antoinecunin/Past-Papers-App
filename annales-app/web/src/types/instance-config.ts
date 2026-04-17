@@ -14,6 +14,7 @@ export interface InstanceConfig {
   };
   uploads?: {
     maxFileSizeMB?: number;
+    maxStorageMB?: number;
   };
 }
 

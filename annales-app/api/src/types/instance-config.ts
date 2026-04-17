@@ -18,8 +18,9 @@ export const instanceConfigSchema = z.object({
   uploads: z
     .object({
       maxFileSizeMB: z.number().int().min(1).max(100).default(50),
+      maxStorageMB: z.number().int().min(1).default(10000),
     })
-    .default({ maxFileSizeMB: 50 }),
+    .default({ maxFileSizeMB: 50, maxStorageMB: 10000 }),
 });
 
 export type InstanceConfig = z.infer<typeof instanceConfigSchema>;
