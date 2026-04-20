@@ -11,6 +11,7 @@ services:
   reverse-proxy:
     image: nginx:alpine
     container_name: annales-nginx
+    mem_limit: 128m
     depends_on:
       web:
         condition: service_healthy
@@ -35,6 +36,7 @@ services:
       context: ./web
       dockerfile: ../docker/web/Dockerfile
     container_name: annales-web
+    mem_limit: 128m
     networks:
       - public
     restart: unless-stopped
@@ -49,8 +51,10 @@ services:
       context: ./api
       dockerfile: ../docker/api/Dockerfile
     container_name: annales-api
+    mem_limit: 512m
     environment:
       - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=350
       - API_PORT=${API_PORT}
       - API_HOST=0.0.0.0
       - API_LOG_LEVEL=${API_LOG_LEVEL}
@@ -95,6 +99,8 @@ services:
   mongo:
     image: mongo:7
     container_name: annales-mongo
+    mem_limit: 1024m
+    command: --wiredTigerCacheSizeGB 0.5
     volumes:
       - mongo_data:/data/db
     networks:
@@ -109,6 +115,7 @@ services:
   garage:
     image: dxflrs/garage:v2.2.0
     container_name: annales-garage
+    mem_limit: 128m
     volumes:
       - ./docker/garage/garage.toml:/etc/garage.toml:ro
       - garage_meta:/var/lib/garage/meta
