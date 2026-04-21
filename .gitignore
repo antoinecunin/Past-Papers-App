@@ -2,6 +2,7 @@
 .env.dev
 .claude/
 *.pdf
+!annales-app/api/src/__tests__/fixtures/pdfs/*.pdf
 node_modules/
 dist/
 *.zip
