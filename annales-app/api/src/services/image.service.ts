@@ -1,10 +1,15 @@
 import sharp from 'sharp';
 import { randomUUID } from 'crypto';
 import { uploadBuffer, deleteFile, objectKey } from './s3.js';
+import { SerialQueue } from '../utils/serial-queue.js';
 
 const MAX_INPUT_SIZE = 5 * 1024 * 1024; // 5 Mo
 const WEBP_QUALITY = 80;
 const ALLOWED_FORMATS = new Set(['jpeg', 'png', 'gif', 'webp', 'tiff', 'avif']);
+
+// Sharp is the main memory-spike culprit under load (decode + re-encode of large images).
+// Serializing prevents N concurrent uploads from multiplying RAM usage.
+const sharpQueue = new SerialQueue();
 
 class ImageService {
   /**
@@ -16,17 +21,19 @@ class ImageService {
       throw new Error('Image too large (max 5 MB)');
     }
 
-    // Valider le format via magic bytes (sharp parse le header)
-    const metadata = await sharp(buffer).metadata();
-    if (!metadata.format || !ALLOWED_FORMATS.has(metadata.format)) {
-      throw new Error('Unsupported image format');
-    }
+    const webpBuffer = await sharpQueue.run(async () => {
+      // Valider le format via magic bytes (sharp parse le header)
+      const metadata = await sharp(buffer).metadata();
+      if (!metadata.format || !ALLOWED_FORMATS.has(metadata.format)) {
+        throw new Error('Unsupported image format');
+      }
 
-    // Convertir en WebP, auto-rotate depuis EXIF puis strip metadata
-    const webpBuffer = await sharp(buffer)
-      .rotate() // applique l'orientation EXIF avant suppression
-      .webp({ quality: WEBP_QUALITY })
-      .toBuffer();
+      // Convertir en WebP, auto-rotate depuis EXIF puis strip metadata
+      return sharp(buffer)
+        .rotate() // applique l'orientation EXIF avant suppression
+        .webp({ quality: WEBP_QUALITY })
+        .toBuffer();
+    });
 
     const key = objectKey('images', `${randomUUID()}.webp`);
     await uploadBuffer(key, webpBuffer, 'image/webp');
