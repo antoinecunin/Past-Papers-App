@@ -6,6 +6,7 @@ volumes:
   mongo_data_dev:
   garage_meta_dev:
   garage_data_dev:
+  meili_data_dev:
 
 services:
   reverse-proxy:
@@ -131,4 +132,23 @@ services:
     networks:
       - backend-dev
     restart: unless-stopped
+
+  meili:
+    image: getmeili/meilisearch:v1.17
+    container_name: annales-meili-dev
+    environment:
+      - MEILI_ENV=development
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    volumes:
+      - meili_data_dev:/meili_data
+    networks:
+      - backend-dev
+    ports:
+      - "${MEILI_EXTERNAL_PORT:-7700}:7700"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:7700/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
