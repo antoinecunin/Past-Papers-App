@@ -11,6 +11,7 @@ import { router as files } from './routes/files.js';
 import { router as answers } from './routes/answers.js';
 import { router as auth } from './routes/auth.js';
 import { router as reports } from './routes/reports.js';
+import { router as search } from './routes/search.js';
 import config from './routes/config.js';
 import { setupSwagger } from './swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -57,6 +58,7 @@ app.use('/api/exams', exams);
 app.use('/api/files', files);
 app.use('/api/answers', answers);
 app.use('/api/reports', reports);
+app.use('/api/search', search);
 
 app.use(errorHandler);
 
