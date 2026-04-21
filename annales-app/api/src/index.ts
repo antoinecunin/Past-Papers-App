@@ -16,6 +16,7 @@ import { setupSwagger } from './swagger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { instanceConfigService } from './services/instance-config.service.js';
 import { AdminInitService } from './services/admin-init.service.js';
+import { ensureIndex as ensureSearchIndex } from './services/search.service.js';
 
 const app = express();
 
@@ -101,6 +102,15 @@ connectMongoWithRetry().then(async () => {
 
   // Initialize first admin user if none exists
   await AdminInitService.initializeFirstAdmin();
+
+  // Configure the Meili index. A search outage shouldn't block server
+  // startup — a warning is enough; the next call to ensureIndex (e.g. on
+  // first indexing attempt) will retry.
+  try {
+    await ensureSearchIndex();
+  } catch (err) {
+    console.warn('[api] search index setup failed:', (err as Error).message);
+  }
 
   const server = app.listen(port, host, () => {
     console.log(`[api] listening on http://${host}:${port}`);

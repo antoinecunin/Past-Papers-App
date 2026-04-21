@@ -14,6 +14,7 @@ export function createExamData(
     fileKey: 'annales/2024/test-exam.pdf',
     fileSize: 1024,
     pages: 5,
+    searchable: true,
     uploadedBy: new Types.ObjectId(),
     ...overrides,
   };

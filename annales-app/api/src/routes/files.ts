@@ -3,6 +3,8 @@ import { z } from 'zod';
 import multer from 'multer';
 import { uploadBuffer, objectKey, downloadFile } from '../services/s3.js';
 import { imageService } from '../services/image.service.js';
+import { extractPdfText } from '../services/pdf-extract.service.js';
+import { indexExam } from '../services/search.service.js';
 import { Exam } from '../models/Exam.js';
 import { PDFDocument } from 'pdf-lib';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
@@ -164,6 +166,33 @@ router.post(
       pages,
       uploadedBy: req.user!.id,
     });
+
+    // Text extraction drives search: a PDF with no extractable text is
+    // flagged non-searchable so the UI can tell the user upfront rather
+    // than letting them think search is broken.
+    try {
+      const extraction = await extractPdfText(req.file.buffer);
+      exam.searchable = extraction.searchable;
+      await exam.save();
+      if (extraction.searchable) {
+        void indexExam(
+          {
+            examId: exam._id.toString(),
+            examTitle: exam.title,
+            module: exam.module,
+            year: exam.year,
+          },
+          extraction.pages
+        );
+      }
+    } catch (err) {
+      console.warn(
+        `[exam upload] text extraction failed for ${exam._id}: ${(err as Error).message}`
+      );
+      exam.searchable = false;
+      await exam.save();
+    }
+
     res.json({ id: exam._id, key, pages });
   })
 );

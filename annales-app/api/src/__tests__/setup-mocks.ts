@@ -61,3 +61,24 @@ jest.unstable_mockModule('pdf-lib', () => ({
     }),
   },
 }));
+
+// Mock meilisearch (bibliothèque externe) — empêche les tests d'essayer
+// de se connecter à une vraie instance Meili.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+jest.unstable_mockModule('meilisearch', () => {
+  const resolveWith = <T>(value: T) =>
+    jest.fn<(...args: any[]) => Promise<T>>().mockResolvedValue(value);
+  const makeIndex = () => ({
+    addDocuments: resolveWith({ taskUid: 0 }),
+    deleteDocuments: resolveWith({ taskUid: 0 }),
+    search: resolveWith({ hits: [] as unknown[], estimatedTotalHits: 0 }),
+    updateSettings: resolveWith({ taskUid: 0 }),
+  });
+  return {
+    Meilisearch: jest.fn<() => unknown>().mockImplementation(() => ({
+      index: jest.fn<() => ReturnType<typeof makeIndex>>().mockReturnValue(makeIndex()),
+      getIndex: resolveWith({}),
+      createIndex: resolveWith({}),
+    })),
+  };
+});

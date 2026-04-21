@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { Exam } from '../models/Exam.js';
 import { AnswerModel } from '../models/Answer.js';
 import { deleteFile } from './s3.js';
+import { removeExam as removeFromSearchIndex } from './search.service.js';
 import { ServiceError } from './ServiceError.js';
 
 export interface ExamData {
@@ -11,6 +12,7 @@ export interface ExamData {
   module: string;
   fileKey: string;
   pages: number;
+  searchable: boolean;
   uploadedBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -82,6 +84,9 @@ class ExamService {
 
     // Supprimer l'examen
     await Exam.findByIdAndDelete(id);
+
+    // Fire-and-forget: remove from search index. removeExam swallows errors.
+    void removeFromSearchIndex(id);
   }
 }
 

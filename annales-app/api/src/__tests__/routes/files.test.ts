@@ -1,11 +1,17 @@
 import request from 'supertest';
 import express from 'express';
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { router as filesRouter } from '../../routes/files.js';
 import { Exam } from '../../models/Exam.js';
-import { createAuthenticatedUser } from '../helpers/auth.helper.js';
+import { createAuthenticatedUser, testEmail } from '../helpers/auth.helper.js';
 import { Types } from 'mongoose';
 import { errorHandler } from '../../middleware/errorHandler.js';
 import { instanceConfigService } from '../../services/instance-config.service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Tests pour /api/files
@@ -87,6 +93,48 @@ describe('POST /api/files/upload', () => {
     expect(exam?.module).toBe('Mathematics');
     expect(exam?.fileSize).toBe(pdfBuffer.length);
     expect(exam?.uploadedBy.toString()).toBe(user._id.toString());
+  });
+
+  it('flags exam as non-searchable when text extraction fails', async () => {
+    // The mock PDF bytes are not a valid PDF for pdfjs-dist, so extraction
+    // throws — the upload should still succeed but mark searchable=false.
+    const { token } = await createAuthenticatedUser({
+      email: testEmail('upload-unsearchable'),
+    });
+
+    const pdfBuffer = Buffer.from('%PDF-1.4\n%mock pdf content');
+
+    const response = await request(app)
+      .post('/api/files/upload')
+      .set('Authorization', `Bearer ${token}`)
+      .field('title', 'Unreadable Exam')
+      .field('year', '2024')
+      .field('module', 'Test')
+      .attach('file', pdfBuffer, { filename: 'bad.pdf', contentType: 'application/pdf' });
+
+    expect(response.status).toBe(200);
+    const exam = await Exam.findById(response.body.id);
+    expect(exam?.searchable).toBe(false);
+  });
+
+  it('flags exam as searchable for a real text PDF', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: testEmail('upload-searchable'),
+    });
+    const fixturePath = resolve(__dirname, '..', 'fixtures', 'pdfs', 'text-3pages.pdf');
+    const pdfBuffer = readFileSync(fixturePath);
+
+    const response = await request(app)
+      .post('/api/files/upload')
+      .set('Authorization', `Bearer ${token}`)
+      .field('title', 'Searchable Exam')
+      .field('year', '2024')
+      .field('module', 'Test')
+      .attach('file', pdfBuffer, { filename: 'ok.pdf', contentType: 'application/pdf' });
+
+    expect(response.status).toBe(200);
+    const exam = await Exam.findById(response.body.id);
+    expect(exam?.searchable).toBe(true);
   });
 
   it('should require title, year, and module fields', async () => {
