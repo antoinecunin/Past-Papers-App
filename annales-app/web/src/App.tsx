@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import UploadPage from './pages/UploadPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import NotSearchableBadge from './components/NotSearchableBadge';
 import { LanguageSwitch } from './components/LanguageSwitch';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ProfilePage from './pages/ProfilePage';
@@ -33,6 +34,7 @@ interface Exam {
   module?: string;
   fileKey: string;
   pages?: number;
+  searchable?: boolean;
   createdAt: string;
   updatedAt: string;
   uploadedBy: string;
@@ -268,6 +270,7 @@ function App() {
                       {selectedExam.title}
                     </h1>
                     <div className="flex flex-wrap items-center gap-2 text-sm text-secondary">
+                      {selectedExam.searchable === false && <NotSearchableBadge />}
                       {selectedExam.module && <span>{selectedExam.module}</span>}
                       {selectedExam.module && selectedExam.year && <span>•</span>}
                       {selectedExam.year && <span>{selectedExam.year}</span>}
@@ -332,6 +335,7 @@ function App() {
             <PdfAnnotator
               pdfUrl={`/api/files/${selectedExam._id}/download`}
               examId={selectedExam._id}
+              initialPage={currentRoute.params.page}
             />
           </div>
         );

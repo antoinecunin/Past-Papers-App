@@ -34,6 +34,10 @@
     "admin_badge": "Admin",
     "menu": "Menu"
   },
+  "search": {
+    "not_searchable_badge": "Not searchable",
+    "not_searchable_title": "Content not searchable (scanned)"
+  },
   "auth": {
     "login": {
       "title": "Welcome",
@@ -200,6 +204,15 @@
     "exam_count_plural": "{{count}} exams",
     "search_placeholder": "Search by title or module...",
     "search_label": "Search",
+    "fulltext_label": "Search within exam contents",
+    "fulltext_placeholder": "e.g. Fourier transforms, martingale…",
+    "fulltext_hint": "Press Enter to filter the list by exams that contain the term.",
+    "fulltext_clear_chip": "Clear search",
+    "fulltext_searching": "Searching…",
+    "fulltext_error": "Search is temporarily unavailable.",
+    "fulltext_hit_page": "Page {{page}}",
+    "fulltext_show_more": "+ {{count}} more pages",
+    "fulltext_show_less": "Show less",
     "year_filter": "Year",
     "all_years": "All years",
     "module_filter": "Module",

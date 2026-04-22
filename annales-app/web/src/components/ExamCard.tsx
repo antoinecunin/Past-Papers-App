@@ -3,6 +3,7 @@ import { BookOpen, FileText, Download, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { showError } from '../utils/swal';
 import { apiFetch } from '../utils/api';
+import NotSearchableBadge from './NotSearchableBadge';
 
 interface Exam {
   _id: string;
@@ -11,6 +12,7 @@ interface Exam {
   module?: string;
   fileKey: string;
   pages?: number;
+  searchable?: boolean;
   createdAt: string;
   updatedAt: string;
   uploadedBy: string;
@@ -95,16 +97,19 @@ export default function ExamCard({ exam, onSelect, onReport }: ExamCardProps) {
         }
       }}
     >
-      {/* Header with title and year */}
+      {/* Header with title, year and optional non-searchable badge */}
       <div className="flex justify-between items-start gap-3 mb-3">
         <h3 className="text-base md:text-lg font-semibold text-secondary-dark flex-1 leading-tight group-hover:text-primary transition-colors">
           {exam.title}
         </h3>
-        {exam.year && (
-          <span className="text-xs font-medium text-primary bg-primary-light px-2.5 py-1 rounded-lg shrink-0">
-            {exam.year}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {exam.searchable === false && <NotSearchableBadge />}
+          {exam.year && (
+            <span className="text-xs font-medium text-primary bg-primary-light px-2.5 py-1 rounded-lg">
+              {exam.year}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Metadata */}

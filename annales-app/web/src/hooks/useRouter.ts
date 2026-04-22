@@ -4,6 +4,7 @@ import { useInstance } from './useInstance';
 export interface RouteParams {
   examId?: string;
   token?: string;
+  page?: number;
 }
 
 export interface Route {
@@ -63,12 +64,14 @@ export function useRouter() {
         return '/privacy';
       case 'terms':
         return '/terms';
-      case 'viewer':
+      case 'viewer': {
         if (!params.examId) {
           console.error('examId required for viewer route');
           return null;
         }
-        return `/exam/${params.examId}`;
+        const pageSuffix = params.page ? `?page=${params.page}` : '';
+        return `/exam/${params.examId}${pageSuffix}`;
+      }
       case 'exams':
       default:
         return '/';
@@ -139,10 +142,15 @@ export function useRouter() {
 
     const examMatch = path.match(/^\/exam\/([^/]+)$/);
     if (examMatch) {
+      const pageParam = urlParams.get('page');
+      const page = pageParam ? Number(pageParam) : undefined;
       return {
         path,
         page: 'viewer',
-        params: { examId: examMatch[1] },
+        params: {
+          examId: examMatch[1],
+          page: Number.isFinite(page) && (page as number) > 0 ? page : undefined,
+        },
       };
     }
 

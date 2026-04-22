@@ -26,6 +26,8 @@ type Props = {
   pdfUrl: string;
   /** Exam ID (ObjectId) */
   examId: string;
+  /** 1-based page number to scroll to on first render (from search result deep-link) */
+  initialPage?: number;
 };
 
 /**
@@ -34,7 +36,7 @@ type Props = {
  * - On scroll, we detect the mostly visible page and refresh the list.
  * - Adding a comment: captures the current yTop (center of the visible area).
  */
-export default function PdfAnnotator({ pdfUrl, examId }: Props) {
+export default function PdfAnnotator({ pdfUrl, examId, initialPage }: Props) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -157,8 +159,16 @@ export default function PdfAnnotator({ pdfUrl, examId }: Props) {
 
         await page.render({ canvasContext: ctx, viewport, canvas }).promise;
       }
+
+      // Deep-link from search results: scroll to the requested page once rendered.
+      if (initialPage && initialPage >= 1 && initialPage <= pdfDoc.numPages) {
+        const target = container.querySelector<HTMLElement>(
+          `.pdf-page[data-page-index="${initialPage - 1}"]`
+        );
+        target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
     })().catch(console.error);
-  }, [pdfDoc]);
+  }, [pdfDoc, initialPage]);
 
   // Visible page detection based on scroll (simpler and more reliable)
   useEffect(() => {

@@ -34,6 +34,10 @@
     "admin_badge": "Admin",
     "menu": "Menu"
   },
+  "search": {
+    "not_searchable_badge": "Non cherchable",
+    "not_searchable_title": "Contenu non cherchable (scan)"
+  },
   "auth": {
     "login": {
       "title": "Bienvenue",
@@ -200,6 +204,15 @@
     "exam_count_plural": "{{count}} examens",
     "search_placeholder": "Rechercher par titre ou module...",
     "search_label": "Rechercher",
+    "fulltext_label": "Rechercher dans le contenu des annales",
+    "fulltext_placeholder": "ex. transformées de Fourier, martingale…",
+    "fulltext_hint": "Appuyez sur Entrée pour filtrer la liste des annales contenant le terme.",
+    "fulltext_clear_chip": "Supprimer la recherche",
+    "fulltext_searching": "Recherche en cours…",
+    "fulltext_error": "La recherche est momentanément indisponible.",
+    "fulltext_hit_page": "Page {{page}}",
+    "fulltext_show_more": "+ {{count}} pages supplémentaires",
+    "fulltext_show_less": "Réduire",
     "year_filter": "Année",
     "all_years": "Toutes les années",
     "module_filter": "Module",

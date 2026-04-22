@@ -1,7 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import DOMPurify from 'dompurify';
 import ExamCard from './ExamCard';
-import { AlertCircle, FileX, Search, RotateCcw, ArrowUpDown } from 'lucide-react';
+import {
+  AlertCircle,
+  FileX,
+  Search,
+  RotateCcw,
+  ArrowUpDown,
+  X,
+  FileText,
+  FileWarning,
+} from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from '../hooks/useRouter';
 import { Input } from './ui/Input';
@@ -15,9 +25,20 @@ interface Exam {
   module?: string;
   fileKey: string;
   pages?: number;
+  searchable?: boolean;
   createdAt: string;
   updatedAt: string;
   uploadedBy: string;
+}
+
+interface SearchHit {
+  examId: string;
+  pageNumber: number;
+  snippet: string;
+}
+
+interface SearchResponse {
+  results: SearchHit[];
 }
 
 interface ExamListProps {
@@ -40,6 +61,53 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
   const [selectedModule, setSelectedModule] = useState<string>('');
   const [sortField, setSortField] = useState<string>('date');
   const [sortAsc, setSortAsc] = useState(false);
+  const [fullTextInput, setFullTextInput] = useState('');
+  const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [chipHits, setChipHits] = useState<SearchHit[] | null>(null);
+  const [chipLoading, setChipLoading] = useState(false);
+  const [chipError, setChipError] = useState(false);
+
+  const clearChip = () => {
+    setActiveChip(null);
+    setChipHits(null);
+    setChipError(false);
+  };
+
+  const handleFullTextSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = fullTextInput.trim();
+    if (!q) return;
+    setActiveChip(q);
+    setFullTextInput('');
+    setChipLoading(true);
+    setChipError(false);
+    try {
+      const res = await apiFetch(`/api/search?q=${encodeURIComponent(q)}&limit=100`);
+      if (!res.ok) throw new Error(String(res.status));
+      const body = (await res.json()) as SearchResponse;
+      setChipHits(body.results);
+    } catch {
+      setChipError(true);
+      setChipHits([]);
+    } finally {
+      setChipLoading(false);
+    }
+  };
+
+  // Group search hits by examId so each card can show the pages that matched.
+  const hitsByExam = useMemo(() => {
+    if (!chipHits) return null;
+    const grouped = new Map<string, SearchHit[]>();
+    for (const hit of chipHits) {
+      const existing = grouped.get(hit.examId);
+      if (existing) existing.push(hit);
+      else grouped.set(hit.examId, [hit]);
+    }
+    for (const list of grouped.values()) {
+      list.sort((a, b) => a.pageNumber - b.pageNumber);
+    }
+    return grouped;
+  }, [chipHits]);
 
   // Load exams
   useEffect(() => {
@@ -82,8 +150,9 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
         (exam.module?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       const matchesYear = !selectedYear || exam.year?.toString() === selectedYear;
       const matchesModule = !selectedModule || exam.module === selectedModule;
+      const matchesChip = !hitsByExam || hitsByExam.has(exam._id);
 
-      return matchesSearch && matchesYear && matchesModule;
+      return matchesSearch && matchesYear && matchesModule && matchesChip;
     });
 
     const dir = sortAsc ? 1 : -1;
@@ -100,7 +169,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
           return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       }
     });
-  }, [exams, searchTerm, selectedYear, selectedModule, sortField, sortAsc]);
+  }, [exams, searchTerm, selectedYear, selectedModule, sortField, sortAsc, hitsByExam]);
 
   // Filter options
   const availableYears = useMemo(() => {
@@ -119,6 +188,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
     setSelectedModule('');
     setSortField('date');
     setSortAsc(false);
+    clearChip();
   };
 
   const handleReportExam = async (examId: string) => {
@@ -189,7 +259,7 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
           </p>
         </div>
 
-        {(searchTerm || selectedYear || selectedModule) && (
+        {(searchTerm || selectedYear || selectedModule || activeChip) && (
           <button
             onClick={resetFilters}
             className="flex items-center gap-2 text-primary hover:text-primary-hover text-sm font-medium transition-colors cursor-pointer"
@@ -197,6 +267,60 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
             <RotateCcw className="w-4 h-4" />
             <span>{t('common.reset_filters')}</span>
           </button>
+        )}
+      </div>
+
+      {/* Full-text search across PDF contents */}
+      <div className="bg-white border border-border rounded-xl p-4 md:p-5 shadow-lg shadow-black/5">
+        <form onSubmit={handleFullTextSubmit}>
+          <label
+            htmlFor="fulltext-search"
+            className="block text-sm font-medium text-secondary-dark mb-2"
+          >
+            {t('exams.fulltext_label')}
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+            <input
+              id="fulltext-search"
+              type="search"
+              value={fullTextInput}
+              onChange={e => setFullTextInput(e.target.value)}
+              placeholder={t('exams.fulltext_placeholder')}
+              className="w-full pl-10 pr-3 py-2 border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+            />
+          </div>
+          <p className="mt-2 text-xs text-secondary">{t('exams.fulltext_hint')}</p>
+          <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-secondary">
+            <span
+              aria-hidden="true"
+              className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-amber-100 text-amber-700"
+            >
+              <FileWarning className="w-3 h-3" />
+            </span>
+            = {t('search.not_searchable_title')}
+          </p>
+        </form>
+
+        {activeChip && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 pl-3 pr-1.5 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              <Search className="w-3.5 h-3.5" />
+              <span className="truncate max-w-[16rem]">{activeChip}</span>
+              <button
+                type="button"
+                onClick={clearChip}
+                aria-label={t('exams.fulltext_clear_chip')}
+                className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-primary/20 cursor-pointer transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+            {chipLoading && (
+              <span className="text-xs text-secondary">{t('exams.fulltext_searching')}</span>
+            )}
+            {chipError && <span className="text-xs text-warning">{t('exams.fulltext_error')}</span>}
+          </div>
         )}
       </div>
 
@@ -306,15 +430,91 @@ export default function ExamList({ onExamSelect }: ExamListProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {filteredExams.map(exam => (
-            <ExamCard
-              key={exam._id}
-              exam={exam}
-              onSelect={onExamSelect}
-              onReport={handleReportExam}
-            />
-          ))}
+          {filteredExams.map(exam => {
+            const hits = hitsByExam?.get(exam._id);
+            return (
+              <ExamListCard
+                key={exam._id}
+                exam={exam}
+                hits={hits}
+                onSelect={onExamSelect}
+                onReport={handleReportExam}
+                onJumpToPage={pageNumber =>
+                  navigate('viewer', { examId: exam._id, page: pageNumber })
+                }
+              />
+            );
+          })}
         </div>
+      )}
+    </div>
+  );
+}
+
+const DEFAULT_VISIBLE_HITS = 3;
+
+interface ExamListCardProps {
+  exam: Exam;
+  hits: SearchHit[] | undefined;
+  onSelect?: (exam: Exam) => void;
+  onReport: (examId: string) => void;
+  onJumpToPage: (page: number) => void;
+}
+
+function ExamListCard({ exam, hits, onSelect, onReport, onJumpToPage }: ExamListCardProps) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const visibleHits = hits ? (expanded ? hits : hits.slice(0, DEFAULT_VISIBLE_HITS)) : [];
+  const hiddenCount = hits ? hits.length - visibleHits.length : 0;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <ExamCard exam={exam} onSelect={onSelect} onReport={onReport} />
+      {hits && hits.length > 0 && (
+        <ul className="pl-3 border-l-2 border-primary/30 space-y-1.5">
+          {visibleHits.map(hit => (
+            <li key={`${hit.examId}-${hit.pageNumber}`}>
+              <button
+                onClick={() => onJumpToPage(hit.pageNumber)}
+                className="group w-full text-left text-xs text-secondary hover:text-secondary-dark cursor-pointer"
+              >
+                <span className="inline-flex items-center gap-1 text-primary font-medium mr-2">
+                  <FileText className="w-3 h-3" />
+                  {t('exams.fulltext_hit_page', { page: hit.pageNumber })}
+                </span>
+                <span
+                  className="line-clamp-2 inline [&_em]:bg-yellow-200 [&_em]:not-italic [&_em]:font-semibold [&_em]:px-0.5 [&_em]:rounded"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(hit.snippet, {
+                      ALLOWED_TAGS: ['em'],
+                      ALLOWED_ATTR: [],
+                    }),
+                  }}
+                />
+              </button>
+            </li>
+          ))}
+          {hiddenCount > 0 && !expanded && (
+            <li>
+              <button
+                onClick={() => setExpanded(true)}
+                className="text-xs text-primary hover:text-primary-hover font-medium cursor-pointer"
+              >
+                {t('exams.fulltext_show_more', { count: hiddenCount })}
+              </button>
+            </li>
+          )}
+          {expanded && hits.length > DEFAULT_VISIBLE_HITS && (
+            <li>
+              <button
+                onClick={() => setExpanded(false)}
+                className="text-xs text-secondary hover:text-secondary-dark font-medium cursor-pointer"
+              >
+                {t('exams.fulltext_show_less')}
+              </button>
+            </li>
+          )}
+        </ul>
       )}
     </div>
   );
