@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_INSTANCE_CONFIG, type InstanceConfig } from '../types/instance-config';
 import { InstanceContext } from './instanceContext';
+import { apiFetch } from '../utils/api';
 
 /**
  * Provider component that loads instance configuration from the API
@@ -14,7 +15,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/config/instance');
+        const response = await apiFetch('/api/config/instance');
 
         if (!response.ok) {
           throw new Error(`Failed to load instance config: ${response.statusText}`);
