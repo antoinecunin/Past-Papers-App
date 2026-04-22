@@ -25,7 +25,7 @@ const ExamSchema = new Schema(
     // Default true for backward compat; upload flow sets it to false when
     // extracted text is too sparse to be useful (scanned documents).
     searchable: { type: Boolean, default: true },
-    uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // qui a uploadé
+    uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true }, // qui a uploadé (indexé pour les requêtes GDPR par utilisateur)
   },
   { timestamps: true }
 );
