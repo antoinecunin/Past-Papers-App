@@ -6,6 +6,7 @@ import { authMiddleware, requireAdmin, AuthenticatedRequest } from '../middlewar
 import { UserModel, UserRole } from '../models/User.js';
 import { instanceConfigService } from '../services/instance-config.service.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { objectIdSchema } from '../utils/validation.js';
 
 const router = Router();
 
@@ -848,7 +849,11 @@ router.put(
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { id } = req.params;
+    const idResult = objectIdSchema('id').safeParse(req.params.id);
+    if (!idResult.success) {
+      return res.status(400).json({ error: idResult.error.errors[0].message });
+    }
+    const id = idResult.data;
     const { role } = result.data;
 
     // Cannot change own role
@@ -941,7 +946,11 @@ router.put(
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { id } = req.params;
+    const idResult = objectIdSchema('id').safeParse(req.params.id);
+    if (!idResult.success) {
+      return res.status(400).json({ error: idResult.error.errors[0].message });
+    }
+    const id = idResult.data;
 
     // Cannot change own permissions
     if (id === req.user!.id) {
