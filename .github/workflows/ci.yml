@@ -5,9 +5,40 @@ on:
     branches: [main, develop]
   pull_request:
 
+# Cancel superseded runs for the same ref — during active development only
+# the latest push matters, so stop burning runner minutes on obsolete commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # Detect which areas of the repo changed so we only run the jobs that
+  # actually have something to validate. Cheap upfront step (~5s) that
+  # skips 80s of API tests when a commit only touches the web tree, and
+  # vice versa.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'annales-app/api/**'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'annales-app/web/**'
+              - '.github/workflows/ci.yml'
+
   api:
     name: API (lint · format · test)
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,6 +62,8 @@ jobs:
 
   web:
     name: Web (lint · format)
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
