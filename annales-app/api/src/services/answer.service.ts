@@ -205,7 +205,11 @@ class AnswerService {
     const oldContent = existingAnswer.content;
     if (oldContent?.type === 'image' && isValidImageKey(oldContent.data)) {
       if (content.type !== 'image' || content.data !== oldContent.data) {
-        await imageService.delete(oldContent.data).catch(() => {});
+        await imageService.delete(oldContent.data).catch((err: unknown) => {
+          console.warn(
+            `[answer] failed to delete old image ${oldContent.data}: ${(err as Error).message}`
+          );
+        });
       }
     }
 
@@ -302,7 +306,13 @@ class AnswerService {
     const imageKeys = answers
       .filter(a => a.content?.type === 'image' && isValidImageKey(a.content.data))
       .map(a => a.content!.data);
-    await Promise.all(imageKeys.map(key => imageService.delete(key).catch(() => {})));
+    await Promise.all(
+      imageKeys.map(key =>
+        imageService.delete(key).catch((err: unknown) => {
+          console.warn(`[answer] failed to delete image ${key}: ${(err as Error).message}`);
+        })
+      )
+    );
   }
 
   /**
