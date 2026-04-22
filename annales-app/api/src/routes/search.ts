@@ -4,6 +4,7 @@ import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { Exam } from '../models/Exam.js';
 import { search as searchIndex } from '../services/search.service.js';
+import { trimSnippet } from '../utils/snippet.js';
 import { objectIdSchema } from '../utils/validation.js';
 
 export const router = Router();
@@ -100,7 +101,7 @@ router.get(
       module: hit.module,
       year: hit.year,
       pageNumber: hit.pageNumber,
-      snippet: hit._formatted?.text ?? hit.text,
+      snippet: trimSnippet(hit._formatted?.text ?? hit.text),
     }));
 
     // Expose how many scanned-only exams are intentionally excluded so the

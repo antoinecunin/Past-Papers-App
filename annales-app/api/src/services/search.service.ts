@@ -123,9 +123,9 @@ export async function search(query: string, options: SearchOptions = {}): Promis
       limit: options.limit ?? 20,
       offset: options.offset ?? 0,
       filter: filters.length > 0 ? filters.join(' AND ') : undefined,
+      // Highlight in the full text; the API layer trims around the first match
+      // to the nearest sentence boundary rather than relying on Meili's word-based crop.
       attributesToHighlight: ['text'],
-      attributesToCrop: ['text'],
-      cropLength: 40,
     });
   return {
     hits: result.hits,
