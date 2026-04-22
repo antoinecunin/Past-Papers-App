@@ -13,7 +13,7 @@ export interface Answer {
   examId: Types.ObjectId;
   page: number; // 1-based
   yTop: number; // [0,1] position Y du commentaire
-  content?: AnswerContent;
+  content: AnswerContent;
   authorId?: Types.ObjectId; // Référence utilisateur
   parentId?: Types.ObjectId; // Référence vers le commentaire parent (thread)
   mentionedUserId?: Types.ObjectId; // Référence vers l'utilisateur mentionné (style YouTube)
@@ -37,7 +37,7 @@ const AnswerSchema = new Schema<Answer>(
     examId: { type: Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },
     page: { type: Number, required: true, min: 1, index: true },
     yTop: { type: Number, required: true, min: 0, max: 1 },
-    content: { type: AnswerContentSchema },
+    content: { type: AnswerContentSchema, required: true },
     authorId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     parentId: { type: Schema.Types.ObjectId, ref: 'Answer', default: null, index: true },
     mentionedUserId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
