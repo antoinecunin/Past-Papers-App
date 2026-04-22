@@ -6,7 +6,8 @@ A self-hosted platform for sharing and annotating past exam papers. Built for un
 
 ## Features
 
-- **PDF upload & viewer** — Upload exam papers with metadata (module, year), view them in-browser with search, filtering and sorting
+- **PDF upload & viewer** — Upload exam papers with metadata (module, year), view them in-browser with filtering and sorting by title, module, or year
+- **Full-text search** — Meilisearch-backed search across every page of every PDF, with highlighted snippets and page-level deep-links into the viewer. Scanned documents are detected at upload and marked as not content-searchable.
 - **Annotations** — Add comments on any page at any position, with support for text, image uploads (auto-converted to WebP), and LaTeX
 - **Threaded discussions** — Reply to comments with @mentions
 - **Voting** — Upvote/downvote comments and replies
@@ -88,12 +89,12 @@ npm run test:coverage
         │  (React)   │        │ (Express)  │
         └────────────┘        └─────┬─────┘
                                     │
-                           ┌────────┴────────┐
-                           │                 │
-                     ┌─────┴─────┐     ┌─────┴─────┐
-                     │  MongoDB  │     │  Garage    │
-                     │ (metadata)│     │(PDFs+imgs) │
-                     └───────────┘     └───────────┘
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+              ┌─────┴─────┐   ┌─────┴─────┐   ┌─────┴─────┐
+              │  MongoDB  │   │  Garage    │   │   Meili   │
+              │ (metadata)│   │(PDFs+imgs) │   │ (search)  │
+              └───────────┘   └───────────┘   └───────────┘
 ```
 
 | Layer | Technology |
@@ -102,6 +103,7 @@ npm run test:coverage
 | Backend | Node.js 20, Express, TypeScript, Mongoose |
 | Database | MongoDB 7 |
 | Storage | Garage v2 (S3-compatible, by Deuxfleurs) |
+| Full-text search | Meilisearch v1, indexed page by page (pdfjs-dist extraction) |
 | Image processing | sharp (WebP conversion, EXIF stripping) |
 | Reverse Proxy | Nginx |
 | Infrastructure | Docker Compose |

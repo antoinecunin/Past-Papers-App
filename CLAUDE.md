@@ -2,7 +2,7 @@
 
 Self-hosted exam archive for universities — PDF upload, annotations (text/image/LaTeX), voting, threaded discussions. Multi-instance, GDPR compliant, bilingual (FR/EN).
 
-Stack: Docker Compose, Nginx, React 19, Express, MongoDB, Garage S3.
+Stack: Docker Compose, Nginx, React 19, Express, MongoDB, Garage S3, Meilisearch.
 
 See @README.md for setup and architecture.
 
@@ -15,7 +15,7 @@ npm run backup                     # Backup MongoDB + Garage files
 npm run backup -- list             # List available backups
 npm run backup -- restore          # Restore most recent backup
 npm run import -- <dir> <pattern>  # Bulk import PDFs
-cd annales-app/api && npm test     # 210 tests
+cd annales-app/api && npm test     # 248 tests
 cd annales-app/api && npm run lint && npm run format:check
 cd annales-app/web && npm run lint && npm run format:check
 ```
@@ -42,6 +42,8 @@ Test accounts: `admin@<domain>` / `admin123`, `test@<domain>` / `test1234`
 - **LaTeX**: KaTeX with `trust: false` + DOMPurify on output to prevent XSS.
 - **Legal pages** (PrivacyPage, TermsPage, CookieBanner) are NOT yet migrated to i18n.
 - **Tests** use `Authorization: Bearer` header (not cookies) via fallback in auth middleware.
+- **Full-text search**: PDF text extracted at upload via `pdfjs-dist`, indexed in Meili as one document per page (id `examId-pageNumber`). Indexing is fire-and-forget — a Meili outage never blocks upload or delete. Exams whose pages carry negligible text (>50% below 50 chars) are flagged `searchable: false` and not indexed; the UI surfaces a badge instead of pretending to search them.
+- **Search snippets**: API post-processes Meili's highlighted output in `utils/snippet.ts`, trimming to the nearest sentence boundary with an 80-char hard cap. Meili's native word-based crop is disabled.
 
 ## Patterns
 
