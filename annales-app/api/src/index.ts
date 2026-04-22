@@ -1,4 +1,11 @@
 import 'dotenv/config';
+import { parseEnv } from './config/env.js';
+
+// Validate required environment variables before anything else touches
+// process.env — a missing or malformed value should fail fast with a
+// clear message rather than crash deep inside a request handler.
+parseEnv();
+
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
