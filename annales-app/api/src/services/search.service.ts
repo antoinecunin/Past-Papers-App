@@ -1,5 +1,6 @@
 import { Meilisearch } from 'meilisearch';
 import type { ExtractedPage } from './pdf-extract.service.js';
+import { escapeMeiliFilter } from '../utils/meili-filter.js';
 
 const INDEX_NAME = process.env.MEILI_INDEX || 'papers';
 const MEILI_HOST = process.env.MEILI_HOST || 'http://meili:7700';
@@ -104,7 +105,7 @@ export async function removeExam(examId: string): Promise<void> {
   try {
     await getClient()
       .index(INDEX_NAME)
-      .deleteDocuments({ filter: `examId = "${examId}"` });
+      .deleteDocuments({ filter: `examId = ${escapeMeiliFilter(examId)}` });
   } catch (err) {
     console.warn(`[search] failed to remove exam ${examId}: ${(err as Error).message}`);
   }
@@ -116,7 +117,7 @@ export async function removeExam(examId: string): Promise<void> {
  */
 export async function search(query: string, options: SearchOptions = {}): Promise<SearchResponse> {
   const filters: string[] = [];
-  if (options.examId) filters.push(`examId = "${options.examId}"`);
+  if (options.examId) filters.push(`examId = ${escapeMeiliFilter(options.examId)}`);
   const result = await getClient()
     .index(INDEX_NAME)
     .search<SearchHit>(query, {
