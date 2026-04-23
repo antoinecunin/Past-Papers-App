@@ -100,7 +100,7 @@ services:
       start_period: 15s
 
   mongo:
-    image: mongo:7
+    image: mongo:8
     container_name: annales-mongo
     mem_limit: 1024m
     command: --wiredTigerCacheSizeGB 0.5

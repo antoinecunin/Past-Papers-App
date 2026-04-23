@@ -106,7 +106,7 @@ services:
       start_period: 15s
 
   mongo:
-    image: mongo:7
+    image: mongo:8
     container_name: annales-mongo-dev
     volumes:
       - mongo_data_dev:/data/db

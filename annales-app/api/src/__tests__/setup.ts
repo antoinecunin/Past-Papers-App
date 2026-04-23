@@ -8,11 +8,9 @@ let mongoServer: MongoMemoryServer;
 
 // Setup avant tous les tests
 beforeAll(async () => {
-  // Pin the in-memory MongoDB to the same major used in production
-  // (docker-compose ships mongo:7). mongodb-memory-server defaults to
-  // the latest stable, which would silently drift away from what users
-  // actually run and mask major-version-specific regressions.
-  mongoServer = await MongoMemoryServer.create({ binary: { version: '7.0.14' } });
+  // Créer une instance MongoDB en mémoire (version par défaut = celle
+  // livrée par mongodb-memory-server, alignée avec le docker-compose prod).
+  mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
 
   // Se connecter à MongoDB
