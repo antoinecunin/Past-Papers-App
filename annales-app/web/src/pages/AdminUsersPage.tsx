@@ -16,6 +16,7 @@ import { PermissionUtils } from '../utils/permissions';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { apiFetch } from '../utils/api';
+import { showConfirm, showError } from '../utils/swal';
 
 interface UserEntry {
   _id: string;
@@ -76,12 +77,14 @@ export default function AdminUsersPage() {
 
     const action =
       newRole === 'admin' ? t('admin.users.promote_action') : t('admin.users.demote_action');
-    const confirmed = window.confirm(
+    const confirmed = await showConfirm(
       t('admin.users.role_change_confirm', {
         action,
         name: `${targetUser.firstName} ${targetUser.lastName}`,
         email: targetUser.email,
-      })
+      }),
+      undefined,
+      { confirmText: t('common.save'), cancelText: t('common.cancel') }
     );
     if (!confirmed) return;
 
@@ -113,10 +116,10 @@ export default function AdminUsersPage() {
         if (response.status === 403) {
           setIsInitialAdmin(false);
         }
-        alert(errorData.error || t('admin.users.error_role'));
+        await showError(t('common.error'), errorData.error || t('admin.users.error_role'));
       }
     } catch {
-      alert(t('admin.users.network_error'));
+      await showError(t('common.error'), t('admin.users.network_error'));
     } finally {
       setActionLoading(null);
     }
@@ -145,10 +148,10 @@ export default function AdminUsersPage() {
         );
       } else {
         const errorData = await response.json();
-        alert(errorData.error || t('admin.users.error_permission'));
+        await showError(t('common.error'), errorData.error || t('admin.users.error_permission'));
       }
     } catch {
-      alert(t('admin.users.network_error'));
+      await showError(t('common.error'), t('admin.users.network_error'));
     } finally {
       setActionLoading(null);
     }
