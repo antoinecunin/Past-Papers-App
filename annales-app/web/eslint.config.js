@@ -38,16 +38,6 @@ export default tseslint.config([
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      // v7 of eslint-plugin-react-hooks adds stricter rules that flag
-      // legitimately-questionable patterns (setState inside effects,
-      // manual memoization that the React Compiler can't preserve, a
-      // hidden mutation). The existing codebase triggers a handful of
-      // each; they're real signals but fixing them is out of scope for
-      // a tooling bump. Disabled here as tech debt to be addressed in
-      // the follow-up commit.
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/immutability': 'off',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

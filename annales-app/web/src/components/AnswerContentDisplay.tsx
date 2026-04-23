@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Answer, AnswerContent, ContentType } from '../types/answer';
 import { renderLatex } from '../utils/latex';
@@ -33,17 +33,11 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [editContent, setEditContent] = useState<AnswerContent | null>(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [renderKey, setRenderKey] = useState(0);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editImageError, setEditImageError] = useState<string | null>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const content = answer.content;
-
-  // Force re-render when content changes or when exiting edit mode
-  useEffect(() => {
-    setRenderKey(prev => prev + 1);
-  }, [content.type, content.data, isEditing]);
 
   const startEdit = () => {
     setEditContent(content);
@@ -376,7 +370,7 @@ export const AnswerContentDisplay: React.FC<AnswerContentDisplayProps> = ({
           userSelect: 'auto',
         }}
       >
-        <div key={`${content.type}-${renderKey}-${isExpanded}`}>
+        <div key={`${content.type}-${content.data}-${isEditing}-${isExpanded}`}>
           {renderContent(content, !isExpanded)}
         </div>
       </div>

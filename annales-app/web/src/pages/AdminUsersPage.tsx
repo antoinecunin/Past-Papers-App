@@ -45,7 +45,6 @@ export default function AdminUsersPage() {
   const fetchUsers = useCallback(async () => {
     if (!user) return;
     try {
-      setLoading(true);
       const response = await apiFetch('/api/auth/users');
 
       if (response.ok) {
@@ -64,7 +63,11 @@ export default function AdminUsersPage() {
     }
   }, [user]);
 
+  // Canonical fetch-on-mount: setState inside fetchUsers only fires after
+  // the await, which is safe, but the v7 plugin flags it anyway. Silence
+  // locally rather than globally to keep the rule active on new code.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsers();
   }, [fetchUsers]);
 
@@ -201,7 +204,15 @@ export default function AdminUsersPage() {
           <Users className="w-6 h-6 text-purple-600" />
           <h1 className="text-2xl font-bold text-gray-900">{t('admin.users.title')}</h1>
         </div>
-        <Button onClick={() => fetchUsers()} variant="secondary" size="sm" disabled={loading}>
+        <Button
+          onClick={() => {
+            setLoading(true);
+            void fetchUsers();
+          }}
+          variant="secondary"
+          size="sm"
+          disabled={loading}
+        >
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           {t('common.refresh')}
         </Button>

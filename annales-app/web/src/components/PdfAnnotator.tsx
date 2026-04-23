@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as pdfjs from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -43,7 +43,7 @@ export default function PdfAnnotator({ pdfUrl, examId, initialPage }: Props) {
   const [pdfDoc, setPdfDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState(0);
   const [visiblePage, setVisiblePage] = useState(1);
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  // answers is derived from allAnswers + visiblePage — no setState needed.
   const [allAnswers, setAllAnswers] = useState<Answer[]>([]); // All comments for visual display
   const [selectedGroup, setSelectedGroup] = useState<Answer[] | null>(null); // Selected comment group
   const [highlightedAnswers, setHighlightedAnswers] = useState<string[]>([]); // IDs of highlighted comments
@@ -70,6 +70,22 @@ export default function PdfAnnotator({ pdfUrl, examId, initialPage }: Props) {
   const [loadedReplies, setLoadedReplies] = useState<
     Record<string, { replies: Answer[]; hasMore: boolean; cursor?: string }>
   >({});
+
+  // Function to load all comments. Declared before useCommentPositioning so
+  // the reload callback below can reference it without triggering the
+  // "accessed before declared" rule from eslint-plugin-react-hooks.
+  const loadAllAnswers = useCallback(async () => {
+    if (!examId || !user) return;
+    try {
+      const url = `/api/answers?examId=${encodeURIComponent(examId)}`;
+      const res = await apiFetch(url);
+      if (!res.ok) throw new Error('Failed to load all answers');
+      const data: Answer[] = await res.json();
+      setAllAnswers(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [examId, user]);
 
   // Hook for click positioning
   const { pendingPosition, handlePageClick, confirmComment, cancelComment } = useCommentPositioning(
@@ -692,32 +708,22 @@ export default function PdfAnnotator({ pdfUrl, examId, initialPage }: Props) {
     }
   }, [pendingPosition, wrappedConfirmComment, wrappedCancelComment, uploadImage, t]);
 
-  // Function to load all comments
-  const loadAllAnswers = useCallback(async () => {
-    if (!examId || !user) return;
-    try {
-      const url = `/api/answers?examId=${encodeURIComponent(examId)}`;
-      const res = await apiFetch(url);
-      if (!res.ok) throw new Error('Failed to load all answers');
-      const data: Answer[] = await res.json();
-      setAllAnswers(data);
-    } catch (err) {
-      console.error(err);
-    }
-  }, [examId, user]);
-
-  // Load all comments on mount and when examId changes
+  // Load all comments on mount and when examId changes. This is the
+  // canonical data-fetching-on-mount pattern; setState happens *inside*
+  // loadAllAnswers after the await, which is safe — but the v7 plugin
+  // lacks the interprocedural depth to see that, so we silence it here.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAllAnswers();
   }, [loadAllAnswers, examId]);
 
-  // Filter comments for the visible page (locally, no API call)
-  useEffect(() => {
-    const pageAnswers = allAnswers
-      .filter(a => a.page === visiblePage)
-      .sort((a, b) => a.yTop - b.yTop);
-    setAnswers(pageAnswers);
-  }, [allAnswers, visiblePage]);
+  // Comments visible on the current page, filtered and ordered top-to-bottom.
+  // Derived directly from allAnswers + visiblePage rather than held in its
+  // own state, so a cascade render isn't triggered every time the user scrolls.
+  const answers = useMemo(
+    () => allAnswers.filter(a => a.page === visiblePage).sort((a, b) => a.yTop - b.yTop),
+    [allAnswers, visiblePage]
+  );
 
   // Inject CSS styles for highlighted indicators
   useEffect(() => {
@@ -1151,7 +1157,7 @@ export default function PdfAnnotator({ pdfUrl, examId, initialPage }: Props) {
                     }
                     onUploadImage={uploadImage}
                   />
-                  {replyTarget?.rootId === a._id && (
+                  {replyTarget !== null && replyTarget.rootId === a._id && (
                     <ReplyForm
                       onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
                       onCancel={() => setReplyTarget(null)}
@@ -1431,7 +1437,7 @@ export default function PdfAnnotator({ pdfUrl, examId, initialPage }: Props) {
                 />
 
                 {/* Thread: reply form (just below the root comment) */}
-                {replyTarget?.rootId === a._id && (
+                {replyTarget !== null && replyTarget.rootId === a._id && (
                   <ReplyForm
                     onSubmit={content => replyToAnswer(a._id, content, replyTarget.mentionUserId)}
                     onCancel={() => setReplyTarget(null)}

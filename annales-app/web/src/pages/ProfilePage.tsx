@@ -59,13 +59,16 @@ export default function ProfilePage() {
     }
   }, [user, navigate]);
 
-  // Sync form with user data
-  useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName);
-      setLastName(user.lastName);
-    }
-  }, [user]);
+  // Resync the form when the server user id changes (login, account switch,
+  // or profile update refreshing the store). Using the render-time reset
+  // pattern — see https://react.dev/learn/you-might-not-need-an-effect#resetting-all-state-when-a-prop-changes
+  // — avoids the cascading render an effect would cause.
+  const [syncedUserId, setSyncedUserId] = useState(user?.id);
+  if (user && syncedUserId !== user.id) {
+    setSyncedUserId(user.id);
+    setFirstName(user.firstName);
+    setLastName(user.lastName);
+  }
 
   // Clean up on unmount
   useEffect(() => {

@@ -195,11 +195,20 @@ export default function AdminReportsPage() {
     }
   };
 
-  // Reset offset when filters change
+  // Fetch whenever the memoised fetcher changes (filter or user change
+  // both invalidate it via useCallback above). The filter-change handlers
+  // below reset the offset to 0 inline so we don't need a setState-in-effect
+  // for offset. setState inside fetchReports only happens after the await
+  // but the v7 plugin can't see that, so we silence it here.
   useEffect(() => {
-    setOffset(0);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchReports(0);
-  }, [filter, user, fetchReports]);
+  }, [fetchReports]);
+
+  const updateFilter = (patch: { status?: string; type?: string }) => {
+    setFilter(prev => ({ ...prev, ...patch }));
+    setOffset(0);
+  };
 
   // Pagination handlers
   const handlePreviousPage = () => {
@@ -355,7 +364,7 @@ export default function AdminReportsPage() {
         <div className="flex flex-wrap gap-3">
           <select
             value={filter.status || ''}
-            onChange={e => setFilter({ ...filter, status: e.target.value || undefined })}
+            onChange={e => updateFilter({ status: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
             <option value="">{t('admin.reports.all_statuses')}</option>
@@ -366,7 +375,7 @@ export default function AdminReportsPage() {
 
           <select
             value={filter.type || ''}
-            onChange={e => setFilter({ ...filter, type: e.target.value || undefined })}
+            onChange={e => updateFilter({ type: e.target.value || undefined })}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors cursor-pointer"
           >
             <option value="">{t('admin.reports.all_types')}</option>
