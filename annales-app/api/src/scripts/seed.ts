@@ -21,6 +21,8 @@ import { ReportModel, ReportType, ReportReason, ReportStatus } from '../models/R
 import { PDFDocument } from 'pdf-lib';
 import { uploadBuffer, objectKey } from '../services/s3.js';
 import { instanceConfigService } from '../services/instance-config.service.js';
+import { extractPdfText } from '../services/pdf-extract.service.js';
+import { ensureIndex, indexExam } from '../services/search.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -131,6 +133,17 @@ async function connectToDatabase(): Promise<void> {
   log('🔌', 'Connecting to MongoDB...');
   await mongoose.connect(mongoUri);
   logSuccess('Connected to MongoDB');
+
+  // Make sure the Meili index exists before we start inserting exams.
+  // A search outage here shouldn't abort the seed — the per-exam index
+  // calls will log their own warnings and the seed still produces a
+  // working database, just with an empty search index.
+  try {
+    await ensureIndex();
+    logSuccess('Search index ready');
+  } catch (err) {
+    logError(`Search index setup failed: ${(err as Error).message}`);
+  }
 }
 
 async function createUsers(
@@ -222,6 +235,30 @@ async function createExams(
         pages,
         uploadedBy: uploaderId,
       });
+
+      // Mirror the /api/files/upload pipeline so seeded exams show up in
+      // full-text search. Without this the demo instance starts with an
+      // empty Meili index and the search bar looks broken on every query.
+      try {
+        const extraction = await extractPdfText(fileBuffer);
+        exam.searchable = extraction.searchable;
+        await exam.save();
+        if (extraction.searchable) {
+          await indexExam(
+            {
+              examId: exam._id.toString(),
+              examTitle: exam.title,
+              module: exam.module,
+              year: exam.year,
+            },
+            extraction.pages
+          );
+        }
+      } catch (err) {
+        logError(`Failed to index ${fileData.title}: ${(err as Error).message}`);
+        exam.searchable = false;
+        await exam.save();
+      }
 
       exams.push({ id: exam._id as mongoose.Types.ObjectId, pages });
       if (verbose) logSuccess(`Exam created: ${fileData.title} (${pages} pages)`);
