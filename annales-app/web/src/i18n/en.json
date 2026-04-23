@@ -185,7 +185,7 @@
       "delete_button": "Delete my account",
       "confirm_title": "Delete your account?",
       "confirm_irreversible": "This action is irreversible.",
-      "confirm_data_loss": "All your data will be deleted: exams, comments, reports.",
+      "confirm_data_loss": "Your personal data will be removed. Exams and comments you shared will stay visible but anonymised. Reports you filed will be deleted.",
       "confirm_continue": "Continue",
       "confirm_password_title": "Confirm deletion",
       "confirm_password_label": "Enter your password to confirm",

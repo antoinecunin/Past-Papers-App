@@ -185,7 +185,7 @@
       "delete_button": "Supprimer mon compte",
       "confirm_title": "Supprimer votre compte ?",
       "confirm_irreversible": "Cette action est irréversible.",
-      "confirm_data_loss": "Toutes vos données seront supprimées : examens, commentaires, signalements.",
+      "confirm_data_loss": "Vos données personnelles seront supprimées. Les annales et commentaires que vous avez partagés resteront visibles mais seront anonymisés. Vos signalements seront supprimés.",
       "confirm_continue": "Continuer",
       "confirm_password_title": "Confirmer la suppression",
       "confirm_password_label": "Entrez votre mot de passe pour confirmer",
